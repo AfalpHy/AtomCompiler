@@ -13,7 +13,7 @@ int main(int argc, const char *argv[]) {
     ATCLexer lexer(&input);
     CommonTokenStream token(&lexer);
     ATCParser parser(&token);
-    parser.expr();
+    parser.compUnit();
 
     if (parser.getNumberOfSyntaxErrors() != 0) {
         cout << "error" << endl;
