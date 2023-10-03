@@ -1,3 +1,4 @@
+#include "ASTBuilderVisitor.h"
 #include "ATCLexer.h"
 #include "ATCParser.h"
 #include "antlr4-runtime/antlr4-runtime.h"
@@ -13,7 +14,10 @@ int main(int argc, const char *argv[]) {
     ATCLexer lexer(&input);
     CommonTokenStream token(&lexer);
     ATCParser parser(&token);
-    parser.compUnit();
+    ASTBuilderVisitor builder;
+
+    auto context = parser.compUnit();
+    context->accept(&builder);
 
     if (parser.getNumberOfSyntaxErrors() != 0) {
         cerr << argv[1] << endl;
