@@ -16,7 +16,7 @@ int main(int argc, const char *argv[]) {
     parser.compUnit();
 
     if (parser.getNumberOfSyntaxErrors() != 0) {
-        cout << "error" << endl;
+        cerr << argv[1] << endl;
     }
     return 0;
 }

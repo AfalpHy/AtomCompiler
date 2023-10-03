@@ -4,7 +4,7 @@ compUnit: (decl | funcDef)* EOF;
 
 decl: constDecl | varDecl;
 
-constDecl: 'const' BType constDef (',' constDef)* ';';
+constDecl: 'const' bType constDef (',' constDef)* ';';
 
 constDef: Ident ( '[' constExpr ']')* '=' constInitVal;
 
@@ -12,7 +12,7 @@ constInitVal:
 	constExpr
 	| '{' ( constInitVal ( ',' constInitVal)*)? '}';
 
-varDecl: BType varDef ( ',' varDef)* ';';
+varDecl: bType varDef ( ',' varDef)* ';';
 
 varDef:
 	Ident ('[' constExpr ']')*
@@ -20,13 +20,13 @@ varDef:
 
 initVal: expr | '{' ( initVal ( ',' initVal)*)? '}';
 
-funcDef: FuncType Ident '(' funcFParams? ')' block;
+funcDef: funcType Ident '(' funcFParams? ')' block;
 
 funcFParams: funcFParam ( ',' funcFParam)*;
 
-funcFParam: BType Ident ('[' ']' ( '[' expr ']')*)?;
+funcFParam: bType Ident ('[' ']' ( '[' expr ']')*)?;
 
-block: '{' blockItem? '}';
+block: '{' blockItem* '}';
 
 blockItem: decl | stmt;
 
@@ -53,9 +53,9 @@ number: IntConst | FloatConst;
 unaryExpr:
 	primaryExpr
 	| Ident '(' funcRParams? ')'
-	| UnaryOp unaryExpr;
+	| unaryOp unaryExpr;
 
-UnaryOp: '+' | '-' | '!';
+unaryOp: '+' | '-' | '!';
 
 funcRParams: expr (',' expr)*;
 
@@ -67,20 +67,48 @@ relExpr: addExpr ( ('<' | '>' | '<=' | '>=') addExpr)*;
 
 eqExpr: relExpr ( ('==' | '!=') relExpr)*;
 
-lAndExpr: eqExpr ( lAndExpr '&&' eqExpr)*;
+lAndExpr: eqExpr ('&&' eqExpr)*;
 
-lOrExpr: lAndExpr ( lOrExpr '||' lAndExpr)*;
+lOrExpr: lAndExpr ('||' lAndExpr)*;
 
 constExpr: addExpr;
 
-FuncType: 'void' | BType;
+funcType: 'void' | bType;
 
-BType: 'int' | 'float';
+bType: 'int' | 'float';
 
 Ident: [_a-zA-Z] [_a-zA-Z0-9]*;
 
-IntConst: [0-9]+;
+IntConst: DecimalConst | OctConst | HexConst;
 
-FloatConst: [0-9]+;
+fragment DecimalConst: [1-9] [0-9]* | '0';
 
-WS: [ \n\t]+->skip;
+fragment OctConst: '0' [0-7] [0-8]*;
+
+fragment HexConst: ('0x' | '0X') [0-9a-fA-F]+;
+
+FloatConst: DecimalFloatingConst | HexFloatingConst;
+
+fragment DecimalFloatingConst:
+	FractionalConst Exponent?
+	| Digit Exponent;
+
+fragment FractionalConst: Digit? '.' Digit?;
+
+fragment Exponent: ( 'E' | 'e') ( '+' | '-')? Digit;
+
+fragment Digit: [0-9]+;
+
+fragment HexFloatingConst: ('0x' | '0X') HexFractionalConst BinaryExponent?
+	| ('0x' | '0X') HexDigit BinaryExponent?;
+
+fragment HexFractionalConst: HexDigit? '.' HexDigit?;
+
+fragment BinaryExponent: ('p' | 'P') ('+' | '-')? Digit;
+
+fragment HexDigit: [a-fA-F0-9]+;
+
+WS: [ \r\n\t]+ -> skip;
+
+LineComment: '//' .*? '\r'? '\n' -> skip;
+MultLineComment: '/*' .*? '*/' -> skip;
