@@ -16,9 +16,4 @@ add_subdirectory(src/frontend)
 
 add_executable(${PROJECT_NAME} src/main.cpp)
 
-target_include_directories(
-  ${PROJECT_NAME}
-  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/frontend/antlr
-  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/frontend/AST)
-
 target_link_libraries(${PROJECT_NAME} frontend)

@@ -1,3 +1,4 @@
 Language: Cpp                 # 指定代码语言为C++，也可以使用 "Language: C" 或 "Language: ObjectiveC" 等
 UseTab: Never                  # 不使用制表符，使用空格来缩进
 IndentWidth: 4
+ColumnLimit: 100
