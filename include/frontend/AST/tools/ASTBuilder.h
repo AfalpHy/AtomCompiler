@@ -4,7 +4,7 @@
 #include "ATCBaseVisitor.h"
 #include <iostream>
 
-class ASTBuilderVisitor : public ATCBaseVisitor {
+class ASTBuilder : public ATCBaseVisitor {
   public:
     virtual antlrcpp::Any visitNumber(ATCParser::NumberContext *ctx) override;
 };
