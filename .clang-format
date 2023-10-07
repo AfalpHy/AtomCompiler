@@ -1,4 +1,9 @@
-Language: Cpp                 # 指定代码语言为C++，也可以使用 "Language: C" 或 "Language: ObjectiveC" 等
-UseTab: Never                  # 不使用制表符，使用空格来缩进
+# ATC命名规范：采用驼峰命名法，函数采用小写开头，类中变量采用下划线加小写开头，函数内变量采用小写开头
+
+BasedOnStyle: Google
+
+Language: Cpp               
+UseTab: Never                 
 IndentWidth: 4
 ColumnLimit: 100
+AccessModifierOffset: -4

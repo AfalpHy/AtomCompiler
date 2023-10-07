@@ -1,8 +1,9 @@
+#include <iostream>
+
 #include "AST/tools/ASTBuilder.h"
 #include "ATCLexer.h"
 #include "ATCParser.h"
 #include "antlr4-runtime/antlr4-runtime.h"
-#include <iostream>
 using namespace std;
 using namespace antlr4;
 
@@ -15,7 +16,7 @@ int main(int argc, const char *argv[]) {
     CommonTokenStream token(&lexer);
     ATCParser parser(&token);
     auto context = parser.compUnit();
-    ASTBuilder astBuilder;
+    ATC::ASTBuilder astBuilder;
     context->accept(&astBuilder);
 
     if (parser.getNumberOfSyntaxErrors() != 0) {
