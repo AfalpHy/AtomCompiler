@@ -8,12 +8,15 @@ namespace ATC {
 class CompUnit : public Node {
 public:
     CompUnit() = default;
-    
+
     virtual int getClassId() override { return ID_COMP_UNIT; }
 
     const std::vector<Node*>& getElements() { return _elements; }
 
     void addElement(Node* element) { _elements.push_back(element); }
+
+    // not used now, for many files in future
+    static std::vector<CompUnit*> AllCompUnits;
 
 private:
     std::vector<Node*> _elements;

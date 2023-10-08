@@ -18,7 +18,7 @@ class Node {
 public:
     Node() = default;
 
-    virtual int getClassId() { return ID_NODE; }
+    virtual int getClassId() = 0;
 
     Node* getParent() { return _parent; }
     std::string getName() { return _name; }
