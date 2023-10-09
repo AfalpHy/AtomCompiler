@@ -10,6 +10,7 @@ enum NodeType {
 
     // expression
     ID_EXPRESSION,
+    ID_VAR_REF,
     ID_UNARY_EXPRESSION,
     ID_BINARY_EXPRESSION,
     ID_FUNC_CALL,

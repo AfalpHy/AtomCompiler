@@ -3,12 +3,27 @@
 
 #include <vector>
 
-#include "Node.h"
+#include "TreeNode.h"
+#include "Variable.h"
 namespace ATC {
-class Expression : public Node {
+class Expression : public TreeNode {
 public:
     Expression() = default;
     virtual int getClassId() override { return ID_EXPRESSION; }
+    virtual bool isConst() { return false; }
+};
+
+class VarRef : public Expression {
+public:
+    virtual int getClassId() override { return ID_VAR_REF; }
+    virtual bool isConst() { return _var->isConst(); }
+
+    Variable* getVariable() { return _var; }
+
+    void setVariable(Variable* var) { _var = var; }
+
+private:
+    Variable* _var;
 };
 
 class UnaryExpression : public Expression {
@@ -16,6 +31,7 @@ public:
     UnaryExpression() = default;
 
     virtual int getClassId() override { return ID_UNARY_EXPRESSION; }
+    virtual bool isConst() { return _operand->isConst(); }
 
     Operator getOperator() { return _operator; }
     Expression* getOperand() { return _operand; }
@@ -33,6 +49,8 @@ public:
     BinaryExpression() = default;
 
     virtual int getClassId() override { return ID_BINARY_EXPRESSION; }
+    virtual bool isConst() { return _left->isConst() && _right->isConst(); }
+
     Operator getOperator() { return _operator; }
     Expression* getLeft() { return _left; }
     Expression* getRight() { return _right; }

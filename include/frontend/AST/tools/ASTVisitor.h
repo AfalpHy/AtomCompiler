@@ -1,7 +1,7 @@
 #ifndef AST_VISITOR_H
 #define AST_VISITOR_H
 
-#include "../Node.h"
+#include "../TreeNode.h"
 
 namespace ATC {
 class ASTVisitor {};

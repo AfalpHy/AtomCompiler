@@ -4,11 +4,11 @@
 #include <vector>
 
 #include "Expression.h"
-#include "Node.h"
+#include "TreeNode.h"
 #include "Variable.h"
 
 namespace ATC {
-class Statement : public Node {
+class Statement : public TreeNode {
 public:
     Statement(/* args */) = default;
     virtual int getClassId() override { return ID_STATEMENT; }
@@ -19,14 +19,14 @@ public:
     Block(/* args */) = default;
     virtual int getClassId() override { return ID_BLOCK_STATEMENT; }
 
-    void addDecl(Node* decl) { _decls.push_back(decl); }
+    void addDecl(Decl* decl) { _decls.push_back(decl); }
     void addStmt(Statement* stmt) { _stmts.push_back(stmt); }
 
-    const std::vector<Node*>& getDecls() { return _decls; }
+    const std::vector<Decl*>& getDecls() { return _decls; }
     const std::vector<Statement*>& getStmts() { return _stmts; }
 
 private:
-    std::vector<Node*> _decls;
+    std::vector<Decl*> _decls;
     std::vector<Statement*> _stmts;
 };
 
@@ -35,14 +35,14 @@ public:
     AssignStatement(/* args */) = default;
     virtual int getClassId() override { return ID_ASSIGN_STATEMENT; }
 
-    void setVar(Variable* var) { _var = var; }
+    void setVar(VarRef* varRef) { _varRef = varRef; }
     void setValue(Expression* value) { _value = value; }
 
-    Variable* getVar() { return _var; }
+    VarRef* getVar() { return _varRef; }
     Expression* getValue() { return _value; }
 
 private:
-    Variable* _var;
+    VarRef* _varRef;
     Expression* _value;
 };
 
@@ -67,12 +67,12 @@ public:
     ReturnStatement(/* args */) = default;
     virtual int getClassId() override { return ID_RETURN_STATEMENT; }
 
-    void setStmt(Statement* stmt) { _stmt = stmt; }
+    void setExpr(Expression* expr) { _expr = expr; }
 
-    Statement* getStmt() { return _stmt; }
+    Expression* getExpr() { return _expr; }
 
 private:
-    Statement* _stmt = nullptr;
+    Expression* _expr = nullptr;
 };
 }  // namespace ATC
 

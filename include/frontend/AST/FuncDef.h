@@ -3,17 +3,17 @@
 
 #include <vector>
 
+#include "Decl.h"
 #include "Statement.h"
-
 namespace ATC {
-class FuncDef : public Node {
+class FuncDef : public TreeNode {
 public:
     FuncDef(/* args */) = default;
     ~FuncDef() = default;
 
 private:
     DataType _retType;
-    std::vector<Expression*> _params;
+    std::vector<Decl*> _params;
     Block* _block;
 };
 

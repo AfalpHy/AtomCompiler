@@ -1,9 +1,10 @@
-#ifndef NODE_H
-#define NODE_H
+#ifndef TREE_NODE_H
+#define TREE_NODE_H
 
 #include <string>
 
 #include "../../Common.h"
+#include "antlr4-runtime.h"
 
 namespace ATC {
 typedef struct {
@@ -14,21 +15,22 @@ typedef struct {
     int _rightColumn;
 } Position;
 
-class Node {
+class TreeNode {
 public:
-    Node() = default;
+    TreeNode() = default;
 
     virtual int getClassId() = 0;
 
-    Node* getParent() { return _parent; }
+    TreeNode* getParent() { return _parent; }
     std::string getName() { return _name; }
     Position getPosition() { return _position; }
 
     void setName(std::string name) { _name = name; }
-    void setPosition(Position position) { _position = position; }
+
+    void setPosition(antlr4::Token* start, antlr4::Token* stop);
 
 private:
-    Node* _parent = nullptr;
+    TreeNode* _parent = nullptr;
     std::string _name;
     Position _position;
 };

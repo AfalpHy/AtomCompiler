@@ -3,23 +3,23 @@
 
 #include <vector>
 
-#include "Node.h"
+#include "TreeNode.h"
 namespace ATC {
-class CompUnit : public Node {
+class CompUnit : public TreeNode {
 public:
     CompUnit() = default;
 
     virtual int getClassId() override { return ID_COMP_UNIT; }
 
-    const std::vector<Node*>& getElements() { return _elements; }
+    const std::vector<TreeNode*>& getElements() { return _elements; }
 
-    void addElement(Node* element) { _elements.push_back(element); }
+    void addElement(TreeNode* element) { _elements.push_back(element); }
 
     // not used now, for many files in future
     static std::vector<CompUnit*> AllCompUnits;
 
 private:
-    std::vector<Node*> _elements;
+    std::vector<TreeNode*> _elements;
 };
 
 }  // namespace ATC
