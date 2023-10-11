@@ -18,6 +18,8 @@ public:
     // not used now, for many files in future
     static std::vector<CompUnit*> AllCompUnits;
 
+    ACCEPT
+
 private:
     std::vector<TreeNode*> _elements;
 };

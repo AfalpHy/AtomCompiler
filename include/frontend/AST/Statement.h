@@ -12,22 +12,23 @@ class Statement : public TreeNode {
 public:
     Statement(/* args */) = default;
     virtual int getClassId() override { return ID_STATEMENT; }
+
+    ACCEPT
 };
 
 class Block : public Statement {
 public:
     Block(/* args */) = default;
-    virtual int getClassId() override { return ID_BLOCK_STATEMENT; }
+    virtual int getClassId() override { return ID_BLOCK; }
 
-    void addDecl(Decl* decl) { _decls.push_back(decl); }
-    void addStmt(Statement* stmt) { _stmts.push_back(stmt); }
+    const std::vector<TreeNode*>& getElements() { return _elements; }
 
-    const std::vector<Decl*>& getDecls() { return _decls; }
-    const std::vector<Statement*>& getStmts() { return _stmts; }
+    void addElement(TreeNode* element) { _elements.push_back(element); }
+
+    ACCEPT
 
 private:
-    std::vector<Decl*> _decls;
-    std::vector<Statement*> _stmts;
+    std::vector<TreeNode*> _elements;
 };
 
 class AssignStatement : public Statement {
@@ -40,6 +41,8 @@ public:
 
     VarRef* getVar() { return _varRef; }
     Expression* getValue() { return _value; }
+
+    ACCEPT
 
 private:
     VarRef* _varRef;
@@ -57,6 +60,8 @@ public:
     Expression* getCond() { return _cond; }
     Statement* getStmt() { return _stmt; }
 
+    ACCEPT
+
 private:
     Expression* _cond = nullptr;
     Statement* _stmt = nullptr;
@@ -70,6 +75,8 @@ public:
     void setExpr(Expression* expr) { _expr = expr; }
 
     Expression* getExpr() { return _expr; }
+
+    ACCEPT
 
 private:
     Expression* _expr = nullptr;

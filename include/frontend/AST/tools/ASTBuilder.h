@@ -37,19 +37,15 @@ public:
     //     return visitChildren(ctx);
     //   }
 
-    virtual antlrcpp::Any visitFuncFParam(ATCParser::FuncFParamContext *ctx) override;
+    // virtual antlrcpp::Any visitFuncFParam(ATCParser::FuncFParamContext *ctx) override;
 
-    //   virtual antlrcpp::Any visitBlock(ATCParser::BlockContext *ctx) override {
-    //     return visitChildren(ctx);
-    //   }
+    virtual antlrcpp::Any visitBlock(ATCParser::BlockContext *ctx) override;
 
     //   virtual antlrcpp::Any visitBlockItem(ATCParser::BlockItemContext *ctx) override {
     //     return visitChildren(ctx);
     //   }
 
-    //   virtual antlrcpp::Any visitStmt(ATCParser::StmtContext *ctx) override {
-    //     return visitChildren(ctx);
-    //   }
+    virtual antlrcpp::Any visitStmt(ATCParser::StmtContext *ctx) override;
 
     // virtual antlrcpp::Any visitExpr(ATCParser::ExprContext *ctx) override;
 
@@ -85,14 +81,6 @@ public:
     // virtual antlrcpp::Any visitLOrExpr(ATCParser::LOrExprContext *ctx) override;
 
     virtual antlrcpp::Any visitConstExpr(ATCParser::ConstExprContext *ctx) override;
-
-    //   virtual antlrcpp::Any visitFuncType(ATCParser::FuncTypeContext *ctx) override {
-    //     return visitChildren(ctx);
-    //   }
-
-    //   virtual antlrcpp::Any visitBType(ATCParser::BTypeContext *ctx) override {
-    //     return visitChildren(ctx);
-    //   }
 
     void setTokenStream(antlr4::CommonTokenStream *token) { _token = token; }
 

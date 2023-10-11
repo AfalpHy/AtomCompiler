@@ -18,7 +18,7 @@ enum NodeType {
 
     // statement
     ID_STATEMENT,
-    ID_BLOCK_STATEMENT,
+    ID_BLOCK,
     ID_ASSIGN_STATEMENT,
     ID_BLANK_STATEMENT,
     ID_IF_STATEMENT,

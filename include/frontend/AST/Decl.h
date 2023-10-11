@@ -16,6 +16,7 @@ public:
 
     void setVariable(Variable* var) { _var = var; }
 
+    ACCEPT
 private:
     Variable* _var;
 };

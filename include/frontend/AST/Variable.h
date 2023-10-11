@@ -18,6 +18,8 @@ public:
     void setDataType(DataType type) { _type = type; }
     void setInitValue(Expression* value) { _initValue = value; }
 
+    ACCEPT
+
 private:
     DataType _type;
     Expression* _initValue = nullptr;

@@ -5,8 +5,12 @@
 
 #include "../../Common.h"
 #include "antlr4-runtime.h"
+#include "tools/ASTVisitor.h"
 
+#define ACCEPT virtual void accept(ASTVisitor* visitor) { visitor->visit(this); }
 namespace ATC {
+
+class ASTVisitor;
 typedef struct {
     std::string _fileName;
     int _leftLine;
@@ -28,6 +32,8 @@ public:
     void setName(std::string name) { _name = name; }
 
     void setPosition(antlr4::Token* start, antlr4::Token* stop);
+
+    ACCEPT
 
 private:
     TreeNode* _parent = nullptr;

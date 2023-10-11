@@ -11,6 +11,8 @@ public:
     Expression() = default;
     virtual int getClassId() override { return ID_EXPRESSION; }
     virtual bool isConst() { return false; }
+
+    ACCEPT
 };
 
 class ConstVal : public Expression {
@@ -26,6 +28,8 @@ public:
     void setDataType(DataType type) { _type = type; }
     void setIntValue(int value) { _intValue = value; }
     void setFloatValue(float value) { _floatValue = value; }
+
+    ACCEPT
 
 private:
     DataType _type;
@@ -44,6 +48,8 @@ public:
     void setVariable(Variable* var) { _var = var; }
     void addDimension(Expression* dimension) { _dimensions.push_back(dimension); }
 
+    ACCEPT
+
 private:
     Variable* _var;
     std::vector<Expression*> _dimensions;
@@ -61,6 +67,8 @@ public:
 
     void setOperator(Operator op) { _operator = op; }
     void setOperand(Expression* operand) { _operand = operand; }
+
+    ACCEPT
 
 private:
     Operator _operator;
@@ -81,6 +89,8 @@ public:
     void setOperator(Operator op) { _operator = op; }
     void setLeft(Expression* left) { _left = left; }
     void setRight(Expression* right) { _right = right; }
+
+    ACCEPT
 
 private:
     Operator _operator;

@@ -1,6 +1,8 @@
 #include <iostream>
 
+#include "AST/CompUnit.h"
 #include "AST/tools/ASTBuilder.h"
+#include "AST/tools/DumpASTVisitor.h"
 #include "ATCLexer.h"
 #include "ATCParser.h"
 #include "antlr4-runtime.h"
@@ -20,6 +22,12 @@ int main(int argc, const char *argv[]) {
     ATC::ASTBuilder astBuilder;
     astBuilder.setTokenStream(&token);
     context->accept(&astBuilder);
+
+    ATC::DumpASTVisitor dump;
+
+    for (auto compUnit : ATC::CompUnit::AllCompUnits) {
+        compUnit->accept(&dump);
+    }
 
     if (parser.getNumberOfSyntaxErrors() != 0) {
         cerr << argv[1] << endl;
