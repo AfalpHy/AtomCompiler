@@ -10,6 +10,7 @@ enum NodeType {
 
     // expression
     ID_EXPRESSION,
+    ID_CONST_VAL,
     ID_VAR_REF,
     ID_UNARY_EXPRESSION,
     ID_BINARY_EXPRESSION,
@@ -28,7 +29,7 @@ enum NodeType {
     ID_RETURN_STATEMENT
 };
 
-enum Operator { ADD, SUB, NOT, MUL, DIV, MOD, LT, GT, LE, GE, EQ, NE, AND, OR };
+enum Operator { PLUS, MINUS, NOT, ADD, SUB, MUL, DIV, MOD, LT, GT, LE, GE, EQ, NE, AND, OR };
 
 enum DataType { VOID, INT, FLOAT };
 }  // namespace ATC

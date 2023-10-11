@@ -9,6 +9,7 @@ namespace ATC {
 class FuncDef : public TreeNode {
 public:
     FuncDef(/* args */) = default;
+    virtual int getClassId() override { return ID_FUNC_DEF; }
     ~FuncDef() = default;
 
 private:

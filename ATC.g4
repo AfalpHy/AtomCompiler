@@ -55,27 +55,39 @@ unaryExpr:
 	| Ident '(' funcRParams? ')'
 	| unaryOp unaryExpr;
 
-unaryOp: '+' | '-' | '!';
+unaryOp: PlusMinus | '!';
 
 funcRParams: expr (',' expr)*;
 
-mulExpr: unaryExpr (('*' | '/' | '%') unaryExpr)*;
+mulExpr: unaryExpr (MulDIV unaryExpr)*;
 
-addExpr: mulExpr ( ('+' | '-') mulExpr)*;
+addExpr: mulExpr ( PlusMinus mulExpr)*;
 
-relExpr: addExpr ( ('<' | '>' | '<=' | '>=') addExpr)*;
+relExpr: addExpr ( Cmp addExpr)*;
 
-eqExpr: relExpr ( ('==' | '!=') relExpr)*;
+eqExpr: relExpr ( EqNe relExpr)*;
 
-lAndExpr: eqExpr ('&&' eqExpr)*;
+lAndExpr: eqExpr (And eqExpr)*;
 
-lOrExpr: lAndExpr ('||' lAndExpr)*;
+lOrExpr: lAndExpr (Or lAndExpr)*;
 
 constExpr: addExpr;
 
 funcType: 'void' | bType;
 
 bType: 'int' | 'float';
+
+MulDIV: '*' | '/' | '%';
+
+PlusMinus: '+' | '-';
+
+Cmp: '<' | '>' | '<=' | '>=';
+
+EqNe: '==' | '!=';
+
+And: '&&';
+
+Or: '||';
 
 Ident: [_a-zA-Z] [_a-zA-Z0-9]*;
 
