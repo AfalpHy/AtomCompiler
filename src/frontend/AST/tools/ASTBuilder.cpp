@@ -4,9 +4,13 @@
 #include "AST/Decl.h"
 #include "AST/Expression.h"
 #include "AST/FuncDef.h"
+#include "AST/Scope.h"
 #include "AST/Statement.h"
 #include "AST/Variable.h"
+
 namespace ATC {
+
+Scope *scope = nullptr;
 
 std::vector<CompUnit *> CompUnit::AllCompUnits;
 // helper;
@@ -19,9 +23,9 @@ antlrcpp::Any ASTBuilder::visitCompUnit(ATCParser::CompUnitContext *ctx) {
     auto compUnit = new CompUnit();
     // 取EOF前一个元素作为stop
     compUnit->setPosition(ctx->getStart(), _token->get(ctx->getStop()->getTokenIndex() - 1));
-    // printPosition(compUnit->getPosition());
-    CompUnit::AllCompUnits.push_back(compUnit);
 
+    CompUnit::AllCompUnits.push_back(compUnit);
+    scope = new Scope();
     _astNodeStack.push_back(compUnit);
     _antlrNodeStack.push_back(ctx);
     visitChildren(ctx);
@@ -77,24 +81,35 @@ antlrcpp::Any ASTBuilder::visitVarDecl(ATCParser::VarDeclContext *ctx) {
 }
 
 antlrcpp::Any ASTBuilder::visitVarDef(ATCParser::VarDefContext *ctx) {
-    Variable *var = new Variable();
-    var->setPosition(ctx->getStart(), ctx->getStart());
+    auto var = new Variable();
+    var->setName(ctx->Ident()->getText());
+    var->setPosition(ctx->Ident()->getSymbol(), ctx->Ident()->getSymbol());
+
+    auto dataType = new DataType();
+    var->setDataType(dataType);
 
     auto astParent = _astNodeStack.back();
     auto antlrParent = _antlrNodeStack.back();
     if (antlrParent->getRuleIndex() == ATCParser::RuleVarDecl) {
         auto varDeclCtx = (ATCParser::VarDeclContext *)antlrParent;
         if (varDeclCtx->bType()->getStart()->getText() == "int") {
-            var->setDataType(INT);
+            dataType->setBaseDataType(INT);
         }
         auto decl = (Decl *)astParent;
         decl->setVariable(var);
     }
+    for (auto constExpr : ctx->constExpr()) {
+        auto dimension = constExpr->accept(this).as<Expression *>();
+        assert(dimension->getClassId() == ID_CONST_VAL);
+        dataType->addDimension((ConstVal *)dimension);
+    }
+
     if (ctx->initVal()) {
         var->setInitValue(ctx->initVal()->accept(this).as<Expression *>());
     }
 
-    return var;
+    scope->insertVariable(var->getName(), var);
+    return nullptr;
 }
 
 //    antlrcpp::Any ASTBuilder::visitInitVal(ATCParser::InitValContext *ctx)  {
@@ -103,8 +118,9 @@ antlrcpp::Any ASTBuilder::visitVarDef(ATCParser::VarDefContext *ctx) {
 
 antlrcpp::Any ASTBuilder::visitFuncDef(ATCParser::FuncDefContext *ctx) {
     auto funcDef = new FuncDef();
-    funcDef->setPosition(ctx->getStart(), ctx->getStop());
     funcDef->setName(ctx->Ident()->getText());
+    funcDef->setPosition(ctx->getStart(), ctx->getStop());
+
     auto retType = ctx->funcType()->getText();
     if (retType == "void") {
         funcDef->setRetType(VOID);
@@ -135,11 +151,16 @@ antlrcpp::Any ASTBuilder::visitFuncDef(ATCParser::FuncDefContext *ctx) {
 antlrcpp::Any ASTBuilder::visitBlock(ATCParser::BlockContext *ctx) {
     auto block = new Block();
     block->setPosition(ctx->getStart(), ctx->getStop());
+    auto tmp = scope;
+    scope = new Scope();
+    scope->setParent(tmp);
     _astNodeStack.push_back(block);
     _antlrNodeStack.push_back(ctx);
     visitChildren(ctx);
     _astNodeStack.pop_back();
     _antlrNodeStack.pop_back();
+    delete scope;
+    scope = tmp;
     return block;
 }
 
@@ -160,6 +181,19 @@ antlrcpp::Any ASTBuilder::visitStmt(ATCParser::StmtContext *ctx) {
         }
         return stmt;
     }
+    if (ctx->lval()) {
+        auto stmt = new AssignStatement();
+        stmt->setPosition(ctx->getStart(), ctx->getStop());
+        auto lval = ctx->lval()->accept(this).as<Expression *>();
+        assert(lval->getClassId() == ID_VAR_REF);
+        stmt->setVar((VarRef *)lval);
+        stmt->setValue(ctx->expr()->accept(this).as<Expression *>());
+        auto astParent = _astNodeStack.back();
+        if (astParent->getClassId() == ID_BLOCK) {
+            auto block = (Block *)astParent;
+            block->addElement(stmt);
+        }
+    }
     return nullptr;
 }
 
@@ -172,11 +206,10 @@ antlrcpp::Any ASTBuilder::visitStmt(ATCParser::StmtContext *ctx) {
 //   }
 
 antlrcpp::Any ASTBuilder::visitLval(ATCParser::LvalContext *ctx) {
-    VarRef *varRef = new VarRef();
+    auto varRef = new VarRef();
     varRef->setPosition(ctx->getStart(), ctx->getStop());
-    Variable *var = new Variable();
-    var->setPosition(ctx->Ident()->getSymbol(), ctx->Ident()->getSymbol());
-    varRef->setVariable(var);
+
+    varRef->setVariable(scope->getVariable(ctx->getStart()->getText()));
     for (auto expr : ctx->expr()) {
         varRef->addDimension(expr->accept(this).as<Expression *>());
     }
@@ -194,13 +227,13 @@ antlrcpp::Any ASTBuilder::visitPrimaryExpr(ATCParser::PrimaryExprContext *ctx) {
 }
 
 antlrcpp::Any ASTBuilder::visitNumber(ATCParser::NumberContext *ctx) {
-    ConstVal *constVal = new ConstVal();
+    auto constVal = new ConstVal();
     constVal->setPosition(ctx->getStart(), ctx->getStop());
     if (ctx->IntConst()) {
-        constVal->setDataType(INT);
+        constVal->setBaseDataType(INT);
         constVal->setIntValue(std::stoi(ctx->IntConst()->getText()));
     } else {
-        constVal->setDataType(FLOAT);
+        constVal->setBaseDataType(FLOAT);
         constVal->setFloatValue(std::stof(ctx->IntConst()->getText()));
     }
     return (Expression *)constVal;

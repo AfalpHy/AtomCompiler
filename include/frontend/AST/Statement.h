@@ -10,10 +10,6 @@
 namespace ATC {
 class Statement : public TreeNode {
 public:
-    Statement(/* args */) = default;
-    virtual int getClassId() override { return ID_STATEMENT; }
-
-    ACCEPT
 };
 
 class Block : public Statement {

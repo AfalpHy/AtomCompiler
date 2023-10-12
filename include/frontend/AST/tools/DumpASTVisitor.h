@@ -18,7 +18,7 @@ public:
 
     virtual void visit(Variable*) override;
 
-    virtual void visit(Expression*) override;
+    // virtual void visit(Expression*) override;
 
     virtual void visit(ConstVal*) override;
 
@@ -28,7 +28,7 @@ public:
 
     virtual void visit(BinaryExpression*) override;
 
-    virtual void visit(Statement*) override;
+    // virtual void visit(Statement*) override;
 
     virtual void visit(Block*) override;
 

@@ -79,7 +79,8 @@ void DumpASTVisitor::visit(FuncDef* node) {
 
 void DumpASTVisitor::visit(Variable* node) {
     printNode(node);
-    cout << " <int>" << endl;
+    cout << " " << node->getName() << " ";
+    cout << " " << node->getDataType()->getBaseDataType() << " " << endl;
     _indent++;
     if (node->getInitValue()) {
         node->getInitValue()->accept(this);
@@ -87,20 +88,28 @@ void DumpASTVisitor::visit(Variable* node) {
     _indent--;
 }
 
-void DumpASTVisitor::visit(Expression* node) {}
+// void DumpASTVisitor::visit(Expression* node) {}
 
 void DumpASTVisitor::visit(ConstVal* node) {
     printNode(node);
     cout << " <" << node->getIntValue() << ">" << endl;
 }
 
-void DumpASTVisitor::visit(VarRef* node) {}
+void DumpASTVisitor::visit(VarRef* node) {
+    printNode(node);
+    cout << " ref to " << node->getVariable() << endl;
+    _indent++;
+    for (auto dimension : node->getDimensions()) {
+        dimension->accept(this);
+    }
+    _indent--;
+}
 
 void DumpASTVisitor::visit(UnaryExpression* node) {}
 
 void DumpASTVisitor::visit(BinaryExpression* node) {}
 
-void DumpASTVisitor::visit(Statement* node) {}
+// void DumpASTVisitor::visit(Statement* node) {}
 
 void DumpASTVisitor::visit(Block* node) {
     printNode(node);
@@ -112,7 +121,14 @@ void DumpASTVisitor::visit(Block* node) {
     _indent--;
 }
 
-void DumpASTVisitor::visit(AssignStatement* node) {}
+void DumpASTVisitor::visit(AssignStatement* node) {
+    printNode(node);
+    cout << endl;
+    _indent++;
+    node->getVar()->accept(this);
+    node->getValue()->accept(this);
+    _indent--;
+}
 
 void DumpASTVisitor::visit(IfStatement* node) {}
 

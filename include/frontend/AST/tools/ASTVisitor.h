@@ -31,7 +31,7 @@ public:
 
     virtual void visit(Variable*) = 0;
 
-    virtual void visit(Expression*) = 0;
+    // virtual void visit(Expression*) = 0;
 
     virtual void visit(ConstVal*) = 0;
 
@@ -41,7 +41,7 @@ public:
 
     virtual void visit(BinaryExpression*) = 0;
 
-    virtual void visit(Statement*) = 0;
+    // virtual void visit(Statement*) = 0;
 
     virtual void visit(Block*) = 0;
 

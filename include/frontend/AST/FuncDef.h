@@ -12,18 +12,18 @@ public:
     virtual int getClassId() override { return ID_FUNC_DEF; }
     ~FuncDef() = default;
 
-    DataType getRetType() { return _retType; }
+    int getRetType() { return _retType; }
     const std::vector<Decl*>& getParams() { return _params; }
     Block* getBlock() { return _block; }
 
-    void setRetType(DataType retType) { _retType = retType; }
+    void setRetType(BaseDataType retType) { _retType = retType; }
     void addParams(Decl* decl) { _params.push_back(decl); }
     void setBlock(Block* block) { _block = block; }
 
     ACCEPT
 
 private:
-    DataType _retType;
+    BaseDataType _retType;
     std::vector<Decl*> _params;
     Block* _block;
 };

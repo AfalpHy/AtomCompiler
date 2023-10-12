@@ -4,6 +4,7 @@
 namespace ATC {
 enum NodeType {
     ID_COMP_UNIT,
+    ID_DATA_TYPE,
     ID_DECL,
     ID_FUNC_DEF,
     ID_VARIABLE,
@@ -31,6 +32,6 @@ enum NodeType {
 
 enum Operator { PLUS, MINUS, NOT, ADD, SUB, MUL, DIV, MOD, LT, GT, LE, GE, EQ, NE, AND, OR };
 
-enum DataType { VOID, INT, FLOAT };
+enum BaseDataType { VOID, INT, FLOAT };
 }  // namespace ATC
 #endif

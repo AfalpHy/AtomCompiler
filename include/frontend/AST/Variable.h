@@ -1,8 +1,7 @@
 #ifndef VARIABLE_H
 #define VARIABLE_H
 
-#include "TreeNode.h"
-
+#include "DataType.h"
 namespace ATC {
 
 class Expression;
@@ -11,17 +10,17 @@ public:
     Variable() = default;
     virtual int getClassId() { return ID_VARIABLE; }
 
-    int getDataType() { return _type; }
+    DataType* getDataType() { return _type; }
     Expression* getInitValue() { return _initValue; }
     bool isConst();
 
-    void setDataType(DataType type) { _type = type; }
+    void setDataType(DataType* type) { _type = type; }
     void setInitValue(Expression* value) { _initValue = value; }
 
     ACCEPT
 
 private:
-    DataType _type;
+    DataType* _type;
     Expression* _initValue = nullptr;
 };
 
