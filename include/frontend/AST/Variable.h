@@ -12,16 +12,18 @@ public:
 
     DataType* getDataType() { return _type; }
     Expression* getInitValue() { return _initValue; }
-    bool isConst();
+    bool isConst() { return _isConst; }
 
     void setDataType(DataType* type) { _type = type; }
     void setInitValue(Expression* value) { _initValue = value; }
+    void setIsConst() { _isConst = true; }
 
     ACCEPT
 
 private:
     DataType* _type;
     Expression* _initValue = nullptr;
+    bool _isConst = false;
 };
 
 }  // namespace ATC

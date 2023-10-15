@@ -1,16 +1,16 @@
-#ifndef FUNC_DEF_H
-#define FUNC_DEF_H
+#ifndef FUNCTION_DEF_H
+#define FUNCTION_DEF_H
 
 #include <vector>
 
 #include "Decl.h"
 #include "Statement.h"
 namespace ATC {
-class FuncDef : public TreeNode {
+class FunctionDef : public TreeNode {
 public:
-    FuncDef(/* args */) = default;
-    virtual int getClassId() override { return ID_FUNC_DEF; }
-    ~FuncDef() = default;
+    FunctionDef(/* args */) = default;
+    virtual int getClassId() override { return ID_FUNCTION_DEF; }
+    ~FunctionDef() = default;
 
     int getRetType() { return _retType; }
     const std::vector<Decl*>& getParams() { return _params; }

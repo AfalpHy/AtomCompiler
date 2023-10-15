@@ -28,9 +28,14 @@ public:
 
     void insertVariable(const std::string& name, Variable* var) { varMap.insert({name, var}); }
 
+    void insertFunctionDef(const std::string& name, FunctionDef* functionDef) {
+        functionMap.insert({name, functionDef});
+    }
+
 private:
     Scope* _parent;
     std::unordered_map<std::string, Variable*> varMap;
+    std::unordered_map<std::string, FunctionDef*> functionMap;
 };
 
 }  // namespace ATC

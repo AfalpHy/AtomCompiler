@@ -1,10 +1,10 @@
 grammar ATC;
 
-compUnit: (decl | funcDef)* EOF;
+compUnit: (decl | functionDef)* EOF;
 
 decl: constDecl | varDecl;
 
-constDecl: 'const' varDecl ';';
+constDecl: 'const' varDecl;
 
 varDecl: (Int | Float) varDef ( ',' varDef)* ';';
 
@@ -14,7 +14,7 @@ varDef:
 
 initVal: expr | '{' ( initVal ( ',' initVal)*)? '}';
 
-funcDef: (Int | Float | Void) Ident '(' funcFParams? ')' block;
+functionDef: (Int | Float | Void) Ident '(' funcFParams? ')' block;
 
 funcFParams: funcFParam ( ',' funcFParam)*;
 
@@ -29,7 +29,7 @@ stmt:
 	| If '(' cond ')' stmt ( Else stmt)?
 	| While '(' cond ')' stmt
 	| Break ';'
-	| Conitinue ';'
+	| Continue ';'
 	| Return expr? ';';
 
 expr: addExpr;
@@ -77,7 +77,7 @@ While: 'while';
 
 Break: 'break';
 
-Conitinue: 'continue';
+Continue: 'continue';
 
 Return: 'return';
 

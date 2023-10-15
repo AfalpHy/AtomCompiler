@@ -11,21 +11,19 @@ class ASTBuilder : public ATCBaseVisitor {
 public:
     virtual antlrcpp::Any visitCompUnit(ATCParser::CompUnitContext *ctx) override;
 
+    virtual antlrcpp::Any visitConstDecl(ATCParser::ConstDeclContext *ctx) override;
+
     virtual antlrcpp::Any visitVarDecl(ATCParser::VarDeclContext *ctx) override;
 
     virtual antlrcpp::Any visitVarDef(ATCParser::VarDefContext *ctx) override;
 
-    //   virtual antlrcpp::Any visitInitVal(ATCParser::InitValContext *ctx) override {
-    //     return visitChildren(ctx);
-    //   }
+    virtual antlrcpp::Any visitInitVal(ATCParser::InitValContext *ctx) override;
 
-    virtual antlrcpp::Any visitFuncDef(ATCParser::FuncDefContext *ctx) override;
+    virtual antlrcpp::Any visitFunctionDef(ATCParser::FunctionDefContext *ctx) override;
 
-    //   virtual antlrcpp::Any visitFuncFParams(ATCParser::FuncFParamsContext *ctx) override {
-    //     return visitChildren(ctx);
-    //   }
+    virtual antlrcpp::Any visitFuncFParams(ATCParser::FuncFParamsContext *ctx) override;
 
-    // virtual antlrcpp::Any visitFuncFParam(ATCParser::FuncFParamContext *ctx) override;
+    virtual antlrcpp::Any visitFuncFParam(ATCParser::FuncFParamContext *ctx) override;
 
     virtual antlrcpp::Any visitBlock(ATCParser::BlockContext *ctx) override;
 
@@ -36,11 +34,10 @@ public:
     virtual antlrcpp::Any visitPrimaryExpr(ATCParser::PrimaryExprContext *ctx) override;
 
     virtual antlrcpp::Any visitNumber(ATCParser::NumberContext *ctx) override;
+
     virtual antlrcpp::Any visitUnaryExpr(ATCParser::UnaryExprContext *ctx) override;
 
-    //   virtual antlrcpp::Any visitFuncRParams(ATCParser::FuncRParamsContext *ctx) override {
-    //     return visitChildren(ctx);
-    //   }
+    virtual antlrcpp::Any visitFuncRParams(ATCParser::FuncRParamsContext *ctx) override;
 
     virtual antlrcpp::Any visitMulExpr(ATCParser::MulExprContext *ctx) override;
 

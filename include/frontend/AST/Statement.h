@@ -14,7 +14,7 @@ public:
 
 class Block : public Statement {
 public:
-    Block(/* args */) = default;
+    Block() = default;
     virtual int getClassId() override { return ID_BLOCK; }
 
     const std::vector<TreeNode*>& getElements() { return _elements; }
@@ -27,9 +27,15 @@ private:
     std::vector<TreeNode*> _elements;
 };
 
+class BlankStatement : public Statement {
+public:
+    BlankStatement() = default;
+    virtual int getClassId() override { return ID_BLANK_STATEMENT; }
+};
+
 class AssignStatement : public Statement {
 public:
-    AssignStatement(/* args */) = default;
+    AssignStatement() = default;
     virtual int getClassId() override { return ID_ASSIGN_STATEMENT; }
 
     void setVar(VarRef* varRef) { _varRef = varRef; }
@@ -47,7 +53,7 @@ private:
 
 class IfStatement : public Statement {
 public:
-    IfStatement(/* args */) = default;
+    IfStatement() = default;
     virtual int getClassId() override { return ID_IF_STATEMENT; }
 
     void setCond(Expression* cond) { _cond = cond; }
@@ -68,7 +74,7 @@ private:
 
 class ElseStatement : public Statement {
 public:
-    ElseStatement(/* args */) = default;
+    ElseStatement() = default;
     virtual int getClassId() override { return ID_ELSE_STATEMENT; }
 
     void setStmt(Statement* stmt) { _stmt = stmt; }
@@ -81,10 +87,55 @@ private:
     Statement* _stmt = nullptr;
 };
 
+class WhileStatement : public Statement {
+public:
+    WhileStatement() = default;
+    virtual int getClassId() override { return ID_WHILE_STATEMENT; }
+
+    void setCond(Expression* cond) { _cond = cond; }
+    void setStmt(Statement* stmt) { _stmt = stmt; }
+
+    Expression* getCond() { return _cond; }
+    Statement* getStmt() { return _stmt; }
+
+    ACCEPT
+
+private:
+    Expression* _cond = nullptr;
+    Statement* _stmt = nullptr;
+};
+
+class BreakStatement : public Statement {
+public:
+    BreakStatement() = default;
+    virtual int getClassId() override { return ID_BREAK_STATEMENT; }
+};
+
+class ContinueStatement : public Statement {
+public:
+    ContinueStatement() = default;
+    virtual int getClassId() override { return ID_CONTINUE_STATEMENT; }
+};
+
 class ReturnStatement : public Statement {
 public:
-    ReturnStatement(/* args */) = default;
+    ReturnStatement() = default;
     virtual int getClassId() override { return ID_RETURN_STATEMENT; }
+
+    void setExpr(Expression* expr) { _expr = expr; }
+
+    Expression* getExpr() { return _expr; }
+
+    ACCEPT
+
+private:
+    Expression* _expr = nullptr;
+};
+
+class OtherStatement : public Statement {
+public:
+    OtherStatement() = default;
+    virtual int getClassId() override { return ID_OTHER_STATEMENT; }
 
     void setExpr(Expression* expr) { _expr = expr; }
 

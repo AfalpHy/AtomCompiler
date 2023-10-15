@@ -63,4 +63,14 @@ float Expression::evaluateConstExpr(Expression* expr) {
         }
     }
 }
+
+bool ArrayExpression::isConst() {
+    for (auto expr : _elements) {
+        if (!expr->isConst()) {
+            return false;
+        }
+    }
+    return true;
+}
+
 }  // namespace ATC

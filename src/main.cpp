@@ -14,6 +14,7 @@ int main(int argc, const char *argv[]) {
     std::ifstream file;
     file.open(argv[1]);
 
+    cout << argv[1] << endl;
     if (!file.is_open()) {
         cerr << filesystem::current_path() << endl;
         cerr << "open file failed" << endl;

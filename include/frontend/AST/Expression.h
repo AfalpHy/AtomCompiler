@@ -52,6 +52,23 @@ private:
     std::vector<Expression*> _dimensions;
 };
 
+class ArrayExpression : public Expression {
+public:
+    ArrayExpression() = default;
+    virtual int getClassId() override { return ID_ARRAY_EXPRESSION; }
+
+    virtual bool isConst();
+
+    const std::vector<Expression*>& getElements() { return _elements; }
+
+    void addElement(Expression* element) { _elements.push_back(element); }
+
+    ACCEPT
+
+private:
+    std::vector<Expression*> _elements;
+};
+
 class UnaryExpression : public Expression {
 public:
     UnaryExpression() = default;
@@ -95,5 +112,22 @@ private:
     Expression* _right;
 };
 
+class FunctionCall : public Expression {
+public:
+    FunctionCall() = default;
+
+    virtual int getClassId() override { return ID_FUNCTION_CALL; }
+    virtual bool isConst() override { return false; }
+
+    const std::vector<Expression*>& getParams() { return _params; }
+
+    void addParams(Expression* param) { _params.push_back(param); }
+
+    ACCEPT
+
+private:
+    std::vector<Expression*> _params;
+    FunctionDef* _functionDef;
+};
 }  // namespace ATC
 #endif
