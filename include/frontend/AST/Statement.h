@@ -52,18 +52,18 @@ public:
 
     void setCond(Expression* cond) { _cond = cond; }
     void setStmt(Statement* stmt) { _stmt = stmt; }
-    void setElseStmt(Statement* stmt) { _elseStmt = stmt; }
+    void setElseStmt(ElseStatement* stmt) { _elseStmt = stmt; }
 
     Expression* getCond() { return _cond; }
     Statement* getStmt() { return _stmt; }
-    Statement* getElseStmt() { return _elseStmt; }
+    ElseStatement* getElseStmt() { return _elseStmt; }
 
     ACCEPT
 
 private:
     Expression* _cond = nullptr;
     Statement* _stmt = nullptr;
-    Statement* _elseStmt = nullptr;
+    ElseStatement* _elseStmt = nullptr;
 };
 
 class ElseStatement : public Statement {

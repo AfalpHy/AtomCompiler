@@ -9,6 +9,7 @@ namespace ATC {
 class Expression : public TreeNode {
 public:
     virtual bool isConst() = 0;
+    static float evaluateConstExpr(Expression* expr);
 };
 
 class ConstVal : public Expression {

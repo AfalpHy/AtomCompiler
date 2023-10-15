@@ -4,49 +4,41 @@ compUnit: (decl | funcDef)* EOF;
 
 decl: constDecl | varDecl;
 
-constDecl: 'const' bType constDef (',' constDef)* ';';
+constDecl: 'const' varDecl ';';
 
-constDef: Ident ( '[' constExpr ']')* '=' constInitVal;
-
-constInitVal:
-	constExpr
-	| '{' ( constInitVal ( ',' constInitVal)*)? '}';
-
-varDecl: bType varDef ( ',' varDef)* ';';
+varDecl: (Int | Float) varDef ( ',' varDef)* ';';
 
 varDef:
-	Ident ('[' constExpr ']')*
-	| Ident ('[' constExpr ']')* '=' initVal;
+	Ident ('[' expr ']')*
+	| Ident ('[' expr ']')* '=' initVal;
 
 initVal: expr | '{' ( initVal ( ',' initVal)*)? '}';
 
-funcDef: funcType Ident '(' funcFParams? ')' block;
+funcDef: (Int | Float | Void) Ident '(' funcFParams? ')' block;
 
 funcFParams: funcFParam ( ',' funcFParam)*;
 
-funcFParam: bType Ident ('[' ']' ( '[' expr ']')*)?;
+funcFParam: (Int | Float) Ident ('[' ']' ( '[' expr ']')*)?;
 
-block: '{' blockItem* '}';
-
-blockItem: decl | stmt;
+block: '{' (decl | stmt)* '}';
 
 stmt:
-	lval '=' expr ';'
+	varRef '=' expr ';'
 	| expr? ';'
 	| block
-	| 'if' '(' cond ')' stmt ( 'else' stmt)?
-	| 'while' '(' cond ')' stmt
-	| 'break' ';'
-	| 'continue' ';'
-	| 'return' expr? ';';
+	| If '(' cond ')' stmt ( Else stmt)?
+	| While '(' cond ')' stmt
+	| Break ';'
+	| Conitinue ';'
+	| Return expr? ';';
 
 expr: addExpr;
 
 cond: lOrExpr;
 
-lval: Ident ('[' expr ']')*;
+varRef: Ident ('[' expr ']')*;
 
-primaryExpr: '(' expr ')' | lval | number;
+primaryExpr: '(' expr ')' | varRef | number;
 
 number: IntConst | FloatConst;
 
@@ -71,11 +63,23 @@ lAndExpr: eqExpr (And eqExpr)*;
 
 lOrExpr: lAndExpr (Or lAndExpr)*;
 
-constExpr: addExpr;
+Int: 'int';
 
-funcType: 'void' | bType;
+Float: 'float';
 
-bType: 'int' | 'float';
+Void: 'void';
+
+If: 'if';
+
+Else: 'else';
+
+While: 'while';
+
+Break: 'break';
+
+Conitinue: 'continue';
+
+Return: 'return';
 
 MulDIV: '*' | '/' | '%';
 

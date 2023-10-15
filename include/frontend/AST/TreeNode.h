@@ -30,8 +30,8 @@ public:
     std::string getName() { return _name; }
     Position getPosition() { return _position; }
 
+    void setParent(TreeNode* parent) { _parent = parent; }
     void setName(std::string name) { _name = name; }
-
     void setPosition(antlr4::Token* start, antlr4::Token* stop);
 
     ACCEPT

@@ -11,18 +11,6 @@ class ASTBuilder : public ATCBaseVisitor {
 public:
     virtual antlrcpp::Any visitCompUnit(ATCParser::CompUnitContext *ctx) override;
 
-    virtual antlrcpp::Any visitDecl(ATCParser::DeclContext *ctx) override;
-
-    // virtual antlrcpp::Any visitConstDecl(ATCParser::ConstDeclContext *ctx) override;
-
-    //   virtual antlrcpp::Any visitConstDef(ATCParser::ConstDefContext *ctx) override {
-    //     return visitChildren(ctx);
-    //   }
-
-    //   virtual antlrcpp::Any visitConstInitVal(ATCParser::ConstInitValContext *ctx) override {
-    //     return visitChildren(ctx);
-    //   }
-
     virtual antlrcpp::Any visitVarDecl(ATCParser::VarDeclContext *ctx) override;
 
     virtual antlrcpp::Any visitVarDef(ATCParser::VarDefContext *ctx) override;
@@ -41,17 +29,9 @@ public:
 
     virtual antlrcpp::Any visitBlock(ATCParser::BlockContext *ctx) override;
 
-    //   virtual antlrcpp::Any visitBlockItem(ATCParser::BlockItemContext *ctx) override {
-    //     return visitChildren(ctx);
-    //   }
-
     virtual antlrcpp::Any visitStmt(ATCParser::StmtContext *ctx) override;
 
-    // virtual antlrcpp::Any visitExpr(ATCParser::ExprContext *ctx) override;
-
-    virtual antlrcpp::Any visitCond(ATCParser::CondContext *ctx) override;
-
-    virtual antlrcpp::Any visitLval(ATCParser::LvalContext *ctx) override;
+    virtual antlrcpp::Any visitVarRef(ATCParser::VarRefContext *ctx) override;
 
     virtual antlrcpp::Any visitPrimaryExpr(ATCParser::PrimaryExprContext *ctx) override;
 
@@ -74,14 +54,12 @@ public:
 
     virtual antlrcpp::Any visitLOrExpr(ATCParser::LOrExprContext *ctx) override;
 
-    virtual antlrcpp::Any visitConstExpr(ATCParser::ConstExprContext *ctx) override;
-
     void setTokenStream(antlr4::CommonTokenStream *token) { _token = token; }
 
 private:
     antlr4::CommonTokenStream *_token;
-    std::vector<TreeNode *> _astNodeStack;
-    std::vector<antlr4::ParserRuleContext *> _antlrNodeStack;
+    // std::vector<TreeNode *> _astNodeStack;
+    // std::vector<antlr4::ParserRuleContext *> _antlrNodeStack;
 };
 }  // namespace ATC
 

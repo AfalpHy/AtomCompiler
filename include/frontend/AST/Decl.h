@@ -12,13 +12,13 @@ public:
     ~Decl() = default;
     virtual int getClassId() { return ID_DECL; }
 
-    Variable* getVariable() { return _var; }
+    const std::vector<Variable*>& getVariables() { return _vars; }
 
-    void setVariable(Variable* var) { _var = var; }
+    void addVariable(Variable* var) { _vars.push_back(var); }
 
     ACCEPT
 private:
-    Variable* _var;
+    std::vector<Variable*> _vars;
 };
 
 }  // namespace ATC

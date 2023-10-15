@@ -21,59 +21,36 @@ antlrcpp::Any ASTBuilder::visitCompUnit(ATCParser::CompUnitContext *ctx) {
 
     CompUnit::AllCompUnits.push_back(compUnit);
     scope = new Scope();
-    _astNodeStack.push_back(compUnit);
-    _antlrNodeStack.push_back(ctx);
-    visitChildren(ctx);
-    _astNodeStack.pop_back();
-    _antlrNodeStack.pop_back();
+    for (size_t i = 0; i < ctx->children.size(); i++) {
+        auto any = ctx->children[i]->accept(this);
+        if (any.is<Decl *>()) {
+            compUnit->addElement(any.as<Decl *>());
+        } else if (any.is<FuncDef *>()) {
+            compUnit->addElement(any.as<FuncDef *>());
+        }
+    }
     delete scope;
     scope = nullptr;
     return nullptr;
 }
 
-antlrcpp::Any ASTBuilder::visitDecl(ATCParser::DeclContext *ctx) {
+antlrcpp::Any ASTBuilder::visitVarDecl(ATCParser::VarDeclContext *ctx) {
     auto decl = new Decl();
     decl->setPosition(ctx->getStart(), ctx->getStop());
 
-    auto astParent = _astNodeStack.back();
-    if (astParent->getClassId() == ID_COMP_UNIT) {
-        auto compUnit = (CompUnit *)astParent;
-        compUnit->addElement(decl);
-    } else {
-        auto block = (Block *)astParent;
-        block->addElement(decl);
+    for (auto varDef : ctx->varDef()) {
+        auto var = varDef->accept(this).as<Variable *>();
+        auto dataType = var->getDataType();
+        var->setDataType(dataType);
+        if (ctx->Int()) {
+            dataType->setBaseType(INT);
+        } else {
+            dataType->setBaseType(FLOAT);
+        }
+        decl->addVariable(var);
     }
 
-    _astNodeStack.push_back(decl);
-    _antlrNodeStack.push_back(ctx);
-    visitChildren(ctx);
-    _astNodeStack.pop_back();
-    _antlrNodeStack.pop_back();
-
-    return nullptr;
-}
-
-// antlrcpp::Any ASTBuilder::visitConstDecl(ATCParser::ConstDeclContext *ctx) {
-//     _antlrNodeStack.push_back(ctx);
-//     auto any = visitChildren(ctx);
-//     _antlrNodeStack.pop_back();
-//     return any;
-// }
-
-//    antlrcpp::Any ASTBuilder::visitConstDef(ATCParser::ConstDefContext *ctx)  {
-//     return visitChildren(ctx);
-//   }
-
-//    antlrcpp::Any ASTBuilder::visitConstInitVal(ATCParser::ConstInitValContext *ctx)  {
-//     return visitChildren(ctx);
-//   }
-
-antlrcpp::Any ASTBuilder::visitVarDecl(ATCParser::VarDeclContext *ctx) {
-    _antlrNodeStack.push_back(ctx);
-    visitChildren(ctx);
-    _antlrNodeStack.pop_back();
-
-    return nullptr;
+    return decl;
 }
 
 antlrcpp::Any ASTBuilder::visitVarDef(ATCParser::VarDefContext *ctx) {
@@ -84,20 +61,10 @@ antlrcpp::Any ASTBuilder::visitVarDef(ATCParser::VarDefContext *ctx) {
     auto dataType = new DataType();
     var->setDataType(dataType);
 
-    auto astParent = _astNodeStack.back();
-    auto antlrParent = _antlrNodeStack.back();
-    if (antlrParent->getRuleIndex() == ATCParser::RuleVarDecl) {
-        auto varDeclCtx = (ATCParser::VarDeclContext *)antlrParent;
-        if (varDeclCtx->bType()->getStart()->getText() == "int") {
-            dataType->setBaseType(INT);
-        }
-        auto decl = (Decl *)astParent;
-        decl->setVariable(var);
-    }
-    for (auto constExpr : ctx->constExpr()) {
+    for (auto constExpr : ctx->expr()) {
         auto dimension = constExpr->accept(this).as<Expression *>();
-        assert(dimension->getClassId() == ID_CONST_VAL);
-        dataType->addDimension((ConstVal *)dimension);
+        assert(dimension->isConst());
+        dataType->addDimension(dimension);
     }
 
     if (ctx->initVal()) {
@@ -105,7 +72,7 @@ antlrcpp::Any ASTBuilder::visitVarDef(ATCParser::VarDefContext *ctx) {
     }
 
     scope->insertVariable(var->getName(), var);
-    return nullptr;
+    return var;
 }
 
 //    antlrcpp::Any ASTBuilder::visitInitVal(ATCParser::InitValContext *ctx)  {
@@ -117,10 +84,9 @@ antlrcpp::Any ASTBuilder::visitFuncDef(ATCParser::FuncDefContext *ctx) {
     funcDef->setName(ctx->Ident()->getText());
     funcDef->setPosition(ctx->getStart(), ctx->getStop());
 
-    auto retType = ctx->funcType()->getText();
-    if (retType == "void") {
+    if (ctx->Void()) {
         funcDef->setRetType(VOID);
-    } else if (retType == "int") {
+    } else if (ctx->Int()) {
         funcDef->setRetType(INT);
     } else {
         funcDef->setRetType(FLOAT);
@@ -129,11 +95,6 @@ antlrcpp::Any ASTBuilder::visitFuncDef(ATCParser::FuncDefContext *ctx) {
     assert(any->getClassId() == ID_BLOCK);
     auto block = (Block *)any;
     funcDef->setBlock(block);
-    auto astParent = _astNodeStack.back();
-    if (astParent->getClassId() == ID_COMP_UNIT) {
-        auto compUnit = (CompUnit *)astParent;
-        compUnit->addElement(funcDef);
-    }
     return funcDef;
 }
 
@@ -151,72 +112,52 @@ antlrcpp::Any ASTBuilder::visitBlock(ATCParser::BlockContext *ctx) {
     auto tmp = scope;
     scope = new Scope();
     scope->setParent(tmp);
-    _astNodeStack.push_back(block);
-    _antlrNodeStack.push_back(ctx);
-    visitChildren(ctx);
-    _astNodeStack.pop_back();
-    _antlrNodeStack.pop_back();
+    for (size_t i = 0; i < ctx->children.size(); i++) {
+        auto any = ctx->children[i]->accept(this);
+        if (any.is<Decl *>()) {
+            block->addElement(any.as<Decl *>());
+        } else if (any.is<Statement *>()) {
+            block->addElement(any.as<Statement *>());
+        }
+    }
     delete scope;
     scope = tmp;
     return (Statement *)block;
 }
 
-//    antlrcpp::Any ASTBuilder::visitBlockItem(ATCParser::BlockItemContext *ctx)  {
-//     return visitChildren(ctx);
-//   }
-
 antlrcpp::Any ASTBuilder::visitStmt(ATCParser::StmtContext *ctx) {
-    if (ctx->getStart()->getText() == "return") {
+    if (ctx->Return()) {
         auto stmt = new ReturnStatement();
         stmt->setPosition(ctx->getStart(), ctx->getStop());
         stmt->setExpr(ctx->expr()->accept(this).as<Expression *>());
-
-        auto astParent = _astNodeStack.back();
-        if (astParent->getClassId() == ID_BLOCK) {
-            auto block = (Block *)astParent;
-            block->addElement(stmt);
-        }
         return (Statement *)stmt;
-    } else if (ctx->getStart()->getText() == "if") {
+    } else if (ctx->If()) {
         auto stmt = new IfStatement();
         stmt->setPosition(ctx->getStart(), ctx->getStop());
         stmt->setCond(ctx->cond()->accept(this).as<Expression *>());
         stmt->setStmt(ctx->stmt(0)->accept(this).as<Statement *>());
-        auto elseStmt = new ElseStatement();
-        elseStmt->setStmt(ctx->stmt(1)->accept(this).as<Statement *>());
-        stmt->setElseStmt(elseStmt);
-        auto astParent = _astNodeStack.back();
-        if (astParent->getClassId() == ID_BLOCK) {
-            auto block = (Block *)astParent;
-            block->addElement(stmt);
+        if (ctx->Else()) {
+            auto elseStmt = new ElseStatement();
+            elseStmt->setStmt(ctx->stmt(1)->accept(this).as<Statement *>());
+            stmt->setElseStmt(elseStmt);
         }
         return (Statement *)stmt;
     } else if (ctx->block()) {
         return ctx->block()->accept(this);
     }
-    if (ctx->lval()) {
+    if (ctx->varRef()) {
         auto stmt = new AssignStatement();
         stmt->setPosition(ctx->getStart(), ctx->getStop());
-        auto lval = ctx->lval()->accept(this).as<Expression *>();
-        assert(lval->getClassId() == ID_VAR_REF);
-        stmt->setVar((VarRef *)lval);
+        auto varRef = ctx->varRef()->accept(this).as<Expression *>();
+        assert(varRef->getClassId() == ID_VAR_REF);
+        stmt->setVar((VarRef *)varRef);
         stmt->setValue(ctx->expr()->accept(this).as<Expression *>());
-        auto astParent = _astNodeStack.back();
-        if (astParent->getClassId() == ID_BLOCK) {
-            auto block = (Block *)astParent;
-            block->addElement(stmt);
-        }
+        return (Statement *)stmt;
     }
     return nullptr;
 }
 
-//    antlrcpp::Any ASTBuilder::visitExpr(ATCParser::ExprContext *ctx)  {
-//     return visitChildren(ctx);
-//   }
-
-antlrcpp::Any ASTBuilder::visitCond(ATCParser::CondContext *ctx) { return visitChildren(ctx); }
-
-antlrcpp::Any ASTBuilder::visitLval(ATCParser::LvalContext *ctx) {
+antlrcpp::Any ASTBuilder::visitVarRef(ATCParser::VarRefContext *ctx) {
     auto varRef = new VarRef();
     varRef->setPosition(ctx->getStart(), ctx->getStop());
     varRef->setName(ctx->getStart()->getText());
@@ -228,13 +169,12 @@ antlrcpp::Any ASTBuilder::visitLval(ATCParser::LvalContext *ctx) {
 }
 
 antlrcpp::Any ASTBuilder::visitPrimaryExpr(ATCParser::PrimaryExprContext *ctx) {
-    auto any = visitChildren(ctx);
-    if (!ctx->lval() && !ctx->number()) {
-        auto expr = any.as<Expression *>();
+    if (!ctx->varRef() && !ctx->number()) {
+        auto expr = ctx->expr()->accept(this).as<Expression *>();
         expr->setPosition(ctx->getStart(), ctx->getStop());
+    } else {
+        return visitChildren(ctx);
     }
-
-    return any;
 }
 
 antlrcpp::Any ASTBuilder::visitNumber(ATCParser::NumberContext *ctx) {
@@ -271,10 +211,6 @@ antlrcpp::Any ASTBuilder::visitUnaryExpr(ATCParser::UnaryExprContext *ctx) {
     }
 }
 
-//    antlrcpp::Any ASTBuilder::visitUnaryOp(ATCParser::UnaryOpContext *ctx)  {
-//     return visitChildren(ctx);
-//   }
-
 //    antlrcpp::Any ASTBuilder::visitFuncRParams(ATCParser::FuncRParamsContext *ctx)  {
 //     return visitChildren(ctx);
 //   }
@@ -283,7 +219,6 @@ antlrcpp::Any ASTBuilder::visitMulExpr(ATCParser::MulExprContext *ctx) {
     auto unaryExprs = ctx->unaryExpr();
     auto operators = ctx->MulDIV();
 
-    _antlrNodeStack.push_back(ctx);
     auto left = unaryExprs[0]->accept(this).as<Expression *>();
     for (int i = 1; i < unaryExprs.size(); i++) {
         BinaryExpression *mulExpr = new BinaryExpression();
@@ -304,7 +239,6 @@ antlrcpp::Any ASTBuilder::visitMulExpr(ATCParser::MulExprContext *ctx) {
 
         left = mulExpr;
     }
-    _antlrNodeStack.pop_back();
 
     left->setPosition(ctx->getStart(), ctx->getStop());
     return (Expression *)left;
@@ -314,7 +248,6 @@ antlrcpp::Any ASTBuilder::visitAddExpr(ATCParser::AddExprContext *ctx) {
     auto mulExprs = ctx->mulExpr();
     auto operators = ctx->PlusMinus();
 
-    _antlrNodeStack.push_back(ctx);
     auto left = mulExprs[0]->accept(this).as<Expression *>();
     for (int i = 1; i < mulExprs.size(); i++) {
         BinaryExpression *addExpr = new BinaryExpression();
@@ -333,7 +266,6 @@ antlrcpp::Any ASTBuilder::visitAddExpr(ATCParser::AddExprContext *ctx) {
 
         left = addExpr;
     }
-    _antlrNodeStack.pop_back();
 
     left->setPosition(ctx->getStart(), ctx->getStop());
     return (Expression *)left;
@@ -343,7 +275,6 @@ antlrcpp::Any ASTBuilder::visitRelExpr(ATCParser::RelExprContext *ctx) {
     auto addExprs = ctx->addExpr();
     auto operators = ctx->Cmp();
 
-    _antlrNodeStack.push_back(ctx);
     auto left = addExprs[0]->accept(this).as<Expression *>();
     for (int i = 1; i < addExprs.size(); i++) {
         BinaryExpression *relExpr = new BinaryExpression();
@@ -362,7 +293,6 @@ antlrcpp::Any ASTBuilder::visitRelExpr(ATCParser::RelExprContext *ctx) {
 
         left = relExpr;
     }
-    _antlrNodeStack.pop_back();
 
     left->setPosition(ctx->getStart(), ctx->getStop());
     return (Expression *)left;
@@ -372,7 +302,6 @@ antlrcpp::Any ASTBuilder::visitEqExpr(ATCParser::EqExprContext *ctx) {
     auto relExprs = ctx->relExpr();
     auto operators = ctx->EqNe();
 
-    _antlrNodeStack.push_back(ctx);
     auto left = relExprs[0]->accept(this).as<Expression *>();
     for (int i = 1; i < relExprs.size(); i++) {
         BinaryExpression *eqExpr = new BinaryExpression();
@@ -391,7 +320,6 @@ antlrcpp::Any ASTBuilder::visitEqExpr(ATCParser::EqExprContext *ctx) {
 
         left = eqExpr;
     }
-    _antlrNodeStack.pop_back();
 
     left->setPosition(ctx->getStart(), ctx->getStop());
     return (Expression *)left;
@@ -400,7 +328,6 @@ antlrcpp::Any ASTBuilder::visitEqExpr(ATCParser::EqExprContext *ctx) {
 antlrcpp::Any ASTBuilder::visitLAndExpr(ATCParser::LAndExprContext *ctx) {
     auto eqExprs = ctx->eqExpr();
 
-    _antlrNodeStack.push_back(ctx);
     auto left = eqExprs[0]->accept(this).as<Expression *>();
     for (int i = 1; i < eqExprs.size(); i++) {
         BinaryExpression *andExpr = new BinaryExpression();
@@ -410,7 +337,6 @@ antlrcpp::Any ASTBuilder::visitLAndExpr(ATCParser::LAndExprContext *ctx) {
         andExpr->setRight(right);
         left = andExpr;
     }
-    _antlrNodeStack.pop_back();
 
     left->setPosition(ctx->getStart(), ctx->getStop());
     return (Expression *)left;
@@ -419,7 +345,6 @@ antlrcpp::Any ASTBuilder::visitLAndExpr(ATCParser::LAndExprContext *ctx) {
 antlrcpp::Any ASTBuilder::visitLOrExpr(ATCParser::LOrExprContext *ctx) {
     auto lAndExprs = ctx->lAndExpr();
 
-    _antlrNodeStack.push_back(ctx);
     auto left = lAndExprs[0]->accept(this).as<Expression *>();
     for (int i = 1; i < lAndExprs.size(); i++) {
         BinaryExpression *orExpr = new BinaryExpression();
@@ -429,20 +354,9 @@ antlrcpp::Any ASTBuilder::visitLOrExpr(ATCParser::LOrExprContext *ctx) {
         orExpr->setRight(right);
         left = orExpr;
     }
-    _antlrNodeStack.pop_back();
 
     left->setPosition(ctx->getStart(), ctx->getStop());
     return (Expression *)left;
 }
 
-antlrcpp::Any ASTBuilder::visitConstExpr(ATCParser::ConstExprContext *ctx) {
-    _antlrNodeStack.push_back(ctx);
-    auto any = visitChildren(ctx);
-    _antlrNodeStack.pop_back();
-    return any;
-}
-
-//    antlrcpp::Any ASTBuilder::visitBType(ATCParser::BTypeContext *ctx)  {
-//     return visitChildren(ctx);
-//   }
 }  // namespace ATC

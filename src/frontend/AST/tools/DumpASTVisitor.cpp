@@ -94,7 +94,9 @@ void DumpASTVisitor::visit(Decl* node) {
     printNode(node);
     cout << endl;
     _indent++;
-    node->getVariable()->accept(this);
+    for (auto var : node->getVariables()) {
+        var->accept(this);
+    }
     _indent--;
 }
 
@@ -109,7 +111,7 @@ void DumpASTVisitor::visit(FuncDef* node) {
 void DumpASTVisitor::visit(DataType* node) {
     cout << "<" << BaseTypeName[node->getBaseType()];
     for (auto dimension : node->getDimensions()) {
-        cout << "[" << dimension->getIntValue() << "]";
+        cout << "[" << Expression::evaluateConstExpr(dimension) << "]";
     }
     cout << ">";
 }
