@@ -16,6 +16,8 @@ public:
 
     virtual void visit(FuncDef*) override;
 
+    virtual void visit(DataType*) override;
+
     virtual void visit(Variable*) override;
 
     // virtual void visit(Expression*) override;
@@ -35,6 +37,8 @@ public:
     virtual void visit(AssignStatement*) override;
 
     virtual void visit(IfStatement*) override;
+
+    virtual void visit(ElseStatement*) override;
 
     virtual void visit(ReturnStatement*) override;
 

@@ -30,8 +30,8 @@ enum NodeType {
     ID_RETURN_STATEMENT
 };
 
-enum Operator { PLUS, MINUS, NOT, ADD, SUB, MUL, DIV, MOD, LT, GT, LE, GE, EQ, NE, AND, OR };
+enum Operator { PLUS, MINUS, NOT, MUL, DIV, MOD, LT, GT, LE, GE, EQ, NE, AND, OR };
 
-enum BaseDataType { VOID, INT, FLOAT };
+enum BaseType { UNKOWN, VOID, INT, FLOAT };
 }  // namespace ATC
 #endif

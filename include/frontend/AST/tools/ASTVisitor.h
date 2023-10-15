@@ -7,6 +7,7 @@ class TreeNode;
 class CompUnit;
 class Decl;
 class FuncDef;
+class DataType;
 class Variable;
 class Expression;
 class ConstVal;
@@ -17,6 +18,7 @@ class Statement;
 class Block;
 class AssignStatement;
 class IfStatement;
+class ElseStatement;
 class ReturnStatement;
 
 class ASTVisitor {
@@ -28,6 +30,8 @@ public:
     virtual void visit(Decl*) = 0;
 
     virtual void visit(FuncDef*) = 0;
+
+    virtual void visit(DataType*) = 0;
 
     virtual void visit(Variable*) = 0;
 
@@ -48,6 +52,8 @@ public:
     virtual void visit(AssignStatement*) = 0;
 
     virtual void visit(IfStatement*) = 0;
+
+    virtual void visit(ElseStatement*)  = 0;
 
     virtual void visit(ReturnStatement*) = 0;
 };

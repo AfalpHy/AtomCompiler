@@ -16,14 +16,14 @@ public:
     const std::vector<Decl*>& getParams() { return _params; }
     Block* getBlock() { return _block; }
 
-    void setRetType(BaseDataType retType) { _retType = retType; }
+    void setRetType(BaseType retType) { _retType = retType; }
     void addParams(Decl* decl) { _params.push_back(decl); }
     void setBlock(Block* block) { _block = block; }
 
     ACCEPT
 
 private:
-    BaseDataType _retType;
+    BaseType _retType;
     std::vector<Decl*> _params;
     Block* _block;
 };

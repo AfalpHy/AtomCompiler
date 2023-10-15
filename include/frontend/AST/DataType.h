@@ -1,4 +1,4 @@
-#ifndef DTATA_TYPE_H
+#ifndef DATA_TYPE_H
 #define DATA_TYPE_H
 
 #include "TreeNode.h"
@@ -11,18 +11,21 @@ public:
     DataType() = default;
     virtual int getClassId() { return ID_DATA_TYPE; }
 
-    int getBaseDataType() { return _type; }
+    int getBaseType() { return _type; }
     const std::vector<ConstVal*>& getDimensions() { return _dimensions; }
 
-    void setBaseDataType(BaseDataType type) { _type = type; }
+    void setBaseType(BaseType type) { _type = type; }
 
     void addDimension(ConstVal* dimension) { _dimensions.push_back(dimension); }
+
+    bool isPointer() { return _pointerDataType != nullptr; }
 
     ACCEPT
 
 private:
-    BaseDataType _type;
+    BaseType _type = UNKOWN;
     std::vector<ConstVal*> _dimensions;
+    DataType* _pointerDataType;
 };
 
 }  // namespace ATC

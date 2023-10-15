@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <iostream>
 
 #include "AST/CompUnit.h"
@@ -10,10 +11,15 @@ using namespace std;
 using namespace antlr4;
 
 int main(int argc, const char *argv[]) {
-    std::ifstream stream;
-    stream.open(argv[1]);
+    std::ifstream file;
+    file.open(argv[1]);
 
-    ANTLRInputStream input(stream);
+    if (!file.is_open()) {
+        cerr << filesystem::current_path() << endl;
+        cerr << "open file failed" << endl;
+        return 0;
+    }
+    ANTLRInputStream input(file);
     input.name = argv[1];
     ATCLexer lexer(&input);
     CommonTokenStream token(&lexer);

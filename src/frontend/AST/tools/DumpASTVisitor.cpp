@@ -17,26 +17,54 @@ namespace ATC {
 
 unordered_map<int, string> ClassName = {
     // clang-format off
-    {ID_COMP_UNIT, "CompUint"},
-    {ID_DECL, "Decl"},
-    {ID_FUNC_DEF, "FuncDef"},
-    {ID_VARIABLE, "Variable"},
-    {ID_EXPRESSION, "Expression"},
-    {ID_CONST_VAL, "ConstVal"},
-    {ID_VAR_REF, "VarRef"},
-    {ID_UNARY_EXPRESSION, "UnaryExpression"},
-    {ID_BINARY_EXPRESSION, "BinaryExpression"},
-    {ID_FUNC_CALL, "FuncCall"},
-    {ID_STATEMENT, "Statement"},
-    {ID_BLOCK, "Block"},
-    {ID_ASSIGN_STATEMENT, "AssignStatement"},
-    {ID_BLANK_STATEMENT, "BlankStatement"},
-    {ID_IF_STATEMENT, "IfStatement"},
-    {ID_ELSE_STATEMENT, "ElseStatement"},
-    {ID_WHILE_STATEMENT, "WhileStatement"},
-    {ID_BREAK_STATEMENT, "BreakStatement"},
-    {ID_CONTINUE_STATEMENT, "ContinueStatement"},
-    {ID_RETURN_STATEMENT, "ReturnStatement"}
+    {ID_COMP_UNIT,              "CompUint"},
+    {ID_DECL,                   "Decl"},
+    {ID_FUNC_DEF,               "FuncDef"},
+    {ID_VARIABLE,               "Variable"},
+    {ID_EXPRESSION,             "Expression"},
+    {ID_CONST_VAL,              "ConstVal"},
+    {ID_VAR_REF,                "VarRef"},
+    {ID_UNARY_EXPRESSION,       "UnaryExpression"},
+    {ID_BINARY_EXPRESSION,      "BinaryExpression"},
+    {ID_FUNC_CALL,              "FuncCall"},
+    {ID_STATEMENT,              "Statement"},
+    {ID_BLOCK,                  "Block"},
+    {ID_ASSIGN_STATEMENT,       "AssignStatement"},
+    {ID_BLANK_STATEMENT,        "BlankStatement"},
+    {ID_IF_STATEMENT,           "IfStatement"},
+    {ID_ELSE_STATEMENT,         "ElseStatement"},
+    {ID_WHILE_STATEMENT,        "WhileStatement"},
+    {ID_BREAK_STATEMENT,        "BreakStatement"},
+    {ID_CONTINUE_STATEMENT,     "ContinueStatement"},
+    {ID_RETURN_STATEMENT,       "ReturnStatement"}
+    // clang-format on
+};
+
+unordered_map<int, string> BaseTypeName = {
+    // clang-format off
+    {UNKOWN,    "unkown"},
+    {INT,       "int"},
+    {FLOAT,     "float"},
+    {VOID,      "void"}
+    // clang-format on
+};
+
+unordered_map<int, string> OperatorName = {
+    // clang-format off
+    {PLUS,  "Plus"},
+    {MINUS, "Minus"},
+    {NOT,   "Not"},
+    {MUL,   "Mul"},
+    {DIV,   "Div"},
+    {MOD,   "Mod"},
+    {LT,    "Lt"},
+    {GT,    "Gt"},
+    {LE,    "Le"},
+    {GE,    "Ge"},
+    {EQ,    "Eq"},
+    {NE,    "Ne"},
+    {AND,   "And"},
+    {OR,    "Or"}
     // clang-format on
 };
 
@@ -45,8 +73,9 @@ void DumpASTVisitor::printNode(TreeNode* node) {
         cout << "  ";
     }
     Position position = node->getPosition();
-    printf("%s <%d:%d-%d:%d> %p", ClassName[node->getClassId()].c_str(), position._leftLine,
-           position._leftColumn, position._rightLine, position._rightColumn, node);
+    printf("%s %p <%d:%d-%d:%d> %s", ClassName[node->getClassId()].c_str(), node,
+           position._leftLine, position._leftColumn, position._rightLine, position._rightColumn,
+           node->getName().c_str());
 }
 
 void DumpASTVisitor::visit(TreeNode* node) {}
@@ -77,10 +106,19 @@ void DumpASTVisitor::visit(FuncDef* node) {
     _indent--;
 }
 
+void DumpASTVisitor::visit(DataType* node) {
+    cout << "<" << BaseTypeName[node->getBaseType()];
+    for (auto dimension : node->getDimensions()) {
+        cout << "[" << dimension->getIntValue() << "]";
+    }
+    cout << ">";
+}
+
 void DumpASTVisitor::visit(Variable* node) {
     printNode(node);
-    cout << " " << node->getName() << " ";
-    cout << " " << node->getDataType()->getBaseDataType() << " " << endl;
+    cout << " ";
+    node->getDataType()->accept(this);
+    cout << endl;
     _indent++;
     if (node->getInitValue()) {
         node->getInitValue()->accept(this);
@@ -92,7 +130,7 @@ void DumpASTVisitor::visit(Variable* node) {
 
 void DumpASTVisitor::visit(ConstVal* node) {
     printNode(node);
-    cout << " <" << node->getIntValue() << ">" << endl;
+    cout << "<" << node->getIntValue() << ">" << endl;
 }
 
 void DumpASTVisitor::visit(VarRef* node) {
@@ -105,9 +143,22 @@ void DumpASTVisitor::visit(VarRef* node) {
     _indent--;
 }
 
-void DumpASTVisitor::visit(UnaryExpression* node) {}
+void DumpASTVisitor::visit(UnaryExpression* node) {
+    printNode(node);
+    cout << "<" << OperatorName[node->getOperator()] << ">" << endl;
+    _indent++;
+    node->getOperand()->accept(this);
+    _indent--;
+}
 
-void DumpASTVisitor::visit(BinaryExpression* node) {}
+void DumpASTVisitor::visit(BinaryExpression* node) {
+    printNode(node);
+    cout << "<" << OperatorName[node->getOperator()] << ">" << endl;
+    _indent++;
+    node->getLeft()->accept(this);
+    node->getRight()->accept(this);
+    _indent--;
+}
 
 // void DumpASTVisitor::visit(Statement* node) {}
 
@@ -130,7 +181,23 @@ void DumpASTVisitor::visit(AssignStatement* node) {
     _indent--;
 }
 
-void DumpASTVisitor::visit(IfStatement* node) {}
+void DumpASTVisitor::visit(IfStatement* node) {
+    printNode(node);
+    cout << endl;
+    _indent++;
+    node->getCond()->accept(this);
+    node->getStmt()->accept(this);
+    node->getElseStmt()->accept(this);
+    _indent--;
+}
+
+void DumpASTVisitor::visit(ElseStatement* node) {
+    printNode(node);
+    cout << endl;
+    _indent++;
+    node->getStmt()->accept(this);
+    _indent--;
+}
 
 void DumpASTVisitor::visit(ReturnStatement* node) {
     printNode(node);

@@ -49,9 +49,7 @@ public:
 
     // virtual antlrcpp::Any visitExpr(ATCParser::ExprContext *ctx) override;
 
-    //   virtual antlrcpp::Any visitCond(ATCParser::CondContext *ctx) override {
-    //     return visitChildren(ctx);
-    //   }
+    virtual antlrcpp::Any visitCond(ATCParser::CondContext *ctx) override;
 
     virtual antlrcpp::Any visitLval(ATCParser::LvalContext *ctx) override;
 
@@ -59,10 +57,6 @@ public:
 
     virtual antlrcpp::Any visitNumber(ATCParser::NumberContext *ctx) override;
     virtual antlrcpp::Any visitUnaryExpr(ATCParser::UnaryExprContext *ctx) override;
-
-    //   virtual antlrcpp::Any visitUnaryOp(ATCParser::UnaryOpContext *ctx) override {
-    //     return visitChildren(ctx);
-    //   }
 
     //   virtual antlrcpp::Any visitFuncRParams(ATCParser::FuncRParamsContext *ctx) override {
     //     return visitChildren(ctx);
@@ -72,13 +66,13 @@ public:
 
     virtual antlrcpp::Any visitAddExpr(ATCParser::AddExprContext *ctx) override;
 
-    // virtual antlrcpp::Any visitRelExpr(ATCParser::RelExprContext *ctx) override;
+    virtual antlrcpp::Any visitRelExpr(ATCParser::RelExprContext *ctx) override;
 
-    // virtual antlrcpp::Any visitEqExpr(ATCParser::EqExprContext *ctx) override;
+    virtual antlrcpp::Any visitEqExpr(ATCParser::EqExprContext *ctx) override;
 
-    // virtual antlrcpp::Any visitLAndExpr(ATCParser::LAndExprContext *ctx) override;
+    virtual antlrcpp::Any visitLAndExpr(ATCParser::LAndExprContext *ctx) override;
 
-    // virtual antlrcpp::Any visitLOrExpr(ATCParser::LOrExprContext *ctx) override;
+    virtual antlrcpp::Any visitLOrExpr(ATCParser::LOrExprContext *ctx) override;
 
     virtual antlrcpp::Any visitConstExpr(ATCParser::ConstExprContext *ctx) override;
 

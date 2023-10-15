@@ -7,16 +7,17 @@
 #include "antlr4-runtime.h"
 #include "tools/ASTVisitor.h"
 
-#define ACCEPT virtual void accept(ASTVisitor* visitor) { visitor->visit(this); }
+#define ACCEPT \
+    virtual void accept(ASTVisitor* visitor) { visitor->visit(this); }
 namespace ATC {
 
 class ASTVisitor;
 typedef struct {
-    std::string _fileName;
-    int _leftLine;
-    int _leftColumn;
-    int _rightLine;
-    int _rightColumn;
+    std::string _fileName = "unknow";
+    int _leftLine = 0;
+    int _leftColumn = 0;
+    int _rightLine = 0;
+    int _rightColumn = 0;
 } Position;
 
 class TreeNode {
