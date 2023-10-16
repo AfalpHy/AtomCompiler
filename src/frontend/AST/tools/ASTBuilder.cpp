@@ -10,7 +10,7 @@
 
 namespace ATC {
 
-Scope *scope = nullptr;
+Scope *CurrentScope = nullptr;
 
 std::vector<CompUnit *> CompUnit::AllCompUnits;
 
@@ -20,7 +20,7 @@ antlrcpp::Any ASTBuilder::visitCompUnit(ATCParser::CompUnitContext *ctx) {
     compUnit->setPosition(ctx->getStart(), _token->get(ctx->getStop()->getTokenIndex() - 1));
 
     CompUnit::AllCompUnits.push_back(compUnit);
-    scope = new Scope();
+    CurrentScope = new Scope();
     for (size_t i = 0; i < ctx->children.size(); i++) {
         auto any = ctx->children[i]->accept(this);
         if (any.is<Decl *>()) {
@@ -29,18 +29,7 @@ antlrcpp::Any ASTBuilder::visitCompUnit(ATCParser::CompUnitContext *ctx) {
             compUnit->addElement(any.as<FunctionDef *>());
         }
     }
-    delete scope;
-    scope = nullptr;
     return nullptr;
-}
-
-antlrcpp::Any ASTBuilder::visitConstDecl(ATCParser::ConstDeclContext *ctx) {
-    auto decl = ctx->varDecl()->accept(this).as<Decl *>();
-    decl->setPosition(ctx->getStart(), ctx->getStop());
-    for (auto var : decl->getVariables()) {
-        var->setIsConst();
-    }
-    return decl;
 }
 
 antlrcpp::Any ASTBuilder::visitVarDecl(ATCParser::VarDeclContext *ctx) {
@@ -49,13 +38,16 @@ antlrcpp::Any ASTBuilder::visitVarDecl(ATCParser::VarDeclContext *ctx) {
 
     for (auto varDef : ctx->varDef()) {
         auto var = varDef->accept(this).as<Variable *>();
+        if (ctx->Const()) {
+            var->setIsConst();
+        }
         auto dataType = var->getDataType();
-        var->setDataType(dataType);
         if (ctx->Int()) {
             dataType->setBaseType(INT);
         } else {
             dataType->setBaseType(FLOAT);
         }
+        var->setDataType(dataType);
         decl->addVariable(var);
     }
 
@@ -80,7 +72,7 @@ antlrcpp::Any ASTBuilder::visitVarDef(ATCParser::VarDefContext *ctx) {
         var->setInitValue(ctx->initVal()->accept(this).as<Expression *>());
     }
 
-    scope->insertVariable(var->getName(), var);
+    CurrentScope->insertVariable(var->getName(), var);
     return var;
 }
 
@@ -108,10 +100,13 @@ antlrcpp::Any ASTBuilder::visitFunctionDef(ATCParser::FunctionDefContext *ctx) {
     } else {
         functionDef->setRetType(FLOAT);
     }
-    scope->insertFunctionDef(functionDef->getName(), functionDef);
-    auto tmp = scope;
-    scope = new Scope();
-    scope->setParent(tmp);
+    CurrentScope->insertFunctionDef(functionDef->getName(), functionDef);
+
+    auto parentScope = CurrentScope;
+    CurrentScope = new Scope();
+    CurrentScope->setParent(parentScope);
+    parentScope->addChild(CurrentScope);
+
     if (ctx->funcFParams()) {
         auto fParams = ctx->funcFParams()->accept(this).as<std::vector<Decl *>>();
         for (auto fParam : fParams) {
@@ -121,8 +116,8 @@ antlrcpp::Any ASTBuilder::visitFunctionDef(ATCParser::FunctionDefContext *ctx) {
     auto block = ctx->block()->accept(this).as<Statement *>();
     assert(block->getClassId() == ID_BLOCK);
     functionDef->setBlock((Block *)block);
-    delete scope;
-    scope = tmp;
+
+    CurrentScope = parentScope;
 
     return functionDef;
 }
@@ -141,6 +136,7 @@ antlrcpp::Any ASTBuilder::visitFuncFParam(ATCParser::FuncFParamContext *ctx) {
     auto dataType = new DataType();
     auto var = new Variable();
     var->setPosition(ctx->Ident()->getSymbol(), ctx->Ident()->getSymbol());
+    var->setName(ctx->Ident()->getText());
     if (ctx->expr().size()) {
         auto baseDataType = new DataType();
         if (ctx->Int()) {
@@ -151,6 +147,7 @@ antlrcpp::Any ASTBuilder::visitFuncFParam(ATCParser::FuncFParamContext *ctx) {
         for (auto expr : ctx->expr()) {
             baseDataType->addDimension(expr->accept(this).as<Expression *>());
         }
+        dataType->setBaseDataType(baseDataType);
     } else {
         if (ctx->Int()) {
             dataType->setBaseType(INT);
@@ -166,9 +163,12 @@ antlrcpp::Any ASTBuilder::visitFuncFParam(ATCParser::FuncFParamContext *ctx) {
 antlrcpp::Any ASTBuilder::visitBlock(ATCParser::BlockContext *ctx) {
     auto block = new Block();
     block->setPosition(ctx->getStart(), ctx->getStop());
-    auto tmp = scope;
-    scope = new Scope();
-    scope->setParent(tmp);
+
+    auto parentScope = CurrentScope;
+    CurrentScope = new Scope();
+    CurrentScope->setParent(parentScope);
+    parentScope->addChild(CurrentScope);
+
     for (size_t i = 0; i < ctx->children.size(); i++) {
         auto any = ctx->children[i]->accept(this);
         if (any.is<Decl *>()) {
@@ -177,8 +177,9 @@ antlrcpp::Any ASTBuilder::visitBlock(ATCParser::BlockContext *ctx) {
             block->addElement(any.as<Statement *>());
         }
     }
-    delete scope;
-    scope = tmp;
+
+    CurrentScope = parentScope;
+
     return (Statement *)block;
 }
 
@@ -214,7 +215,7 @@ antlrcpp::Any ASTBuilder::visitStmt(ATCParser::StmtContext *ctx) {
         auto stmt = new BreakStatement();
         stmt->setPosition(ctx->getStart(), ctx->getStop());
         return (Statement *)stmt;
-    } else if (ctx->Conitinue()) {
+    } else if (ctx->Continue()) {
         auto stmt = new ContinueStatement();
         stmt->setPosition(ctx->getStart(), ctx->getStop());
         return (Statement *)stmt;
@@ -241,10 +242,10 @@ antlrcpp::Any ASTBuilder::visitVarRef(ATCParser::VarRefContext *ctx) {
     auto varRef = new VarRef();
     varRef->setPosition(ctx->getStart(), ctx->getStop());
     varRef->setName(ctx->getStart()->getText());
-    varRef->setVariable(scope->getVariable(ctx->getStart()->getText()));
     for (auto expr : ctx->expr()) {
         varRef->addDimension(expr->accept(this).as<Expression *>());
     }
+    CurrentScope->addNeedFixupNode(varRef);
     return (Expression *)varRef;
 }
 
@@ -275,14 +276,16 @@ antlrcpp::Any ASTBuilder::visitUnaryExpr(ATCParser::UnaryExprContext *ctx) {
     if (ctx->primaryExpr()) {
         return ctx->primaryExpr()->accept(this);
     } else if (ctx->Ident()) {
-        auto funtionCall = new FunctionCall();
+        auto functionCall = new FunctionCall();
+        functionCall->setName(ctx->Ident()->getText());
         if (ctx->funcRParams()) {
             auto rParams = ctx->funcRParams()->accept(this).as<std::vector<Expression *>>();
             for (auto rParam : rParams) {
-                funtionCall->addParams(rParam);
+                functionCall->addParams(rParam);
             }
         }
-        return (Expression *)funtionCall;
+        CurrentScope->addNeedFixupNode(functionCall);
+        return (Expression *)functionCall;
     } else {
         auto unaryExpr = new UnaryExpression();
         auto unaryOp = ctx->unaryOp()->getText();

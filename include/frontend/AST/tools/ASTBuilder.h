@@ -11,8 +11,6 @@ class ASTBuilder : public ATCBaseVisitor {
 public:
     virtual antlrcpp::Any visitCompUnit(ATCParser::CompUnitContext *ctx) override;
 
-    virtual antlrcpp::Any visitConstDecl(ATCParser::ConstDeclContext *ctx) override;
-
     virtual antlrcpp::Any visitVarDecl(ATCParser::VarDeclContext *ctx) override;
 
     virtual antlrcpp::Any visitVarDef(ATCParser::VarDefContext *ctx) override;

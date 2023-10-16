@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "AST/CompUnit.h"
+#include "AST/Scope.h"
 #include "AST/tools/ASTBuilder.h"
 #include "AST/tools/DumpASTVisitor.h"
 #include "ATCLexer.h"
@@ -14,10 +15,8 @@ int main(int argc, const char *argv[]) {
     std::ifstream file;
     file.open(argv[1]);
 
-    cout << argv[1] << endl;
     if (!file.is_open()) {
-        cerr << filesystem::current_path() << endl;
-        cerr << "open file failed" << endl;
+        cerr << filesystem::absolute(argv[1]) << " not exist" << endl;
         return 0;
     }
     ANTLRInputStream input(file);
@@ -29,6 +28,7 @@ int main(int argc, const char *argv[]) {
     ATC::ASTBuilder astBuilder;
     astBuilder.setTokenStream(&token);
     context->accept(&astBuilder);
+    ATC::CurrentScope->fixupNode();
 
     ATC::DumpASTVisitor dump;
 

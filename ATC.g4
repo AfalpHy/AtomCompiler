@@ -2,11 +2,9 @@ grammar ATC;
 
 compUnit: (decl | functionDef)* EOF;
 
-decl: constDecl | varDecl;
+decl: varDecl;
 
-constDecl: 'const' varDecl;
-
-varDecl: (Int | Float) varDef ( ',' varDef)* ';';
+varDecl: Const? (Int | Float) varDef ( ',' varDef)* ';';
 
 varDef:
 	Ident ('[' expr ']')*
@@ -62,6 +60,8 @@ eqExpr: relExpr ( EqNe relExpr)*;
 lAndExpr: eqExpr (And eqExpr)*;
 
 lOrExpr: lAndExpr (Or lAndExpr)*;
+
+Const: 'const';
 
 Int: 'int';
 

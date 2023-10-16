@@ -1,6 +1,7 @@
 
 #include "AST/tools/DumpASTVisitor.h"
 
+#include <filesystem>
 #include <iostream>
 #include <unordered_map>
 
@@ -86,6 +87,7 @@ void DumpASTVisitor::printNode(TreeNode* node, bool newLine) {
 void DumpASTVisitor::visit(TreeNode* node) { printNode(node); }
 
 void DumpASTVisitor::visit(CompUnit* node) {
+    cout << filesystem::absolute(node->getPosition()._fileName) << endl;
     printNode(node);
     _indent++;
     for (auto element : node->getElements()) {
@@ -106,16 +108,24 @@ void DumpASTVisitor::visit(Decl* node) {
 void DumpASTVisitor::visit(FunctionDef* node) {
     printNode(node);
     _indent++;
+    for (auto fParam : node->getParams()) {
+        fParam->accept(this);
+    }
     node->getBlock()->accept(this);
     _indent--;
 }
 
 void DumpASTVisitor::visit(DataType* node) {
-    cout << "<" << BaseTypeName[node->getBaseType()];
-    for (auto dimension : node->getDimensions()) {
-        cout << "[" << Expression::evaluateConstExpr(dimension) << "]";
+    if (node->isPointer()) {
+        cout << "<Pointer> ";
+        node->getBaseDataType()->accept(this);
+    } else {
+        cout << "<" << BaseTypeName[node->getBaseType()];
+        for (auto dimension : node->getDimensions()) {
+            cout << "[" << Expression::evaluateConstExpr(dimension) << "]";
+        }
+        cout << ">";
     }
-    cout << ">";
 }
 
 void DumpASTVisitor::visit(Variable* node) {
@@ -176,8 +186,7 @@ void DumpASTVisitor::visit(BinaryExpression* node) {
 }
 
 void DumpASTVisitor::visit(FunctionCall* node) {
-    printNode(node, false);
-    cout << node->getName() << endl;
+    printNode(node);
     _indent++;
     for (auto rParam : node->getParams()) {
         rParam->accept(this);
