@@ -18,7 +18,7 @@ public:
 
     Variable* getVariable(const std::string& name);
     FunctionDef* getFunctionDef(const std::string& name);
-
+    const std::unordered_map<std::string, Variable*>& getVarMap() { return _varMap; }
     void setParent(Scope* parent) { _parent = parent; }
     void addChild(Scope* child) { _children.push_back(child); }
     void addNeedFixupNode(TreeNode* node) { _needFixupNode.push_back(node); }
@@ -31,8 +31,8 @@ public:
 private:
     Scope* _parent;
     std::vector<Scope*> _children;
-    std::unordered_map<std::string, Variable*> varMap;
-    std::unordered_map<std::string, FunctionDef*> functionMap;
+    std::unordered_map<std::string, Variable*> _varMap;
+    std::unordered_map<std::string, FunctionDef*> _functionMap;
     std::vector<TreeNode*> _needFixupNode;
 };
 

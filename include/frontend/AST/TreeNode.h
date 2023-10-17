@@ -12,6 +12,8 @@
 namespace ATC {
 
 class ASTVisitor;
+class Scope;
+
 typedef struct {
     std::string _fileName = "unknow";
     int _leftLine = 0;
@@ -29,10 +31,12 @@ public:
     TreeNode* getParent() { return _parent; }
     std::string getName() { return _name; }
     Position getPosition() { return _position; }
+    Scope* getScope() { return _scope; }
 
     void setParent(TreeNode* parent) { _parent = parent; }
     void setName(std::string name) { _name = name; }
     void setPosition(antlr4::Token* start, antlr4::Token* stop);
+    void setScope(Scope* scope) { _scope = scope; }
 
     ACCEPT
 
@@ -40,6 +44,7 @@ private:
     TreeNode* _parent = nullptr;
     std::string _name;
     Position _position;
+    Scope* _scope = nullptr;
 };
 
 }  // namespace ATC

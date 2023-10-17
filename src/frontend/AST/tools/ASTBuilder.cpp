@@ -21,6 +21,7 @@ antlrcpp::Any ASTBuilder::visitCompUnit(ATCParser::CompUnitContext *ctx) {
 
     CompUnit::AllCompUnits.push_back(compUnit);
     CurrentScope = new Scope();
+    compUnit->setScope(CurrentScope);
     for (size_t i = 0; i < ctx->children.size(); i++) {
         auto any = ctx->children[i]->accept(this);
         if (any.is<Decl *>()) {
@@ -106,6 +107,7 @@ antlrcpp::Any ASTBuilder::visitFunctionDef(ATCParser::FunctionDefContext *ctx) {
     CurrentScope = new Scope();
     CurrentScope->setParent(parentScope);
     parentScope->addChild(CurrentScope);
+    functionDef->setScope(CurrentScope);
 
     if (ctx->funcFParams()) {
         auto fParams = ctx->funcFParams()->accept(this).as<std::vector<Decl *>>();
@@ -157,6 +159,7 @@ antlrcpp::Any ASTBuilder::visitFuncFParam(ATCParser::FuncFParamContext *ctx) {
     }
     var->setDataType(dataType);
     decl->addVariable(var);
+    CurrentScope->insertVariable(var->getName(), var);
     return decl;
 }
 
@@ -168,6 +171,7 @@ antlrcpp::Any ASTBuilder::visitBlock(ATCParser::BlockContext *ctx) {
     CurrentScope = new Scope();
     CurrentScope->setParent(parentScope);
     parentScope->addChild(CurrentScope);
+    block->setScope(CurrentScope);
 
     for (size_t i = 0; i < ctx->children.size(); i++) {
         auto any = ctx->children[i]->accept(this);

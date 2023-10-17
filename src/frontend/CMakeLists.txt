@@ -3,8 +3,9 @@ project(frontend)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/antlr ANTLR4)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/AST AST)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/AST/tools AST_TOOLS)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/llvmIR LLVM_IR)
 
-add_library(${PROJECT_NAME} ${ANTLR4} ${AST} ${AST_TOOLS})
+add_library(${PROJECT_NAME} ${ANTLR4} ${AST} ${AST_TOOLS} ${LLVM_IR})
 
 target_include_directories(
   ${PROJECT_NAME}
@@ -12,4 +13,5 @@ target_include_directories(
   PUBLIC /usr/include/antlr4-runtime
   PUBLIC ${CMAKE_SOURCE_DIR}/include/frontend)
 
-target_link_libraries(${PROJECT_NAME} antlr4-runtime)
+find_package(LLVM REQUIRED CONFIG)
+target_link_libraries(${PROJECT_NAME} antlr4-runtime "LLVM-${LLVM_VERSION_MAJOR}")

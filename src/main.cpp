@@ -1,5 +1,6 @@
 #include <filesystem>
 #include <iostream>
+#include <string>
 
 #include "AST/CompUnit.h"
 #include "AST/Scope.h"
@@ -8,6 +9,9 @@
 #include "ATCLexer.h"
 #include "ATCParser.h"
 #include "antlr4-runtime.h"
+#include "llvmIR/IRBuilder.h"
+
+#include<stdio.h>
 using namespace std;
 using namespace antlr4;
 
@@ -25,19 +29,26 @@ int main(int argc, const char *argv[]) {
     CommonTokenStream token(&lexer);
     ATCParser parser(&token);
     auto context = parser.compUnit();
+    if (parser.getNumberOfSyntaxErrors() != 0) {
+        cerr << "There are syntax errors" << endl;
+        return 0;
+    }
     ATC::ASTBuilder astBuilder;
     astBuilder.setTokenStream(&token);
     context->accept(&astBuilder);
     ATC::CurrentScope->fixupNode();
 
-    ATC::DumpASTVisitor dump;
+    if (argc > 2 && strcmp(argv[2], "--dump-ast") == 0) {
+        ATC::DumpASTVisitor dump;
+        for (auto compUnit : ATC::CompUnit::AllCompUnits) {
+            compUnit->accept(&dump);
+        }
+    }
 
+    ATC::IRBuilder irBuilder;
     for (auto compUnit : ATC::CompUnit::AllCompUnits) {
-        compUnit->accept(&dump);
+        compUnit->accept(&irBuilder);
     }
 
-    if (parser.getNumberOfSyntaxErrors() != 0) {
-        cerr << argv[1] << endl;
-    }
     return 0;
 }
