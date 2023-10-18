@@ -9,7 +9,6 @@
 
 namespace ATC {
 class Statement : public TreeNode {
-public:
 };
 
 class Block : public Statement {

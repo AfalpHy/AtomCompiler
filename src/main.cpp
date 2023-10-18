@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -6,12 +8,11 @@
 #include "AST/Scope.h"
 #include "AST/tools/ASTBuilder.h"
 #include "AST/tools/DumpASTVisitor.h"
+#include "AST/tools/SemanticChecker.h"
 #include "ATCLexer.h"
 #include "ATCParser.h"
 #include "antlr4-runtime.h"
 #include "llvmIR/IRBuilder.h"
-
-#include<stdio.h>
 using namespace std;
 using namespace antlr4;
 
@@ -36,7 +37,11 @@ int main(int argc, const char *argv[]) {
     ATC::ASTBuilder astBuilder;
     astBuilder.setTokenStream(&token);
     context->accept(&astBuilder);
-    ATC::CurrentScope->fixupNode();
+
+    ATC::SemanticChecker checker;
+    for (auto compUnit : ATC::CompUnit::AllCompUnits) {
+        compUnit->accept(&checker);
+    }
 
     if (argc > 2 && strcmp(argv[2], "--dump-ast") == 0) {
         ATC::DumpASTVisitor dump;

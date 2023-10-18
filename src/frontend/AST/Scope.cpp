@@ -30,19 +30,5 @@ void Scope::insertFunctionDef(const std::string& name, FunctionDef* functionDef)
     _functionMap.insert({name, functionDef});
 }
 
-void Scope::fixupNode() {
-    for (auto node : _needFixupNode) {
-        if (node->getClassId() == ID_VAR_REF) {
-            auto varRef = (VarRef*)node;
-            varRef->setVariable(getVariable(varRef->getName()));
-        } else if (node->getClassId() == ID_FUNCTION_CALL) {
-            auto functionCall = (FunctionCall*)node;
-            functionCall->setFunctionDef(getFunctionDef(functionCall->getName()));
-        }
-    }
-    for (auto child : _children) {
-        child->fixupNode();
-    }
-}
 
 }  // namespace ATC

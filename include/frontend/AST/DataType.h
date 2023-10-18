@@ -11,19 +11,19 @@ public:
     DataType() = default;
     virtual int getClassId() { return ID_DATA_TYPE; }
 
-    int getBaseType() { return _type; }
+    int getBaseType() { return _baseType; }
     const std::vector<Expression*>& getDimensions() { return _dimensions; }
     bool isPointer() { return _baseDataType != nullptr; }
     DataType* getBaseDataType() { return _baseDataType; }
 
-    void setBaseType(BaseType type) { _type = type; }
+    void setBaseType(BaseType baseType) { _baseType = baseType; }
     void addDimension(Expression* dimension) { _dimensions.push_back(dimension); }
     void setBaseDataType(DataType* dataType) { _baseDataType = dataType; }
 
     ACCEPT
 
 private:
-    BaseType _type = UNKOWN;
+    BaseType _baseType = UNKOWN;
     std::vector<Expression*> _dimensions;
     DataType* _baseDataType;
 };

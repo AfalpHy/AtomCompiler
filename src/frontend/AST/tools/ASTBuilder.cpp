@@ -12,6 +12,8 @@ namespace ATC {
 
 Scope *CurrentScope = nullptr;
 
+TreeNode *Parent = nullptr;
+
 std::vector<CompUnit *> CompUnit::AllCompUnits;
 
 antlrcpp::Any ASTBuilder::visitCompUnit(ATCParser::CompUnitContext *ctx) {
@@ -37,32 +39,31 @@ antlrcpp::Any ASTBuilder::visitVarDecl(ATCParser::VarDeclContext *ctx) {
     auto decl = new Decl();
     decl->setPosition(ctx->getStart(), ctx->getStop());
 
+    auto dataType = new DataType();
+    decl->setDataType(dataType);
+    Parent = decl;
     for (auto varDef : ctx->varDef()) {
         auto var = varDef->accept(this).as<Variable *>();
         if (ctx->Const()) {
             var->setIsConst();
         }
-        auto dataType = var->getDataType();
         if (ctx->Int()) {
             dataType->setBaseType(INT);
         } else {
             dataType->setBaseType(FLOAT);
         }
-        var->setDataType(dataType);
         decl->addVariable(var);
     }
-
+    Parent = decl->getParent();
     return decl;
 }
 
 antlrcpp::Any ASTBuilder::visitVarDef(ATCParser::VarDefContext *ctx) {
     auto var = new Variable();
+    var->setParent(Parent);
     var->setName(ctx->Ident()->getText());
     var->setPosition(ctx->Ident()->getSymbol(), ctx->Ident()->getSymbol());
-
-    auto dataType = new DataType();
-    var->setDataType(dataType);
-
+    auto dataType = static_cast<Decl *>(var->getParent())->getDataType();
     for (auto constExpr : ctx->expr()) {
         auto dimension = constExpr->accept(this).as<Expression *>();
         assert(dimension->isConst());
@@ -157,7 +158,7 @@ antlrcpp::Any ASTBuilder::visitFuncFParam(ATCParser::FuncFParamContext *ctx) {
             dataType->setBaseType(FLOAT);
         }
     }
-    var->setDataType(dataType);
+    decl->setDataType(dataType);
     decl->addVariable(var);
     CurrentScope->insertVariable(var->getName(), var);
     return decl;
@@ -249,7 +250,7 @@ antlrcpp::Any ASTBuilder::visitVarRef(ATCParser::VarRefContext *ctx) {
     for (auto expr : ctx->expr()) {
         varRef->addDimension(expr->accept(this).as<Expression *>());
     }
-    CurrentScope->addNeedFixupNode(varRef);
+    varRef->setVariable(CurrentScope->getVariable(varRef->getName()));
     return (Expression *)varRef;
 }
 
@@ -288,7 +289,7 @@ antlrcpp::Any ASTBuilder::visitUnaryExpr(ATCParser::UnaryExprContext *ctx) {
                 functionCall->addParams(rParam);
             }
         }
-        CurrentScope->addNeedFixupNode(functionCall);
+        functionCall->setFunctionDef(CurrentScope->getFunctionDef(functionCall->getName()));
         return (Expression *)functionCall;
     } else {
         auto unaryExpr = new UnaryExpression();

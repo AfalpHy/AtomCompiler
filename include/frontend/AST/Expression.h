@@ -17,19 +17,19 @@ public:
     ConstVal() = default;
     virtual int getClassId() override { return ID_CONST_VAL; }
 
-    int getBaseType() { return _type; }
+    int getBaseType() { return _baseType; }
     virtual bool isConst() override { return true; }
     int getIntValue() { return _intValue; }
     float getFloatValue() { return _floatValue; }
 
-    void setBaseType(BaseType type) { _type = type; }
+    void setBaseType(BaseType baseType) { _baseType = baseType; }
     void setIntValue(int value) { _intValue = value; }
     void setFloatValue(float value) { _floatValue = value; }
 
     ACCEPT
 
 private:
-    BaseType _type;
+    BaseType _baseType;
     int _intValue = 0;
     float _floatValue = 0;
 };

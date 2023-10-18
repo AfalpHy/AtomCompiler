@@ -26,43 +26,43 @@ class ReturnStatement;
 class OtherStatement;
 class ASTVisitor {
 public:
-    virtual void visit(TreeNode*) = 0;
+    virtual void visit(TreeNode*);
 
-    virtual void visit(CompUnit*) = 0;
+    virtual void visit(CompUnit*);
 
-    virtual void visit(Decl*) = 0;
+    virtual void visit(Decl*);
 
-    virtual void visit(FunctionDef*) = 0;
+    virtual void visit(FunctionDef*);
 
     virtual void visit(DataType*) = 0;
 
-    virtual void visit(Variable*) = 0;
+    virtual void visit(Variable*);
 
     virtual void visit(ConstVal*) = 0;
 
-    virtual void visit(VarRef*) = 0;
+    virtual void visit(VarRef*);
 
-    virtual void visit(ArrayExpression*) = 0;
+    virtual void visit(ArrayExpression*);
 
-    virtual void visit(UnaryExpression*) = 0;
+    virtual void visit(UnaryExpression*);
 
-    virtual void visit(BinaryExpression*) = 0;
+    virtual void visit(BinaryExpression*);
 
-    virtual void visit(FunctionCall*) = 0;
+    virtual void visit(FunctionCall*);
 
-    virtual void visit(Block*) = 0;
+    virtual void visit(Block*);
 
-    virtual void visit(AssignStatement*) = 0;
+    virtual void visit(AssignStatement*);
 
-    virtual void visit(IfStatement*) = 0;
+    virtual void visit(IfStatement*);
 
-    virtual void visit(ElseStatement*) = 0;
+    virtual void visit(ElseStatement*);
 
-    virtual void visit(WhileStatement*) = 0;
+    virtual void visit(WhileStatement*);
 
-    virtual void visit(ReturnStatement*) = 0;
+    virtual void visit(ReturnStatement*);
 
-    virtual void visit(OtherStatement*) = 0;
+    virtual void visit(OtherStatement*);
 };
 }  // namespace ATC
 

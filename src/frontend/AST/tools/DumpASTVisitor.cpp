@@ -19,6 +19,7 @@ namespace ATC {
 unordered_map<int, string> ClassName = {
     // clang-format off
     {ID_COMP_UNIT,              "CompUint"},
+    {ID_DATA_TYPE,              "DataType"},
     {ID_DECL,                   "Decl"},
     {ID_FUNCTION_DEF,           "FunctionDef"},
     {ID_VARIABLE,               "Variable"},
@@ -90,32 +91,26 @@ void DumpASTVisitor::visit(CompUnit* node) {
     cout << filesystem::absolute(node->getPosition()._fileName) << endl;
     printNode(node);
     _indent++;
-    for (auto element : node->getElements()) {
-        element->accept(this);
-    }
+    ASTVisitor::visit(node);
     _indent--;
 }
 
 void DumpASTVisitor::visit(Decl* node) {
     printNode(node);
     _indent++;
-    for (auto var : node->getVariables()) {
-        var->accept(this);
-    }
+    ASTVisitor::visit(node);
     _indent--;
 }
 
 void DumpASTVisitor::visit(FunctionDef* node) {
     printNode(node);
     _indent++;
-    for (auto fParam : node->getParams()) {
-        fParam->accept(this);
-    }
-    node->getBlock()->accept(this);
+    ASTVisitor::visit(node);
     _indent--;
 }
 
 void DumpASTVisitor::visit(DataType* node) {
+    printNode(node,false);
     if (node->isPointer()) {
         cout << "<Pointer> ";
         node->getBaseDataType()->accept(this);
@@ -124,19 +119,16 @@ void DumpASTVisitor::visit(DataType* node) {
         for (auto dimension : node->getDimensions()) {
             cout << "[" << Expression::evaluateConstExpr(dimension) << "]";
         }
-        cout << ">";
+        cout << ">" << endl;
     }
 }
 
 void DumpASTVisitor::visit(Variable* node) {
     printNode(node, false);
     cout << " ";
-    node->getDataType()->accept(this);
     cout << (node->isConst() ? " const" : "") << endl;
     _indent++;
-    if (node->getInitValue()) {
-        node->getInitValue()->accept(this);
-    }
+    ASTVisitor::visit(node);
     _indent--;
 }
 
@@ -153,18 +145,14 @@ void DumpASTVisitor::visit(VarRef* node) {
     printNode(node, false);
     cout << " ref to " << node->getVariable() << endl;
     _indent++;
-    for (auto dimension : node->getDimensions()) {
-        dimension->accept(this);
-    }
+    ASTVisitor::visit(node);
     _indent--;
 }
 
 void DumpASTVisitor::visit(ArrayExpression* node) {
     printNode(node);
     _indent++;
-    for (auto expr : node->getElements()) {
-        expr->accept(this);
-    }
+    ASTVisitor::visit(node);
     _indent--;
 }
 
@@ -172,7 +160,7 @@ void DumpASTVisitor::visit(UnaryExpression* node) {
     printNode(node, false);
     cout << "<" << OperatorName[node->getOperator()] << ">" << endl;
     _indent++;
-    node->getOperand()->accept(this);
+    ASTVisitor::visit(node);
     _indent--;
 }
 
@@ -180,76 +168,63 @@ void DumpASTVisitor::visit(BinaryExpression* node) {
     printNode(node, false);
     cout << "<" << OperatorName[node->getOperator()] << ">" << endl;
     _indent++;
-    node->getLeft()->accept(this);
-    node->getRight()->accept(this);
+    ASTVisitor::visit(node);
     _indent--;
 }
 
 void DumpASTVisitor::visit(FunctionCall* node) {
     printNode(node);
     _indent++;
-    for (auto rParam : node->getParams()) {
-        rParam->accept(this);
-    }
+    ASTVisitor::visit(node);
     _indent--;
 }
 
 void DumpASTVisitor::visit(Block* node) {
     printNode(node);
     _indent++;
-    for (auto element : node->getElements()) {
-        element->accept(this);
-    }
+    ASTVisitor::visit(node);
     _indent--;
 }
 
 void DumpASTVisitor::visit(AssignStatement* node) {
     printNode(node);
     _indent++;
-    node->getVar()->accept(this);
-    node->getValue()->accept(this);
+    ASTVisitor::visit(node);
     _indent--;
 }
 
 void DumpASTVisitor::visit(IfStatement* node) {
     printNode(node);
     _indent++;
-    node->getCond()->accept(this);
-    node->getStmt()->accept(this);
-    if (node->getElseStmt()) {
-        node->getElseStmt()->accept(this);
-    }
+    ASTVisitor::visit(node);
     _indent--;
 }
 
 void DumpASTVisitor::visit(ElseStatement* node) {
     printNode(node);
     _indent++;
-    node->getStmt()->accept(this);
+    ASTVisitor::visit(node);
     _indent--;
 }
 
 void DumpASTVisitor::visit(WhileStatement* node) {
     printNode(node);
     _indent++;
-    node->getCond()->accept(this);
-    node->getStmt()->accept(this);
+    ASTVisitor::visit(node);
     _indent--;
 }
 
 void DumpASTVisitor::visit(ReturnStatement* node) {
     printNode(node);
-    if (node->getExpr()) {
-        _indent++;
-        node->getExpr()->accept(this);
-        _indent--;
-    }
+    _indent++;
+    ASTVisitor::visit(node);
+    _indent--;
 }
 
 void DumpASTVisitor::visit(OtherStatement* node) {
     printNode(node);
     _indent++;
-    node->getExpr()->accept(this);
+    ASTVisitor::visit(node);
     _indent--;
 }
 }  // namespace ATC

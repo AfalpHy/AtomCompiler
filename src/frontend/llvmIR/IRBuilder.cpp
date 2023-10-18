@@ -41,8 +41,7 @@ void IRBuilder::visit(Decl *node) {}
 void IRBuilder::visit(FunctionDef *node) {
     std::vector<llvm::Type *> params;
     for (auto param : node->getParams()) {
-        // 形参中的每个声明只能有一个定义
-        DataType *dataType = param->getVariables()[0]->getDataType();
+        DataType *dataType = param->getDataType();
         params.push_back(convetToLLVMType(dataType));
     }
     llvm::FunctionType *funcTy =
@@ -125,7 +124,7 @@ llvm::Type *IRBuilder::convetToLLVMType(DataType *dataType) {
 
 void IRBuilder::allocForScopeVars(Scope *currentScope) {
     for (auto [first, var] : currentScope->getVarMap()) {
-        DataType *dataType = var->getDataType();
+        DataType *dataType = static_cast<Decl *>(var->getParent())->getDataType();
         auto addr =
             _theIRBuilder->CreateAlloca(convetToLLVMType(dataType), nullptr, var->getName());
         var->setAddr(addr);

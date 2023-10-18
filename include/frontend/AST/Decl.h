@@ -12,12 +12,15 @@ public:
     ~Decl() = default;
     virtual int getClassId() { return ID_DECL; }
 
+    DataType* getDataType() { return _dataType; }
     const std::vector<Variable*>& getVariables() { return _vars; }
 
+    void setDataType(DataType* dataType) { _dataType = dataType; }
     void addVariable(Variable* var) { _vars.push_back(var); }
 
     ACCEPT
 private:
+    DataType* _dataType;
     std::vector<Variable*> _vars;
 };
 
