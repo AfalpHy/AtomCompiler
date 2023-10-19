@@ -10,6 +10,12 @@ class Expression : public TreeNode {
 public:
     virtual bool isConst() = 0;
     static float evaluateConstExpr(Expression* expr);
+
+    int getBaseType() { return _baseType; }
+    void setBaseType(BaseType baseType) { _baseType = baseType; }
+
+protected:
+    BaseType _baseType;
 };
 
 class ConstVal : public Expression {
@@ -17,19 +23,16 @@ public:
     ConstVal() = default;
     virtual int getClassId() override { return ID_CONST_VAL; }
 
-    int getBaseType() { return _baseType; }
     virtual bool isConst() override { return true; }
     int getIntValue() { return _intValue; }
     float getFloatValue() { return _floatValue; }
 
-    void setBaseType(BaseType baseType) { _baseType = baseType; }
     void setIntValue(int value) { _intValue = value; }
     void setFloatValue(float value) { _floatValue = value; }
 
     ACCEPT
 
 private:
-    BaseType _baseType;
     int _intValue = 0;
     float _floatValue = 0;
 };

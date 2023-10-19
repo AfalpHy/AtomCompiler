@@ -45,7 +45,10 @@ antlrcpp::Any ASTBuilder::visitVarDecl(ATCParser::VarDeclContext *ctx) {
     for (auto varDef : ctx->varDef()) {
         auto var = varDef->accept(this).as<Variable *>();
         if (ctx->Const()) {
-            var->setIsConst();
+            var->setIsConst(true);
+        }
+        if (CurrentScope->getParent() == nullptr) {
+            var->setIsGlobal(true);
         }
         if (ctx->Int()) {
             dataType->setBaseType(INT);

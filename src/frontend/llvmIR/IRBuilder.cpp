@@ -28,16 +28,6 @@ IRBuilder::IRBuilder() {
 
 IRBuilder::~IRBuilder() { _module->print(llvm::outs(), nullptr); }
 
-void IRBuilder::visit(TreeNode *node) {}
-
-void IRBuilder::visit(CompUnit *node) {
-    for (auto element : node->getElements()) {
-        element->accept(this);
-    }
-}
-
-void IRBuilder::visit(Decl *node) {}
-
 void IRBuilder::visit(FunctionDef *node) {
     std::vector<llvm::Type *> params;
     for (auto param : node->getParams()) {
@@ -67,26 +57,70 @@ void IRBuilder::visit(FunctionDef *node) {
     _theIRBuilder->CreateBr(entryBB);
 
     _theIRBuilder->SetInsertPoint(entryBB);
+    node->getBlock()->accept(this);
     _theIRBuilder->CreateRet(_int32Zero);
 }
 
 void IRBuilder::visit(DataType *node) {}
 
-void IRBuilder::visit(Variable *node) {}
+void IRBuilder::visit(Variable *node) {
+    llvm::Type *type = node->getDataType()->getBaseType() == INT ? _int32Ty : _floatTy;
+    if (node->isGlobal()) {
+        // create global variable
+        _module->getOrInsertGlobal(node->getName(), type);
+        auto globalVar = _module->getNamedGlobal(node->getName());
 
-void IRBuilder::visit(ConstVal *node) {}
+        if (auto initValue = node->getInitValue()) {
+            assert(initValue->isConst());
+            auto value = Expression::evaluateConstExpr(initValue);
+            globalVar->setInitializer(llvm::ConstantInt::get(type, value));
+        }
+        node->setAddr(globalVar);
+    } else {
+        if (auto initValue = node->getInitValue()) {
+            if (initValue->isConst()) {
+                auto value = Expression::evaluateConstExpr(initValue);
+                _theIRBuilder->CreateStore(llvm::ConstantInt::get(type, value), node->getAddr());
+            } else {
+                initValue->accept(this);
+                _theIRBuilder->CreateStore(_value, node->getAddr());
+            }
+        }
+    }
+}
 
-void IRBuilder::visit(VarRef *node) {}
+void IRBuilder::visit(ConstVal *node) {
+    if (node->getBaseType() == INT) {
+        _value = llvm::ConstantInt::get(_int32Ty, node->getIntValue());
+    } else {
+        _value = llvm::ConstantFP::get(_floatTy, node->getFloatValue());
+    }
+}
+
+void IRBuilder::visit(VarRef *node) {
+    _value = _theIRBuilder->CreateLoad(_int32Ty, node->getVariable()->getAddr());
+}
 
 void IRBuilder::visit(ArrayExpression *node) {}
 
 void IRBuilder::visit(UnaryExpression *node) {}
 
-void IRBuilder::visit(BinaryExpression *node) {}
+void IRBuilder::visit(BinaryExpression *node) {
+    node->getLeft()->accept(this);
+    auto left = _value;
+    node->getRight()->accept(this);
+    auto right = _value;
+    switch (node->getOperator()) {
+        case PLUS:
+            _value = _theIRBuilder->CreateAdd(left, right);
+            break;
+
+        default:
+            break;
+    }
+}
 
 void IRBuilder::visit(FunctionCall *node) {}
-
-void IRBuilder::visit(Block *node) {}
 
 void IRBuilder::visit(AssignStatement *node) {}
 
@@ -123,10 +157,9 @@ llvm::Type *IRBuilder::convetToLLVMType(DataType *dataType) {
 }
 
 void IRBuilder::allocForScopeVars(Scope *currentScope) {
-    for (auto [first, var] : currentScope->getVarMap()) {
-        DataType *dataType = static_cast<Decl *>(var->getParent())->getDataType();
+    for (auto [name, var] : currentScope->getVarMap()) {
         auto addr =
-            _theIRBuilder->CreateAlloca(convetToLLVMType(dataType), nullptr, var->getName());
+            _theIRBuilder->CreateAlloca(convetToLLVMType(var->getDataType()), nullptr, name);
         var->setAddr(addr);
     }
     for (auto child : currentScope->getChildren()) {

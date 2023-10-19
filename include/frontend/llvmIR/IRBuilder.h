@@ -14,11 +14,11 @@ public:
     IRBuilder();
     ~IRBuilder();
 
-    virtual void visit(TreeNode *) override;
+    // virtual void visit(TreeNode *) override;
 
-    virtual void visit(CompUnit *) override;
+    // virtual void visit(CompUnit *) override;
 
-    virtual void visit(Decl *) override;
+    // virtual void visit(Decl *) override;
 
     virtual void visit(FunctionDef *) override;
 
@@ -38,7 +38,7 @@ public:
 
     virtual void visit(FunctionCall *) override;
 
-    virtual void visit(Block *) override;
+    // virtual void visit(Block *) override;
 
     virtual void visit(AssignStatement *) override;
 
@@ -69,6 +69,9 @@ private:
     llvm::Constant *_floatZero;
     llvm::Constant *_int32One;
     llvm::Constant *_floatOne;
+
+    // 保存遍历表达式节点后的求出的值
+    llvm::Value* _value;
 };
 }  // namespace ATC
 #endif
