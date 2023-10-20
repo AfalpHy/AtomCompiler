@@ -9,6 +9,8 @@ class Expression;
 class DataType : public TreeNode {
 public:
     DataType() = default;
+    DataType(TreeNode* parent) : TreeNode(parent) {}
+
     virtual int getClassId() { return ID_DATA_TYPE; }
 
     int getBaseType() { return _baseType; }

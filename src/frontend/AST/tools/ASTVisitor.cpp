@@ -38,11 +38,15 @@ void ASTVisitor::visit(FunctionDef* node) {
     node->getBlock()->accept(this);
 }
 
+void ASTVisitor::visit(DataType* node) {}
+
 void ASTVisitor::visit(Variable* node) {
     if (node->getInitValue()) {
         node->getInitValue()->accept(this);
     }
 }
+
+void ASTVisitor::visit(ConstVal* node) {}
 
 void ASTVisitor::visit(VarRef* node) {
     for (auto dimension : node->getDimensions()) {

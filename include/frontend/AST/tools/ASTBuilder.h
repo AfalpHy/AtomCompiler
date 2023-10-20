@@ -53,6 +53,7 @@ public:
 
 private:
     antlr4::CommonTokenStream *_token;
+    TreeNode *_lastNode = nullptr;
     // std::vector<TreeNode *> _astNodeStack;
     // std::vector<antlr4::ParserRuleContext *> _antlrNodeStack;
 };

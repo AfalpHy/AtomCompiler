@@ -34,11 +34,11 @@ public:
 
     virtual void visit(FunctionDef*);
 
-    virtual void visit(DataType*) = 0;
+    virtual void visit(DataType*);
 
     virtual void visit(Variable*);
 
-    virtual void visit(ConstVal*) = 0;
+    virtual void visit(ConstVal*);
 
     virtual void visit(VarRef*);
 

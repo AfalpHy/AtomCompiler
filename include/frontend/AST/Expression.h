@@ -8,6 +8,9 @@
 namespace ATC {
 class Expression : public TreeNode {
 public:
+    Expression() = default;
+    Expression(TreeNode* parent) : TreeNode(parent) {}
+
     virtual bool isConst() = 0;
     static float evaluateConstExpr(Expression* expr);
 
@@ -21,6 +24,8 @@ protected:
 class ConstVal : public Expression {
 public:
     ConstVal() = default;
+    ConstVal(TreeNode* parent) : Expression(parent) {}
+
     virtual int getClassId() override { return ID_CONST_VAL; }
 
     virtual bool isConst() override { return true; }
@@ -39,6 +44,9 @@ private:
 
 class VarRef : public Expression {
 public:
+    VarRef() = default;
+    VarRef(TreeNode* parent) : Expression(parent) {}
+
     virtual int getClassId() override { return ID_VAR_REF; }
     virtual bool isConst() { return _var->isConst(); }
 
@@ -58,6 +66,8 @@ private:
 class ArrayExpression : public Expression {
 public:
     ArrayExpression() = default;
+    ArrayExpression(TreeNode* parent) : Expression(parent) {}
+
     virtual int getClassId() override { return ID_ARRAY_EXPRESSION; }
 
     virtual bool isConst();
@@ -75,6 +85,7 @@ private:
 class UnaryExpression : public Expression {
 public:
     UnaryExpression() = default;
+    UnaryExpression(TreeNode* parent) : Expression(parent) {}
 
     virtual int getClassId() override { return ID_UNARY_EXPRESSION; }
     virtual bool isConst() { return _operand->isConst(); }
@@ -95,6 +106,7 @@ private:
 class BinaryExpression : public Expression {
 public:
     BinaryExpression() = default;
+    BinaryExpression(TreeNode* parent) : Expression(parent) {}
 
     virtual int getClassId() override { return ID_BINARY_EXPRESSION; }
     virtual bool isConst() { return _left->isConst() && _right->isConst(); }
@@ -118,6 +130,7 @@ private:
 class FunctionCall : public Expression {
 public:
     FunctionCall() = default;
+    FunctionCall(TreeNode* parent) : Expression(parent) {}
 
     virtual int getClassId() override { return ID_FUNCTION_CALL; }
     virtual bool isConst() override { return false; }

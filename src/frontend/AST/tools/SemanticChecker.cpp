@@ -23,11 +23,11 @@ namespace ATC {
 
 // void SemanticChecker::visit(FunctionDef* node) { ASTVisitor::visit(node); }
 
-void SemanticChecker::visit(DataType* node) {}
+// void SemanticChecker::visit(DataType* node) {}
 
 // void SemanticChecker::visit(Variable* node) { ASTVisitor::visit(node); }
 
-void SemanticChecker::visit(ConstVal* node) {}
+// void SemanticChecker::visit(ConstVal* node) {}
 
 void SemanticChecker::visit(VarRef* node) {
     if (node->getVariable() == nullptr) {

@@ -11,9 +11,10 @@ namespace ATC {
 
 class FunctionDef : public TreeNode {
 public:
-    FunctionDef(/* args */) = default;
+    FunctionDef() = default;
+    FunctionDef(TreeNode* parent) : TreeNode(parent) {}
+
     virtual int getClassId() override { return ID_FUNCTION_DEF; }
-    ~FunctionDef() = default;
 
     int getRetType() { return _retType; }
     const std::vector<Decl*>& getParams() { return _params; }

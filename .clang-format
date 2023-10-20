@@ -5,5 +5,5 @@ BasedOnStyle: Google
 Language: Cpp               
 UseTab: Never                 
 IndentWidth: 4
-ColumnLimit: 100
+ColumnLimit: 120
 AccessModifierOffset: -4

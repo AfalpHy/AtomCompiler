@@ -8,6 +8,7 @@ namespace ATC {
 class CompUnit : public TreeNode {
 public:
     CompUnit() = default;
+    CompUnit(TreeNode* parent) : TreeNode(parent) {}
 
     virtual int getClassId() override { return ID_COMP_UNIT; }
 

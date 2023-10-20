@@ -10,6 +10,8 @@ class Expression;
 class Variable : public TreeNode {
 public:
     Variable() = default;
+    Variable(TreeNode* parent) : TreeNode(parent) {}
+    
     virtual int getClassId() { return ID_VARIABLE; }
 
     Expression* getInitValue() { return _initValue; }

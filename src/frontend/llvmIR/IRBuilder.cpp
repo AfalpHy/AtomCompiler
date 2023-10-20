@@ -11,6 +11,15 @@
 #include "llvm/Support/raw_ostream.h"
 namespace ATC {
 
+bool isAndOrExpr(Expression *expr) {
+    if (expr->getClassId() != ID_BINARY_EXPRESSION) {
+        return false;
+    } else {
+        auto binaryExpr = (BinaryExpression *)expr;
+        return binaryExpr->getOperator() == AND || binaryExpr->getOperator() == OR;
+    }
+}
+
 IRBuilder::IRBuilder() {
     llvm::LLVMContext *ctx = new llvm::LLVMContext();
     _theIRBuilder = new llvm::IRBuilder<>(*ctx);
@@ -34,16 +43,15 @@ void IRBuilder::visit(FunctionDef *node) {
         DataType *dataType = param->getDataType();
         params.push_back(convetToLLVMType(dataType));
     }
-    llvm::FunctionType *funcTy =
-        llvm::FunctionType::get(convetToLLVMType(node->getRetType()), params, false);
-    llvm::Function *func = llvm::Function::Create(funcTy, llvm::GlobalValue::ExternalLinkage,
-                                                  node->getName(), _module);
+    llvm::FunctionType *funcTy = llvm::FunctionType::get(convetToLLVMType(node->getRetType()), params, false);
+    llvm::Function *func = llvm::Function::Create(funcTy, llvm::GlobalValue::ExternalLinkage, node->getName(), _module);
     node->setFunction(func);
+    _currentFunction = func;
 
     llvm::BasicBlock *allocBB = llvm::BasicBlock::Create(_module->getContext(), "init");
     llvm::BasicBlock *entryBB = llvm::BasicBlock::Create(_module->getContext(), "entry");
-    allocBB->insertInto(func);
-    entryBB->insertInto(func);
+    allocBB->insertInto(_currentFunction);
+    entryBB->insertInto(_currentFunction);
 
     _theIRBuilder->SetInsertPoint(allocBB);
     allocForScopeVars(node->getScope());
@@ -58,10 +66,8 @@ void IRBuilder::visit(FunctionDef *node) {
 
     _theIRBuilder->SetInsertPoint(entryBB);
     node->getBlock()->accept(this);
-    _theIRBuilder->CreateRet(_int32Zero);
+    // _theIRBuilder->CreateRet(_int32Zero);
 }
-
-void IRBuilder::visit(DataType *node) {}
 
 void IRBuilder::visit(Variable *node) {
     llvm::Type *type = node->getDataType()->getBaseType() == INT ? _int32Ty : _floatTy;
@@ -72,15 +78,19 @@ void IRBuilder::visit(Variable *node) {
 
         if (auto initValue = node->getInitValue()) {
             assert(initValue->isConst());
-            auto value = Expression::evaluateConstExpr(initValue);
-            globalVar->setInitializer(llvm::ConstantInt::get(type, value));
+            if (initValue->getClassId() != ID_ARRAY_EXPRESSION) {
+                auto value = Expression::evaluateConstExpr(initValue);
+                globalVar->setInitializer(llvm::ConstantInt::get(type, value));
+            }
         }
         node->setAddr(globalVar);
     } else {
         if (auto initValue = node->getInitValue()) {
             if (initValue->isConst()) {
-                auto value = Expression::evaluateConstExpr(initValue);
-                _theIRBuilder->CreateStore(llvm::ConstantInt::get(type, value), node->getAddr());
+                if (initValue->getClassId() != ID_ARRAY_EXPRESSION) {
+                    auto value = Expression::evaluateConstExpr(initValue);
+                    _theIRBuilder->CreateStore(llvm::ConstantInt::get(type, value), node->getAddr());
+                }
             } else {
                 initValue->accept(this);
                 _theIRBuilder->CreateStore(_value, node->getAddr());
@@ -97,15 +107,61 @@ void IRBuilder::visit(ConstVal *node) {
     }
 }
 
-void IRBuilder::visit(VarRef *node) {
-    _value = _theIRBuilder->CreateLoad(_int32Ty, node->getVariable()->getAddr());
-}
+void IRBuilder::visit(VarRef *node) { _value = _theIRBuilder->CreateLoad(_int32Ty, node->getVariable()->getAddr()); }
 
 void IRBuilder::visit(ArrayExpression *node) {}
 
-void IRBuilder::visit(UnaryExpression *node) {}
+void IRBuilder::visit(UnaryExpression *node) {
+    node->getOperand()->accept(this);
+    switch (node->getOperator()) {
+        case PLUS:
+            break;
+        case MINUS:
+            _value = _theIRBuilder->CreateSub(_int32Zero, _value);
+            break;
+        case NOT:
+            _value = _theIRBuilder->CreateNot(_value);
+            break;
+        default:
+            assert(false && "should not reach here");
+            break;
+    }
+}
 
 void IRBuilder::visit(BinaryExpression *node) {
+    if (node->getOperator() == AND || node->getOperator() == OR) {
+        llvm::BasicBlock *rhsCondBB = llvm::BasicBlock::Create(_module->getContext(), "rhsCondBB");
+        rhsCondBB->insertInto(_currentFunction);
+
+        // 当左表达式是一个独立的条件表达式时
+        if (!isAndOrExpr(node->getLeft())) {
+            node->getLeft()->accept(this);
+            if (node->getOperator() == AND) {
+                _theIRBuilder->CreateCondBr(_value, rhsCondBB, _falseBB);
+            } else {
+                _theIRBuilder->CreateCondBr(_value, _trueBB, rhsCondBB);
+            }
+        } else {
+            if (node->getOperator() == AND) {
+                auto tmpTrueBB = _trueBB;
+                _trueBB = rhsCondBB;
+                node->getLeft()->accept(this);
+                _trueBB = tmpTrueBB;
+            } else {
+                auto tmpFalseBB = _falseBB;
+                _falseBB = rhsCondBB;
+                node->getLeft()->accept(this);
+                _falseBB = tmpFalseBB;
+            }
+        }
+
+        _theIRBuilder->SetInsertPoint(rhsCondBB);
+        node->getRight()->accept(this);
+        if (!isAndOrExpr(node->getRight())) {
+            _theIRBuilder->CreateCondBr(_value, _trueBB, _falseBB);
+        }
+        return;
+    }
     node->getLeft()->accept(this);
     auto left = _value;
     node->getRight()->accept(this);
@@ -114,25 +170,121 @@ void IRBuilder::visit(BinaryExpression *node) {
         case PLUS:
             _value = _theIRBuilder->CreateAdd(left, right);
             break;
-
+        case MINUS:
+            _value = _theIRBuilder->CreateSub(left, right);
+            break;
+        case MUL:
+            _value = _theIRBuilder->CreateMul(left, right);
+            break;
+        case DIV:
+            _value = _theIRBuilder->CreateSDiv(left, right);
+            break;
+        case MOD:
+            _value = _theIRBuilder->CreateSRem(left, right);
+            break;
+        case LT:
+            _value = _theIRBuilder->CreateICmpSLT(left, right);
+            break;
+        case GT:
+            _value = _theIRBuilder->CreateICmpSGT(left, right);
+            break;
+        case LE:
+            _value = _theIRBuilder->CreateICmpSLE(left, right);
+            break;
+        case GE:
+            _value = _theIRBuilder->CreateICmpSGE(left, right);
+            break;
+        case EQ:
+            _value = _theIRBuilder->CreateICmpEQ(left, right);
+            break;
+        case NE:
+            _value = _theIRBuilder->CreateICmpNE(left, right);
+            break;
         default:
+            assert(false && "should not reach here");
             break;
     }
 }
 
-void IRBuilder::visit(FunctionCall *node) {}
+void IRBuilder::visit(FunctionCall *node) {
+    std::vector<llvm::Value *> params;
+    for (auto rParam : node->getParams()) {
+        rParam->accept(this);
+        params.push_back(_value);
+    }
+    _value = _theIRBuilder->CreateCall(node->getFunctionDef()->getFunction(), params);
+}
 
-void IRBuilder::visit(AssignStatement *node) {}
+void IRBuilder::visit(AssignStatement *node) {
+    node->getValue()->accept(this);
+    _theIRBuilder->CreateStore(_value, node->getVar()->getVariable()->getAddr());
+}
 
-void IRBuilder::visit(IfStatement *node) {}
+void IRBuilder::visit(IfStatement *node) {
+    llvm::BasicBlock *ifBB = llvm::BasicBlock::Create(_module->getContext(), "ifBB");
+    llvm::BasicBlock *afterIfBB = llvm::BasicBlock::Create(_module->getContext(), "afterIfBB");
+    ifBB->insertInto(_currentFunction);
+    afterIfBB->insertInto(_currentFunction);
 
-void IRBuilder::visit(ElseStatement *node) {}
+    _trueBB = ifBB;
+    if (node->getElseStmt()) {
+        llvm::BasicBlock *elseBB = llvm::BasicBlock::Create(_module->getContext(), "elseBB");
+        elseBB->insertInto(_currentFunction);
+        _falseBB = elseBB;
+        node->getCond()->accept(this);
+        if (!isAndOrExpr(node->getCond())) {
+            _theIRBuilder->CreateCondBr(_value, _trueBB, _falseBB);
+        }
+        _theIRBuilder->SetInsertPoint(elseBB);
+        node->getElseStmt()->accept(this);
+        _theIRBuilder->CreateBr(afterIfBB);
+    } else {
+        _falseBB = afterIfBB;
+        node->getCond()->accept(this);
+        if (!isAndOrExpr(node->getCond())) {
+            _theIRBuilder->CreateCondBr(_value, _trueBB, _falseBB);
+        }
+    }
 
-void IRBuilder::visit(WhileStatement *node) {}
+    _theIRBuilder->SetInsertPoint(ifBB);
+    node->getStmt()->accept(this);
+    _theIRBuilder->CreateBr(afterIfBB);
 
-void IRBuilder::visit(ReturnStatement *node) {}
+    _theIRBuilder->SetInsertPoint(afterIfBB);
+}
 
-void IRBuilder::visit(OtherStatement *node) {}
+void IRBuilder::visit(WhileStatement *node) {
+    llvm::BasicBlock *condBB = llvm::BasicBlock::Create(_module->getContext(), "condBB");
+    llvm::BasicBlock *whileBB = llvm::BasicBlock::Create(_module->getContext(), "whileBB");
+    llvm::BasicBlock *afterWhileBB = llvm::BasicBlock::Create(_module->getContext(), "afterWhileBB");
+    condBB->insertInto(_currentFunction);
+    whileBB->insertInto(_currentFunction);
+    afterWhileBB->insertInto(_currentFunction);
+
+    _theIRBuilder->CreateBr(condBB);
+    _theIRBuilder->SetInsertPoint(condBB);
+    _trueBB = whileBB;
+    _falseBB = afterWhileBB;
+    node->getCond()->accept(this);
+    if (!isAndOrExpr(node->getCond())) {
+        _theIRBuilder->CreateCondBr(_value, _trueBB, _falseBB);
+    }
+
+    _theIRBuilder->SetInsertPoint(whileBB);
+    node->getStmt()->accept(this);
+    _theIRBuilder->CreateBr(condBB);
+
+    _theIRBuilder->SetInsertPoint(afterWhileBB);
+}
+
+void IRBuilder::visit(ReturnStatement *node) {
+    if (node->getExpr()) {
+        node->getExpr()->accept(this);
+        _theIRBuilder->CreateRet(_value);
+    } else {
+        _theIRBuilder->CreateRetVoid();
+    }
+}
 
 llvm::Type *IRBuilder::convetToLLVMType(int type) {
     switch (type) {
@@ -158,12 +310,12 @@ llvm::Type *IRBuilder::convetToLLVMType(DataType *dataType) {
 
 void IRBuilder::allocForScopeVars(Scope *currentScope) {
     for (auto [name, var] : currentScope->getVarMap()) {
-        auto addr =
-            _theIRBuilder->CreateAlloca(convetToLLVMType(var->getDataType()), nullptr, name);
+        auto addr = _theIRBuilder->CreateAlloca(convetToLLVMType(var->getDataType()), nullptr, name);
         var->setAddr(addr);
     }
     for (auto child : currentScope->getChildren()) {
         allocForScopeVars(child);
     }
 }
+
 }  // namespace ATC

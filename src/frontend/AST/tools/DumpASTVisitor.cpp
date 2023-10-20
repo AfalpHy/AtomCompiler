@@ -61,12 +61,12 @@ unordered_map<int, string> OperatorName = {
     {MUL,   "Mul"},
     {DIV,   "Div"},
     {MOD,   "Mod"},
-    {LT,    "Lt"},
-    {GT,    "Gt"},
-    {LE,    "Le"},
-    {GE,    "Ge"},
-    {EQ,    "Eq"},
-    {NE,    "Ne"},
+    {LT,    "LT"},
+    {GT,    "GT"},
+    {LE,    "LE"},
+    {GE,    "GE"},
+    {EQ,    "EQ"},
+    {NE,    "NE"},
     {AND,   "And"},
     {OR,    "Or"}
     // clang-format on

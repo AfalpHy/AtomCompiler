@@ -25,7 +25,8 @@ typedef struct {
 class TreeNode {
 public:
     TreeNode() = default;
-
+    TreeNode(TreeNode* parent) : _parent(parent) {}
+    
     virtual int getClassId() = 0;
 
     TreeNode* getParent() { return _parent; }
@@ -40,7 +41,7 @@ public:
 
     ACCEPT
 
-private:
+protected:
     TreeNode* _parent = nullptr;
     std::string _name;
     Position _position;

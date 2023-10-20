@@ -22,7 +22,7 @@ public:
 
     virtual void visit(FunctionDef *) override;
 
-    virtual void visit(DataType *) override;
+    // virtual void visit(DataType *) override;
 
     virtual void visit(Variable *) override;
 
@@ -44,13 +44,13 @@ public:
 
     virtual void visit(IfStatement *) override;
 
-    virtual void visit(ElseStatement *) override;
+    // virtual void visit(ElseStatement *) override;
 
     virtual void visit(WhileStatement *) override;
 
     virtual void visit(ReturnStatement *) override;
 
-    virtual void visit(OtherStatement *) override;
+    // virtual void visit(OtherStatement *) override;
 
 private:
     llvm::Type *convetToLLVMType(int type);
@@ -71,7 +71,10 @@ private:
     llvm::Constant *_floatOne;
 
     // 保存遍历表达式节点后的求出的值
-    llvm::Value* _value;
+    llvm::Value *_value;
+    llvm::BasicBlock *_trueBB;
+    llvm::BasicBlock *_falseBB;
+    llvm::Function *_currentFunction;
 };
 }  // namespace ATC
 #endif

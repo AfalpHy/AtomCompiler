@@ -16,11 +16,11 @@ public:
 
     // virtual void visit(FunctionDef*) override;
 
-    virtual void visit(DataType*) override;
+    // virtual void visit(DataType*) override;
 
     // virtual void visit(Variable*) override;
 
-    virtual void visit(ConstVal*) override;
+    // virtual void visit(ConstVal*) override;
 
     virtual void visit(VarRef*) override;
 

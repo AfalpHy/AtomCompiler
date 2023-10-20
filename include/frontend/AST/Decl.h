@@ -8,8 +8,9 @@
 namespace ATC {
 class Decl : public TreeNode {
 public:
-    Decl(/* args */) = default;
-    ~Decl() = default;
+    Decl() = default;
+    Decl(TreeNode* parent) : TreeNode(parent) {}
+
     virtual int getClassId() { return ID_DECL; }
 
     DataType* getDataType() { return _dataType; }
