@@ -57,7 +57,7 @@ void IRBuilder::visit(FunctionDef *node) {
     allocForScopeVars(node->getScope());
     int i = 0;
     for (auto param : node->getParams()) {
-        // 形参中的每个声明只能有一个定义
+        // the decl of formal param is the only one
         Variable *var = param->getVariables()[0];
         auto arg = func->getArg(i++);
         _theIRBuilder->CreateStore(arg, var->getAddr());
@@ -66,7 +66,13 @@ void IRBuilder::visit(FunctionDef *node) {
 
     _theIRBuilder->SetInsertPoint(entryBB);
     node->getBlock()->accept(this);
-    // _theIRBuilder->CreateRet(_int32Zero);
+
+    // if the function didn't execute return before, than return the default value
+    if (node->getRetType() == INT) {
+        _theIRBuilder->CreateRet(_int32Zero);
+    } else {
+        _theIRBuilder->CreateRet(_floatZero);
+    }
 }
 
 void IRBuilder::visit(Variable *node) {
@@ -81,6 +87,8 @@ void IRBuilder::visit(Variable *node) {
             if (initValue->getClassId() != ID_ARRAY_EXPRESSION) {
                 auto value = Expression::evaluateConstExpr(initValue);
                 globalVar->setInitializer(llvm::ConstantInt::get(type, value));
+            } else {
+                std::vector<llvm::Value *> initVec;
             }
         }
         node->setAddr(globalVar);
@@ -129,11 +137,11 @@ void IRBuilder::visit(UnaryExpression *node) {
 }
 
 void IRBuilder::visit(BinaryExpression *node) {
-    if (node->getOperator() == AND || node->getOperator() == OR) {
+    if (node->isCond() && (node->getOperator() == AND || node->getOperator() == OR)) {
         llvm::BasicBlock *rhsCondBB = llvm::BasicBlock::Create(_module->getContext(), "rhsCondBB");
         rhsCondBB->insertInto(_currentFunction);
 
-        // 当左表达式是一个独立的条件表达式时
+        // if lhs is a single cond expression
         if (!isAndOrExpr(node->getLeft())) {
             node->getLeft()->accept(this);
             if (node->getOperator() == AND) {
@@ -162,6 +170,12 @@ void IRBuilder::visit(BinaryExpression *node) {
         }
         return;
     }
+    if (node->isConst()) {
+        auto value = Expression::evaluateConstExpr(node);
+        _value = llvm::ConstantInt::get(_int32Ty, value);
+        return;
+    }
+
     node->getLeft()->accept(this);
     auto left = _value;
     node->getRight()->accept(this);
@@ -200,6 +214,11 @@ void IRBuilder::visit(BinaryExpression *node) {
         case NE:
             _value = _theIRBuilder->CreateICmpNE(left, right);
             break;
+        case AND:
+            _value = _theIRBuilder->CreateAnd(left, right);
+            break;
+        case OR:
+            _value = _theIRBuilder->CreateOr(left, right);
         default:
             assert(false && "should not reach here");
             break;

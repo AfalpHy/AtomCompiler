@@ -15,10 +15,14 @@ public:
     static float evaluateConstExpr(Expression* expr);
 
     int getBaseType() { return _baseType; }
+    bool isCond() { return _isCond; }
+
     void setBaseType(BaseType baseType) { _baseType = baseType; }
+    void setIsCond(bool b) { _isCond = b; }
 
 protected:
     BaseType _baseType;
+    bool _isCond = false;
 };
 
 class ConstVal : public Expression {
