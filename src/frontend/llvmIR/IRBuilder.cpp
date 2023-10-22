@@ -76,33 +76,22 @@ void IRBuilder::visit(FunctionDef *node) {
 }
 
 void IRBuilder::visit(Variable *node) {
-    llvm::Type *type = node->getDataType()->getBaseType() == INT ? _int32Ty : _floatTy;
     if (node->isGlobal()) {
         // create global variable
+        llvm::Type *type = node->getDataType()->getBaseType() == INT ? _int32Ty : _floatTy;
         _module->getOrInsertGlobal(node->getName(), type);
         auto globalVar = _module->getNamedGlobal(node->getName());
 
         if (auto initValue = node->getInitValue()) {
             assert(initValue->isConst());
-            if (initValue->getClassId() != ID_ARRAY_EXPRESSION) {
-                auto value = Expression::evaluateConstExpr(initValue);
-                globalVar->setInitializer(llvm::ConstantInt::get(type, value));
-            } else {
-                std::vector<llvm::Value *> initVec;
-            }
+            initValue->accept(this);
+            globalVar->setInitializer((llvm::Constant *)_value);
         }
         node->setAddr(globalVar);
     } else {
         if (auto initValue = node->getInitValue()) {
-            if (initValue->isConst()) {
-                if (initValue->getClassId() != ID_ARRAY_EXPRESSION) {
-                    auto value = Expression::evaluateConstExpr(initValue);
-                    _theIRBuilder->CreateStore(llvm::ConstantInt::get(type, value), node->getAddr());
-                }
-            } else {
-                initValue->accept(this);
-                _theIRBuilder->CreateStore(_value, node->getAddr());
-            }
+            initValue->accept(this);
+            _theIRBuilder->CreateStore(_value, node->getAddr());
         }
     }
 }
@@ -117,7 +106,21 @@ void IRBuilder::visit(ConstVal *node) {
 
 void IRBuilder::visit(VarRef *node) { _value = _theIRBuilder->CreateLoad(_int32Ty, node->getVariable()->getAddr()); }
 
-void IRBuilder::visit(ArrayExpression *node) {}
+void IRBuilder::visit(ArrayExpression *node) {
+    if (node->isConst()) {
+        // std::vector<llvm::Constant *> array;
+        // array.push_back(_int32One);
+        // array.push_back(_int32One);
+        // llvm::ArrayRef<llvm::Constant *> arrayRef = array;
+        // auto arrayType = llvm::ArrayType::get(_int32Ty, 0);
+        // auto arrayType1 = llvm::ArrayType::get(arrayType, 0);
+        // auto tmp1 = llvm::ConstantArray::get(arrayType, array);
+        // std::vector<llvm::Constant *> array1;
+        // array1.push_back(tmp1);
+        // array1.push_back(tmp1);
+        // _value = llvm::ConstantArray::get(arrayType, array1);
+    }
+}
 
 void IRBuilder::visit(UnaryExpression *node) {
     node->getOperand()->accept(this);
@@ -137,7 +140,7 @@ void IRBuilder::visit(UnaryExpression *node) {
 }
 
 void IRBuilder::visit(BinaryExpression *node) {
-    if (node->isCond() && (node->getOperator() == AND || node->getOperator() == OR)) {
+    if (node->getOperator() == AND || node->getOperator() == OR) {
         llvm::BasicBlock *rhsCondBB = llvm::BasicBlock::Create(_module->getContext(), "rhsCondBB");
         rhsCondBB->insertInto(_currentFunction);
 
@@ -219,6 +222,7 @@ void IRBuilder::visit(BinaryExpression *node) {
             break;
         case OR:
             _value = _theIRBuilder->CreateOr(left, right);
+            break;
         default:
             assert(false && "should not reach here");
             break;
