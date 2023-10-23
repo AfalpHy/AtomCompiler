@@ -99,12 +99,27 @@ void IRBuilder::visit(Variable *node) {
 void IRBuilder::visit(ConstVal *node) {
     if (node->getBaseType() == INT) {
         _value = llvm::ConstantInt::get(_int32Ty, node->getIntValue());
+        // if the node is cond expression, than convert to i1
+        if (node->isCond()) {
+            _value = _theIRBuilder->CreateICmpEQ(_value, _int32Zero);
+        }
     } else {
         _value = llvm::ConstantFP::get(_floatTy, node->getFloatValue());
+        // if the node is cond expression, than convert to i1
+        if (node->isCond()) {
+            _value = _theIRBuilder->CreateFCmpOEQ(_value, _floatZero);
+        }
     }
 }
 
-void IRBuilder::visit(VarRef *node) { _value = _theIRBuilder->CreateLoad(_int32Ty, node->getVariable()->getAddr()); }
+void IRBuilder::visit(VarRef *node) {
+    _value = _theIRBuilder->CreateLoad(_int32Ty, node->getVariable()->getAddr());
+
+    // if the node is cond expression, than convert to i1
+    if (node->isCond() && _value->getType() != _theIRBuilder->getInt1Ty()) {
+        _value = _theIRBuilder->CreateICmpEQ(_value, _int32Zero);
+    }
+}
 
 void IRBuilder::visit(ArrayExpression *node) {
     if (node->isConst()) {
@@ -131,16 +146,21 @@ void IRBuilder::visit(UnaryExpression *node) {
             _value = _theIRBuilder->CreateSub(_int32Zero, _value);
             break;
         case NOT:
-            _value = _theIRBuilder->CreateNot(_value);
+            _value = _theIRBuilder->CreateXor(_value, -1);
             break;
         default:
             assert(false && "should not reach here");
             break;
     }
+
+    // if the node is cond expression, than convert to i1
+    if (node->isCond() && _value->getType() != _theIRBuilder->getInt1Ty()) {
+        _value = _theIRBuilder->CreateICmpEQ(_value, _int32Zero);
+    }
 }
 
 void IRBuilder::visit(BinaryExpression *node) {
-    if (node->getOperator() == AND || node->getOperator() == OR) {
+    if (node->isCond() && (node->getOperator() == AND || node->getOperator() == OR)) {
         llvm::BasicBlock *rhsCondBB = llvm::BasicBlock::Create(_module->getContext(), "rhsCondBB");
         rhsCondBB->insertInto(_currentFunction);
 
@@ -176,56 +196,60 @@ void IRBuilder::visit(BinaryExpression *node) {
     if (node->isConst()) {
         auto value = Expression::evaluateConstExpr(node);
         _value = llvm::ConstantInt::get(_int32Ty, value);
-        return;
+    } else {
+        node->getLeft()->accept(this);
+        auto left = _value;
+        node->getRight()->accept(this);
+        auto right = _value;
+        switch (node->getOperator()) {
+            case PLUS:
+                _value = _theIRBuilder->CreateAdd(left, right);
+                break;
+            case MINUS:
+                _value = _theIRBuilder->CreateSub(left, right);
+                break;
+            case MUL:
+                _value = _theIRBuilder->CreateMul(left, right);
+                break;
+            case DIV:
+                _value = _theIRBuilder->CreateSDiv(left, right);
+                break;
+            case MOD:
+                _value = _theIRBuilder->CreateSRem(left, right);
+                break;
+            case LT:
+                _value = _theIRBuilder->CreateICmpSLT(left, right);
+                break;
+            case GT:
+                _value = _theIRBuilder->CreateICmpSGT(left, right);
+                break;
+            case LE:
+                _value = _theIRBuilder->CreateICmpSLE(left, right);
+                break;
+            case GE:
+                _value = _theIRBuilder->CreateICmpSGE(left, right);
+                break;
+            case EQ:
+                _value = _theIRBuilder->CreateICmpEQ(left, right);
+                break;
+            case NE:
+                _value = _theIRBuilder->CreateICmpNE(left, right);
+                break;
+            case AND:
+                _value = _theIRBuilder->CreateAnd(left, right);
+                break;
+            case OR:
+                _value = _theIRBuilder->CreateOr(left, right);
+                break;
+            default:
+                assert(false && "should not reach here");
+                break;
+        }
     }
 
-    node->getLeft()->accept(this);
-    auto left = _value;
-    node->getRight()->accept(this);
-    auto right = _value;
-    switch (node->getOperator()) {
-        case PLUS:
-            _value = _theIRBuilder->CreateAdd(left, right);
-            break;
-        case MINUS:
-            _value = _theIRBuilder->CreateSub(left, right);
-            break;
-        case MUL:
-            _value = _theIRBuilder->CreateMul(left, right);
-            break;
-        case DIV:
-            _value = _theIRBuilder->CreateSDiv(left, right);
-            break;
-        case MOD:
-            _value = _theIRBuilder->CreateSRem(left, right);
-            break;
-        case LT:
-            _value = _theIRBuilder->CreateICmpSLT(left, right);
-            break;
-        case GT:
-            _value = _theIRBuilder->CreateICmpSGT(left, right);
-            break;
-        case LE:
-            _value = _theIRBuilder->CreateICmpSLE(left, right);
-            break;
-        case GE:
-            _value = _theIRBuilder->CreateICmpSGE(left, right);
-            break;
-        case EQ:
-            _value = _theIRBuilder->CreateICmpEQ(left, right);
-            break;
-        case NE:
-            _value = _theIRBuilder->CreateICmpNE(left, right);
-            break;
-        case AND:
-            _value = _theIRBuilder->CreateAnd(left, right);
-            break;
-        case OR:
-            _value = _theIRBuilder->CreateOr(left, right);
-            break;
-        default:
-            assert(false && "should not reach here");
-            break;
+    // if the node is cond expression, than convert to i1
+    if (node->isCond() && _value->getType() != _theIRBuilder->getInt1Ty()) {
+        _value = _theIRBuilder->CreateICmpEQ(_value, _int32Zero);
     }
 }
 
@@ -236,6 +260,11 @@ void IRBuilder::visit(FunctionCall *node) {
         params.push_back(_value);
     }
     _value = _theIRBuilder->CreateCall(node->getFunctionDef()->getFunction(), params);
+
+    // if the node is cond expression, than convert to i1
+    if (node->isCond() && _value->getType() != _theIRBuilder->getInt1Ty()) {
+        _value = _theIRBuilder->CreateICmpEQ(_value, _int32Zero);
+    }
 }
 
 void IRBuilder::visit(AssignStatement *node) {

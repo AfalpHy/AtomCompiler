@@ -64,6 +64,17 @@ float Expression::evaluateConstExpr(Expression* expr) {
     }
 }
 
+void Expression::setCond(Expression* expr) {
+    expr->setIsCond(true);
+    if (expr->getClassId() == ID_BINARY_EXPRESSION) {
+        auto binaryExpr = (BinaryExpression*)expr;
+        if (binaryExpr->getOperator() == AND || binaryExpr->getOperator() == OR) {
+            setCond(binaryExpr->getLeft());
+            setCond(binaryExpr->getRight());
+        }
+    }
+}
+
 bool ArrayExpression::isConst() {
     for (auto expr : _elements) {
         if (!expr->isConst()) {

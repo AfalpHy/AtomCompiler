@@ -20,6 +20,8 @@ public:
     void setBaseType(BaseType baseType) { _baseType = baseType; }
     void setIsCond(bool b) { _isCond = b; }
 
+    static void setCond(Expression* expr);
+
 protected:
     BaseType _baseType;
     bool _isCond = false;

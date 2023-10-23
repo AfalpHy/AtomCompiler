@@ -226,7 +226,9 @@ antlrcpp::Any ASTBuilder::visitStmt(ATCParser::StmtContext *ctx) {
         stmt->setPosition(ctx->getStart(), ctx->getStop());
 
         _lastNode = stmt;
-        stmt->setCond(ctx->cond()->accept(this).as<Expression *>());
+        auto cond = ctx->cond()->accept(this).as<Expression *>();
+        Expression::setCond(cond);
+        stmt->setCond(cond);
         stmt->setStmt(ctx->stmt(0)->accept(this).as<Statement *>());
         if (ctx->Else()) {
             auto elseStmt = new ElseStatement();
@@ -241,7 +243,9 @@ antlrcpp::Any ASTBuilder::visitStmt(ATCParser::StmtContext *ctx) {
         stmt->setPosition(ctx->getStart(), ctx->getStop());
 
         _lastNode = stmt;
-        stmt->setCond(ctx->cond()->accept(this).as<Expression *>());
+        auto cond = ctx->cond()->accept(this).as<Expression *>();
+        Expression::setCond(cond);
+        stmt->setCond(cond);
         stmt->setStmt(ctx->stmt(0)->accept(this).as<Statement *>());
         _lastNode = stmt->getParent();
 
