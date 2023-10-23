@@ -8,7 +8,8 @@
 #include "AST/Statement.h"
 #include "AST/Variable.h"
 #include "llvm/ADT/StringMap.h"
-#include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/Host.h"
+
 namespace ATC {
 
 bool isAndOrExpr(Expression *expr) {
@@ -33,6 +34,8 @@ IRBuilder::IRBuilder() {
     _floatZero = llvm::ConstantFP::get(_floatTy, 0);
     _int32One = llvm::ConstantInt::get(_int32Ty, 1, true);
     _floatOne = llvm::ConstantFP::get(_floatTy, 1);
+
+    _module->setTargetTriple(llvm::sys::getProcessTriple());
 }
 
 IRBuilder::~IRBuilder() { _module->print(llvm::outs(), nullptr); }
