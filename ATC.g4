@@ -30,7 +30,7 @@ stmt:
 	| Continue ';'
 	| Return expr? ';';
 
-expr: addExpr;
+expr: lOrExpr;
 
 cond: lOrExpr;
 

@@ -1,7 +1,9 @@
 #include "AST/Expression.h"
 
+#include "AST/FunctionDef.h"
+
 namespace ATC {
-float Expression::evaluateConstExpr(Expression* expr) {
+float ExpressionHandle::evaluateConstExpr(Expression* expr) {
     assert(expr->isConst());
     switch (expr->getClassId()) {
         case ID_CONST_VAL: {
@@ -64,13 +66,13 @@ float Expression::evaluateConstExpr(Expression* expr) {
     }
 }
 
-void Expression::setCond(Expression* expr) {
-    expr->setIsCond(true);
+void ExpressionHandle::setShortCircuit(Expression* expr) {
     if (expr->getClassId() == ID_BINARY_EXPRESSION) {
         auto binaryExpr = (BinaryExpression*)expr;
         if (binaryExpr->getOperator() == AND || binaryExpr->getOperator() == OR) {
-            setCond(binaryExpr->getLeft());
-            setCond(binaryExpr->getRight());
+            binaryExpr->setIsShortCircuit();
+            setShortCircuit(binaryExpr->getLeft());
+            setShortCircuit(binaryExpr->getRight());
         }
     }
 }

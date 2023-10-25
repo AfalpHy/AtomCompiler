@@ -117,7 +117,7 @@ void DumpASTVisitor::visit(DataType* node) {
     } else {
         cout << "<" << BaseTypeName[node->getBaseType()];
         for (auto dimension : node->getDimensions()) {
-            cout << "[" << Expression::evaluateConstExpr(dimension) << "]";
+            cout << "[" << ExpressionHandle::evaluateConstExpr(dimension) << "]";
         }
         cout << ">" << endl;
     }

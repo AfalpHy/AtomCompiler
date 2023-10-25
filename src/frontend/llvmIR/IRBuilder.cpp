@@ -12,26 +12,20 @@
 
 namespace ATC {
 
-bool isAndOrExpr(Expression *expr) {
-    if (expr->getClassId() != ID_BINARY_EXPRESSION) {
-        return false;
-    } else {
-        auto binaryExpr = (BinaryExpression *)expr;
-        return binaryExpr->getOperator() == AND || binaryExpr->getOperator() == OR;
-    }
-}
-
 IRBuilder::IRBuilder() {
     llvm::LLVMContext *ctx = new llvm::LLVMContext();
     _theIRBuilder = new llvm::IRBuilder<>(*ctx);
     _module = new llvm::Module("module", *ctx);
     _voidTy = llvm::Type::getVoidTy(*ctx);
+    _int1Ty = llvm::Type::getInt1Ty(*ctx);
     _int32Ty = llvm::Type::getInt32Ty(*ctx);
     _floatTy = llvm::Type::getFloatTy(*ctx);
     _int32PtrTy = llvm::Type::getInt32PtrTy(*ctx);
     _floatPtrTy = llvm::Type::getFloatPtrTy(*ctx);
+    _int1Zero == llvm::ConstantInt::get(_int1Ty, 0);
     _int32Zero = llvm::ConstantInt::get(_int32Ty, 0, true);
     _floatZero = llvm::ConstantFP::get(_floatTy, 0);
+    _int1One == llvm::ConstantInt::get(_int1Ty, 1);
     _int32One = llvm::ConstantInt::get(_int32Ty, 1, true);
     _floatOne = llvm::ConstantFP::get(_floatTy, 1);
 
@@ -44,9 +38,9 @@ void IRBuilder::visit(FunctionDef *node) {
     std::vector<llvm::Type *> params;
     for (auto param : node->getParams()) {
         DataType *dataType = param->getDataType();
-        params.push_back(convetToLLVMType(dataType));
+        params.push_back(convertToLLVMType(dataType));
     }
-    llvm::FunctionType *funcTy = llvm::FunctionType::get(convetToLLVMType(node->getRetType()), params, false);
+    llvm::FunctionType *funcTy = llvm::FunctionType::get(convertToLLVMType(node->getRetType()), params, false);
     llvm::Function *func = llvm::Function::Create(funcTy, llvm::GlobalValue::ExternalLinkage, node->getName(), _module);
     node->setFunction(func);
     _currentFunction = func;
@@ -94,6 +88,7 @@ void IRBuilder::visit(Variable *node) {
     } else {
         if (auto initValue = node->getInitValue()) {
             initValue->accept(this);
+            _value = convertToDestTy(_value, node->getAddr()->getType()->getPointerElementType());
             _theIRBuilder->CreateStore(_value, node->getAddr());
         }
     }
@@ -102,25 +97,16 @@ void IRBuilder::visit(Variable *node) {
 void IRBuilder::visit(ConstVal *node) {
     if (node->getBaseType() == INT) {
         _value = llvm::ConstantInt::get(_int32Ty, node->getIntValue());
-        // if the node is cond expression, than convert to i1
-        if (node->isCond()) {
-            _value = _theIRBuilder->CreateICmpEQ(_value, _int32Zero);
-        }
     } else {
         _value = llvm::ConstantFP::get(_floatTy, node->getFloatValue());
-        // if the node is cond expression, than convert to i1
-        if (node->isCond()) {
-            _value = _theIRBuilder->CreateFCmpOEQ(_value, _floatZero);
-        }
     }
 }
 
 void IRBuilder::visit(VarRef *node) {
-    _value = _theIRBuilder->CreateLoad(_int32Ty, node->getVariable()->getAddr());
-
-    // if the node is cond expression, than convert to i1
-    if (node->isCond() && _value->getType() != _theIRBuilder->getInt1Ty()) {
-        _value = _theIRBuilder->CreateICmpEQ(_value, _int32Zero);
+    if (node->getVariable()->getDataType()->getBaseType() == INT) {
+        _value = _theIRBuilder->CreateLoad(_int32Ty, node->getVariable()->getAddr());
+    } else {
+        _value = _theIRBuilder->CreateLoad(_floatTy, node->getVariable()->getAddr());
     }
 }
 
@@ -142,68 +128,99 @@ void IRBuilder::visit(ArrayExpression *node) {
 
 void IRBuilder::visit(UnaryExpression *node) {
     node->getOperand()->accept(this);
-    switch (node->getOperator()) {
-        case PLUS:
-            break;
-        case MINUS:
+    if (node->getOperator() == MINUS) {
+        if (_value->getType() == _floatTy) {
+            _value = _theIRBuilder->CreateFSub(_floatZero, _value);
+        } else if (_value->getType() == _int32Ty) {
             _value = _theIRBuilder->CreateSub(_int32Zero, _value);
-            break;
-        case NOT:
-            _value = _theIRBuilder->CreateXor(_value, -1);
-            break;
-        default:
-            assert(false && "should not reach here");
-            break;
-    }
-
-    // if the node is cond expression, than convert to i1
-    if (node->isCond() && _value->getType() != _theIRBuilder->getInt1Ty()) {
-        _value = _theIRBuilder->CreateICmpEQ(_value, _int32Zero);
+        }
+    } else if (node->getOperator() == NOT) {
+        _value = _theIRBuilder->CreateNot(convertToDestTy(_value, _int1Ty));
     }
 }
 
 void IRBuilder::visit(BinaryExpression *node) {
-    if (node->isCond() && (node->getOperator() == AND || node->getOperator() == OR)) {
+    if (node->isShortCircuit()) {
         llvm::BasicBlock *rhsCondBB = llvm::BasicBlock::Create(_module->getContext(), "rhsCondBB");
         rhsCondBB->insertInto(_currentFunction);
 
-        // if lhs is a single cond expression
-        if (!isAndOrExpr(node->getLeft())) {
+        if (node->getOperator() == AND) {
+            auto tmpTrueBB = _trueBB;
+            _trueBB = rhsCondBB;
             node->getLeft()->accept(this);
-            if (node->getOperator() == AND) {
-                _theIRBuilder->CreateCondBr(_value, rhsCondBB, _falseBB);
-            } else {
-                _theIRBuilder->CreateCondBr(_value, _trueBB, rhsCondBB);
-            }
+            _theIRBuilder->CreateCondBr(convertToDestTy(_value, _int1Ty), rhsCondBB, _falseBB);
+            _trueBB = tmpTrueBB;
         } else {
-            if (node->getOperator() == AND) {
-                auto tmpTrueBB = _trueBB;
-                _trueBB = rhsCondBB;
-                node->getLeft()->accept(this);
-                _trueBB = tmpTrueBB;
-            } else {
-                auto tmpFalseBB = _falseBB;
-                _falseBB = rhsCondBB;
-                node->getLeft()->accept(this);
-                _falseBB = tmpFalseBB;
-            }
+            auto tmpFalseBB = _falseBB;
+            _falseBB = rhsCondBB;
+            node->getLeft()->accept(this);
+            _theIRBuilder->CreateCondBr(convertToDestTy(_value, _int1Ty), _trueBB, rhsCondBB);
+            _falseBB = tmpFalseBB;
         }
 
         _theIRBuilder->SetInsertPoint(rhsCondBB);
         node->getRight()->accept(this);
-        if (!isAndOrExpr(node->getRight())) {
-            _theIRBuilder->CreateCondBr(_value, _trueBB, _falseBB);
-        }
         return;
     }
-    if (node->isConst()) {
-        auto value = Expression::evaluateConstExpr(node);
-        _value = llvm::ConstantInt::get(_int32Ty, value);
+
+    node->getLeft()->accept(this);
+    auto left = _value;
+    node->getRight()->accept(this);
+    auto right = _value;
+
+    if (node->getOperator() == AND) {
+        _value = _theIRBuilder->CreateAnd(convertToDestTy(left, _int1Ty), convertToDestTy(right, _int1Ty));
+        return;
+    } else if (node->getOperator() == OR) {
+        _value = _theIRBuilder->CreateOr(convertToDestTy(left, _int1Ty), convertToDestTy(right, _int1Ty));
+        return;
+    }
+
+    // make the left expr and right expr has the same type
+    if (left->getType() == _floatTy || right->getType() == _floatTy) {
+        left = convertToDestTy(left, _floatTy);
+        right = convertToDestTy(right, _floatTy);
+        switch (node->getOperator()) {
+            case PLUS:
+                _value = _theIRBuilder->CreateFAdd(left, right);
+                break;
+            case MINUS:
+                _value = _theIRBuilder->CreateFSub(left, right);
+                break;
+            case MUL:
+                _value = _theIRBuilder->CreateFMul(left, right);
+                break;
+            case DIV:
+                _value = _theIRBuilder->CreateFDiv(left, right);
+                break;
+            case MOD:
+                assert(false && "should not reach here");
+                break;
+            case LT:
+                _value = _theIRBuilder->CreateFCmpOLT(left, right);
+                break;
+            case GT:
+                _value = _theIRBuilder->CreateFCmpOGT(left, right);
+                break;
+            case LE:
+                _value = _theIRBuilder->CreateFCmpOLE(left, right);
+                break;
+            case GE:
+                _value = _theIRBuilder->CreateFCmpOGE(left, right);
+                break;
+            case EQ:
+                _value = _theIRBuilder->CreateFCmpOEQ(left, right);
+                break;
+            case NE:
+                _value = _theIRBuilder->CreateFCmpONE(left, right);
+                break;
+            default:
+                assert(false && "should not reach here");
+                break;
+        }
     } else {
-        node->getLeft()->accept(this);
-        auto left = _value;
-        node->getRight()->accept(this);
-        auto right = _value;
+        left = convertToDestTy(left, _int32Ty);
+        right = convertToDestTy(right, _int32Ty);
         switch (node->getOperator()) {
             case PLUS:
                 _value = _theIRBuilder->CreateAdd(left, right);
@@ -238,21 +255,10 @@ void IRBuilder::visit(BinaryExpression *node) {
             case NE:
                 _value = _theIRBuilder->CreateICmpNE(left, right);
                 break;
-            case AND:
-                _value = _theIRBuilder->CreateAnd(left, right);
-                break;
-            case OR:
-                _value = _theIRBuilder->CreateOr(left, right);
-                break;
             default:
                 assert(false && "should not reach here");
                 break;
         }
-    }
-
-    // if the node is cond expression, than convert to i1
-    if (node->isCond() && _value->getType() != _theIRBuilder->getInt1Ty()) {
-        _value = _theIRBuilder->CreateICmpEQ(_value, _int32Zero);
     }
 }
 
@@ -263,16 +269,15 @@ void IRBuilder::visit(FunctionCall *node) {
         params.push_back(_value);
     }
     _value = _theIRBuilder->CreateCall(node->getFunctionDef()->getFunction(), params);
-
-    // if the node is cond expression, than convert to i1
-    if (node->isCond() && _value->getType() != _theIRBuilder->getInt1Ty()) {
-        _value = _theIRBuilder->CreateICmpEQ(_value, _int32Zero);
-    }
 }
 
 void IRBuilder::visit(AssignStatement *node) {
     node->getValue()->accept(this);
-    _theIRBuilder->CreateStore(_value, node->getVar()->getVariable()->getAddr());
+    llvm::Value *addr = node->getVar()->getVariable()->getAddr();
+    assert(addr->getType()->isPointerTy());
+    llvm::Type *destTy = addr->getType()->getPointerElementType();
+    _value = convertToDestTy(_value, destTy);
+    _theIRBuilder->CreateStore(_value, addr);
 }
 
 void IRBuilder::visit(IfStatement *node) {
@@ -287,18 +292,15 @@ void IRBuilder::visit(IfStatement *node) {
         elseBB->insertInto(_currentFunction);
         _falseBB = elseBB;
         node->getCond()->accept(this);
-        if (!isAndOrExpr(node->getCond())) {
-            _theIRBuilder->CreateCondBr(_value, _trueBB, _falseBB);
-        }
+        _theIRBuilder->CreateCondBr(convertToDestTy(_value, _int1Ty), _trueBB, _falseBB);
+
         _theIRBuilder->SetInsertPoint(elseBB);
         node->getElseStmt()->accept(this);
         _theIRBuilder->CreateBr(afterIfBB);
     } else {
         _falseBB = afterIfBB;
         node->getCond()->accept(this);
-        if (!isAndOrExpr(node->getCond())) {
-            _theIRBuilder->CreateCondBr(_value, _trueBB, _falseBB);
-        }
+        _theIRBuilder->CreateCondBr(convertToDestTy(_value, _int1Ty), _trueBB, _falseBB);
     }
 
     _theIRBuilder->SetInsertPoint(ifBB);
@@ -321,9 +323,7 @@ void IRBuilder::visit(WhileStatement *node) {
     _trueBB = whileBB;
     _falseBB = afterWhileBB;
     node->getCond()->accept(this);
-    if (!isAndOrExpr(node->getCond())) {
-        _theIRBuilder->CreateCondBr(_value, _trueBB, _falseBB);
-    }
+    _theIRBuilder->CreateCondBr(convertToDestTy(_value, _int1Ty), _trueBB, _falseBB);
 
     _theIRBuilder->SetInsertPoint(whileBB);
     node->getStmt()->accept(this);
@@ -341,8 +341,10 @@ void IRBuilder::visit(ReturnStatement *node) {
     }
 }
 
-llvm::Type *IRBuilder::convetToLLVMType(int type) {
+llvm::Type *IRBuilder::convertToLLVMType(int type) {
     switch (type) {
+        case BOOL:
+            return _int1Ty;
         case INT:
             return _int32Ty;
         case FLOAT:
@@ -354,23 +356,44 @@ llvm::Type *IRBuilder::convetToLLVMType(int type) {
     }
 }
 
-llvm::Type *IRBuilder::convetToLLVMType(DataType *dataType) {
+llvm::Type *IRBuilder::convertToLLVMType(DataType *dataType) {
     if (dataType->isPointer()) {
         // TODO:
         return nullptr;
     } else {
-        return convetToLLVMType(dataType->getBaseType());
+        return convertToLLVMType(dataType->getBaseType());
     }
 }
 
 void IRBuilder::allocForScopeVars(Scope *currentScope) {
     for (auto [name, var] : currentScope->getVarMap()) {
-        auto addr = _theIRBuilder->CreateAlloca(convetToLLVMType(var->getDataType()), nullptr, name);
+        auto addr = _theIRBuilder->CreateAlloca(convertToLLVMType(var->getDataType()), nullptr, name);
         var->setAddr(addr);
     }
     for (auto child : currentScope->getChildren()) {
         allocForScopeVars(child);
     }
+}
+
+llvm::Value *IRBuilder::convertToDestTy(llvm::Value *value, llvm::Type *destTy) {
+    if (destTy == _floatTy) {
+        if (value->getType() != _floatTy) {
+            return _theIRBuilder->CreateSIToFP(value, _floatTy);
+        }
+    } else if (destTy == _int32Ty) {
+        if (value->getType() == _floatTy) {
+            return _theIRBuilder->CreateFPToSI(value, _int32Ty);
+        } else if (value->getType() == _int1Ty) {
+            return _theIRBuilder->CreateZExt(value, _int32Ty);
+        }
+    } else {
+        if (value->getType() == _floatTy) {
+            return _theIRBuilder->CreateFCmpONE(value, _floatZero);
+        } else if (value->getType() == _int32Ty) {
+            return _theIRBuilder->CreateICmpNE(value, _int32Zero);
+        }
+    }
+    return value;
 }
 
 }  // namespace ATC

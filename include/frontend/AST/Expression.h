@@ -12,19 +12,8 @@ public:
     Expression(TreeNode* parent) : TreeNode(parent) {}
 
     virtual bool isConst() = 0;
-    static float evaluateConstExpr(Expression* expr);
-
-    int getBaseType() { return _baseType; }
-    bool isCond() { return _isCond; }
-
-    void setBaseType(BaseType baseType) { _baseType = baseType; }
-    void setIsCond(bool b) { _isCond = b; }
-
-    static void setCond(Expression* expr);
 
 protected:
-    BaseType _baseType;
-    bool _isCond = false;
 };
 
 class ConstVal : public Expression {
@@ -35,15 +24,19 @@ public:
     virtual int getClassId() override { return ID_CONST_VAL; }
 
     virtual bool isConst() override { return true; }
+
+    int getBaseType() { return _baseType; }
     int getIntValue() { return _intValue; }
     float getFloatValue() { return _floatValue; }
 
+    void setBaseType(BaseType baseType) { _baseType = baseType; }
     void setIntValue(int value) { _intValue = value; }
     void setFloatValue(float value) { _floatValue = value; }
 
     ACCEPT
 
 private:
+    BaseType _baseType;
     int _intValue = 0;
     float _floatValue = 0;
 };
@@ -120,17 +113,19 @@ public:
     Operator getOperator() { return _operator; }
     Expression* getLeft() { return _left; }
     Expression* getRight() { return _right; }
+    bool isShortCircuit() { return _isShortCircuit; }
 
     void setOperator(Operator op) { _operator = op; }
     void setLeft(Expression* left) { _left = left; }
     void setRight(Expression* right) { _right = right; }
-
+    void setIsShortCircuit() { _isShortCircuit = true; }
     ACCEPT
 
 private:
     Operator _operator;
     Expression* _left;
     Expression* _right;
+    bool _isShortCircuit = false;
 };
 
 class FunctionCall : public Expression {
@@ -152,6 +147,12 @@ public:
 private:
     std::vector<Expression*> _params;
     FunctionDef* _functionDef;
+};
+
+class ExpressionHandle {
+public:
+    static float evaluateConstExpr(Expression* expr);
+    static void setShortCircuit(Expression* expr);
 };
 }  // namespace ATC
 #endif

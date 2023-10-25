@@ -34,6 +34,6 @@ enum NodeType {
 
 enum Operator { PLUS, MINUS, NOT, MUL, DIV, MOD, LT, GT, LE, GE, EQ, NE, AND, OR };
 
-enum BaseType { UNKOWN, VOID, INT, FLOAT };
+enum BaseType { UNKOWN, VOID, BOOL, INT, FLOAT };
 }  // namespace ATC
 #endif

@@ -53,18 +53,22 @@ public:
     // virtual void visit(OtherStatement *) override;
 
 private:
-    llvm::Type *convetToLLVMType(int type);
-    llvm::Type *convetToLLVMType(DataType *dataType);
+    llvm::Type *convertToLLVMType(int type);
+    llvm::Type *convertToLLVMType(DataType *dataType);
     void allocForScopeVars(Scope *currentScope);
+    llvm::Value *convertToDestTy(llvm::Value *value, llvm::Type *destTy);
 
     llvm::Module *_module;
     llvm::IRBuilder<> *_theIRBuilder;
     llvm::Type *_voidTy;
+    llvm::Type *_int1Ty;
     llvm::Type *_int32Ty;
     llvm::Type *_int32PtrTy;
     llvm::Type *_floatTy;
     llvm::Type *_floatPtrTy;
 
+    llvm::Constant *_int1Zero;
+    llvm::Constant *_int1One;
     llvm::Constant *_int32Zero;
     llvm::Constant *_floatZero;
     llvm::Constant *_int32One;

@@ -27,7 +27,7 @@ public:
 private:
     BaseType _baseType = UNKOWN;
     std::vector<Expression*> _dimensions;
-    DataType* _baseDataType;
+    DataType* _baseDataType = nullptr;
 };
 
 }  // namespace ATC
