@@ -59,16 +59,18 @@ void IRBuilder::visit(FunctionDef *node) {
         auto arg = func->getArg(i++);
         _theIRBuilder->CreateStore(arg, var->getAddr());
     }
-    _theIRBuilder->CreateBr(entryBB);
+    checkAndCreateBr(entryBB);
 
     _theIRBuilder->SetInsertPoint(entryBB);
     node->getBlock()->accept(this);
 
     // if the function didn't execute return before, than return the default value
-    if (node->getRetType() == INT) {
-        _theIRBuilder->CreateRet(_int32Zero);
-    } else {
-        _theIRBuilder->CreateRet(_floatZero);
+    if (_retBlk.find(_theIRBuilder->GetInsertBlock()) == _retBlk.end()) {
+        if (node->getRetType() == INT) {
+            _theIRBuilder->CreateRet(_int32Zero);
+        } else {
+            _theIRBuilder->CreateRet(_floatZero);
+        }
     }
 }
 
@@ -148,13 +150,13 @@ void IRBuilder::visit(BinaryExpression *node) {
             auto tmpTrueBB = _trueBB;
             _trueBB = rhsCondBB;
             node->getLeft()->accept(this);
-            _theIRBuilder->CreateCondBr(convertToDestTy(_value, _int1Ty), rhsCondBB, _falseBB);
+            checkAndCreateCondBr(convertToDestTy(_value, _int1Ty), rhsCondBB, _falseBB);
             _trueBB = tmpTrueBB;
         } else {
             auto tmpFalseBB = _falseBB;
             _falseBB = rhsCondBB;
             node->getLeft()->accept(this);
-            _theIRBuilder->CreateCondBr(convertToDestTy(_value, _int1Ty), _trueBB, rhsCondBB);
+            checkAndCreateCondBr(convertToDestTy(_value, _int1Ty), _trueBB, rhsCondBB);
             _falseBB = tmpFalseBB;
         }
 
@@ -271,6 +273,16 @@ void IRBuilder::visit(FunctionCall *node) {
     _value = _theIRBuilder->CreateCall(node->getFunctionDef()->getFunction(), params);
 }
 
+void IRBuilder::visit(Block* node) {
+    for (auto element : node->getElements()) {
+        element->accept(this);
+        // skip the statements following the return statement
+        if(element->getClassId() == ID_RETURN_STATEMENT){
+            break;
+        }
+    }
+}
+
 void IRBuilder::visit(AssignStatement *node) {
     node->getValue()->accept(this);
     llvm::Value *addr = node->getVar()->getVariable()->getAddr();
@@ -292,20 +304,20 @@ void IRBuilder::visit(IfStatement *node) {
         elseBB->insertInto(_currentFunction);
         _falseBB = elseBB;
         node->getCond()->accept(this);
-        _theIRBuilder->CreateCondBr(convertToDestTy(_value, _int1Ty), _trueBB, _falseBB);
+        checkAndCreateCondBr(convertToDestTy(_value, _int1Ty), _trueBB, _falseBB);
 
         _theIRBuilder->SetInsertPoint(elseBB);
         node->getElseStmt()->accept(this);
-        _theIRBuilder->CreateBr(afterIfBB);
+        checkAndCreateBr(afterIfBB);
     } else {
         _falseBB = afterIfBB;
         node->getCond()->accept(this);
-        _theIRBuilder->CreateCondBr(convertToDestTy(_value, _int1Ty), _trueBB, _falseBB);
+        checkAndCreateCondBr(convertToDestTy(_value, _int1Ty), _trueBB, _falseBB);
     }
 
     _theIRBuilder->SetInsertPoint(ifBB);
     node->getStmt()->accept(this);
-    _theIRBuilder->CreateBr(afterIfBB);
+    checkAndCreateBr(afterIfBB);
 
     _theIRBuilder->SetInsertPoint(afterIfBB);
 }
@@ -318,24 +330,25 @@ void IRBuilder::visit(WhileStatement *node) {
     whileBB->insertInto(_currentFunction);
     afterWhileBB->insertInto(_currentFunction);
 
-    _theIRBuilder->CreateBr(condBB);
+    checkAndCreateBr(condBB);
     _theIRBuilder->SetInsertPoint(condBB);
     _trueBB = whileBB;
     _falseBB = afterWhileBB;
     node->getCond()->accept(this);
-    _theIRBuilder->CreateCondBr(convertToDestTy(_value, _int1Ty), _trueBB, _falseBB);
+    checkAndCreateCondBr(convertToDestTy(_value, _int1Ty), _trueBB, _falseBB);
 
     _theIRBuilder->SetInsertPoint(whileBB);
     node->getStmt()->accept(this);
-    _theIRBuilder->CreateBr(condBB);
+    checkAndCreateBr(condBB);
 
     _theIRBuilder->SetInsertPoint(afterWhileBB);
 }
 
 void IRBuilder::visit(ReturnStatement *node) {
+    _retBlk.insert(_theIRBuilder->GetInsertBlock());
     if (node->getExpr()) {
         node->getExpr()->accept(this);
-        _theIRBuilder->CreateRet(_value);
+        _theIRBuilder->CreateRet(convertToDestTy(_value, _currentFunction->getReturnType()));
     } else {
         _theIRBuilder->CreateRetVoid();
     }
@@ -396,6 +409,18 @@ llvm::Value *IRBuilder::convertToDestTy(llvm::Value *value, llvm::Type *destTy) 
         }
     }
     return value;
+}
+
+void IRBuilder::checkAndCreateBr(llvm::BasicBlock *destBlk) {
+    if (_retBlk.find(_theIRBuilder->GetInsertBlock()) == _retBlk.end()) {
+        _theIRBuilder->CreateBr(destBlk);
+    }
+}
+
+void IRBuilder::checkAndCreateCondBr(llvm::Value *value, llvm::BasicBlock *trueBlk, llvm::BasicBlock *falseBlck) {
+    if (_retBlk.find(_theIRBuilder->GetInsertBlock()) == _retBlk.end()) {
+        _theIRBuilder->CreateCondBr(value, _trueBB, _falseBB);
+    }
 }
 
 }  // namespace ATC

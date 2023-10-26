@@ -38,7 +38,7 @@ public:
 
     virtual void visit(FunctionCall *) override;
 
-    // virtual void visit(Block *) override;
+    virtual void visit(Block *) override;
 
     virtual void visit(AssignStatement *) override;
 
@@ -57,6 +57,9 @@ private:
     llvm::Type *convertToLLVMType(DataType *dataType);
     void allocForScopeVars(Scope *currentScope);
     llvm::Value *convertToDestTy(llvm::Value *value, llvm::Type *destTy);
+    // check if there is a return statement in the current basic block, and create the br if not
+    void checkAndCreateBr(llvm::BasicBlock *destBlk);
+    void checkAndCreateCondBr(llvm::Value *value, llvm::BasicBlock *trueBlk, llvm::BasicBlock *falseBlck);
 
     llvm::Module *_module;
     llvm::IRBuilder<> *_theIRBuilder;
@@ -79,6 +82,8 @@ private:
     llvm::BasicBlock *_trueBB;
     llvm::BasicBlock *_falseBB;
     llvm::Function *_currentFunction;
+
+    std::set<llvm::BasicBlock *> _retBlk;
 };
 }  // namespace ATC
 #endif
