@@ -107,12 +107,25 @@ void IRBuilder::visit(ConstVal *node) {
 
 void IRBuilder::visit(VarRef *node) {
     auto addr = node->getVariable()->getAddr();
-    _value = _theIRBuilder->CreateLoad(addr->getType()->getPointerElementType(), addr);
+    if (addr->getType()->getPointerElementType()->isArrayTy()) {
+        // cast the array to pointer,
+        // int a[10]; 'a' is treated as a pointer when used as a function argument
+        _value =
+            _theIRBuilder->CreateInBoundsGEP(addr->getType()->getPointerElementType(), addr, {_int32Zero, _int32Zero});
+    } else {
+        _value = _theIRBuilder->CreateLoad(addr->getType()->getPointerElementType(), addr);
+    }
 }
 
 void IRBuilder::visit(IndexedRef *node) {
     auto addr = getIndexedRefAddress(node);
-    _value = _theIRBuilder->CreateLoad(addr->getType()->getPointerElementType(), addr);
+    if (addr->getType()->getPointerElementType()->isArrayTy()) {
+        // cast the array to pointer
+        _value =
+            _theIRBuilder->CreateInBoundsGEP(addr->getType()->getPointerElementType(), addr, {_int32Zero, _int32Zero});
+    } else {
+        _value = _theIRBuilder->CreateLoad(addr->getType()->getPointerElementType(), addr);
+    }
 }
 
 void IRBuilder::visit(NestedExpression *node) {
