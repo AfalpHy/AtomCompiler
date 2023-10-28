@@ -52,7 +52,7 @@ unaryOp: PlusMinus | Not;
 
 funcRParams: expr (Comma expr)*;
 
-mulExpr: unaryExpr (MulDIV unaryExpr)*;
+mulExpr: unaryExpr (mulDiv unaryExpr)*;
 
 addExpr: mulExpr ( PlusMinus mulExpr)*;
 
@@ -118,7 +118,9 @@ Star: '*';
 
 Not: '!';
 
-MulDIV: '*' | '/' | '%';
+DivMod: '/' | '%';
+
+mulDiv: Star | DivMod;
 
 PlusMinus: '+' | '-';
 

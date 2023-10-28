@@ -69,7 +69,8 @@ antlrcpp::Any ASTBuilder::visitCType(ATCParser::CTypeContext *ctx) {
             static_cast<BasicType *>(cType)->setType(BasicType::Type::FLOAT);
             cType->setPosition(ctx->Float()->getSymbol(), ctx->Float()->getSymbol());
         } else {
-            assert(false && "not supported");
+            static_cast<BasicType *>(cType)->setType(BasicType::Type::VOID);
+            cType->setPosition(ctx->Void()->getSymbol(), ctx->Void()->getSymbol());
         }
     }
     return cType;
@@ -413,13 +414,13 @@ antlrcpp::Any ASTBuilder::visitFuncRParams(ATCParser::FuncRParamsContext *ctx) {
 
 antlrcpp::Any ASTBuilder::visitMulExpr(ATCParser::MulExprContext *ctx) {
     auto unaryExprs = ctx->unaryExpr();
-    auto operators = ctx->MulDIV();
+    auto operators = ctx->mulDiv();
 
     auto left = unaryExprs[0]->accept(this).as<Expression *>();
     for (int i = 1; i < unaryExprs.size(); i++) {
         BinaryExpression *mulExpr = new BinaryExpression();
 
-        // 表达式比操作符多1个
+        // Number of expressions is one more than the number of operators.
         if (operators[i - 1]->getText() == "*") {
             mulExpr->setOperator(MUL);
         } else if (operators[i - 1]->getText() == "/") {
@@ -451,7 +452,7 @@ antlrcpp::Any ASTBuilder::visitAddExpr(ATCParser::AddExprContext *ctx) {
     for (int i = 1; i < mulExprs.size(); i++) {
         BinaryExpression *addExpr = new BinaryExpression();
 
-        // 表达式比操作符多1个
+        // Number of expressions is one more than the number of operators.
         if (operators[i - 1]->getText() == "+") {
             addExpr->setOperator(PLUS);
         } else {
@@ -480,7 +481,7 @@ antlrcpp::Any ASTBuilder::visitRelExpr(ATCParser::RelExprContext *ctx) {
     for (int i = 1; i < addExprs.size(); i++) {
         BinaryExpression *relExpr = new BinaryExpression();
 
-        // 表达式比操作符多1个
+        // Number of expressions is one more than the number of operators.
         if (operators[i - 1]->getText() == "<") {
             relExpr->setOperator(LT);
         } else if (operators[i - 1]->getText() == ">") {
@@ -513,7 +514,7 @@ antlrcpp::Any ASTBuilder::visitEqExpr(ATCParser::EqExprContext *ctx) {
     for (int i = 1; i < relExprs.size(); i++) {
         BinaryExpression *eqExpr = new BinaryExpression();
 
-        // 表达式比操作符多1个
+        // Number of expressions is one more than the number of operators.
         if (operators[i - 1]->getText() == "==") {
             eqExpr->setOperator(EQ);
         } else {
