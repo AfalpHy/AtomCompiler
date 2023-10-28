@@ -78,7 +78,7 @@ void IRBuilder::visit(FunctionDef *node) {
 void IRBuilder::visit(Variable *node) {
     if (node->isGlobal()) {
         // create global variable
-        llvm::Type *type = node->getDataType()->getBasicType() == BasicType::INT ? _int32Ty : _floatTy;
+        llvm::Type *type = convertToLLVMType(node->getDataType());
         _module->getOrInsertGlobal(node->getName(), type);
         auto globalVar = _module->getNamedGlobal(node->getName());
 
@@ -121,8 +121,7 @@ void IRBuilder::visit(IndexedRef *node) {
     auto addr = getIndexedRefAddress(node);
     if (addr->getType()->getPointerElementType()->isArrayTy()) {
         // cast the array to pointer
-        _value =
-            _theIRBuilder->CreateInBoundsGEP(addr->getType()->getPointerElementType(), addr, {_int32Zero, _int32Zero});
+        _value = addr;
     } else {
         _value = _theIRBuilder->CreateLoad(addr->getType()->getPointerElementType(), addr);
     }
@@ -130,17 +129,6 @@ void IRBuilder::visit(IndexedRef *node) {
 
 void IRBuilder::visit(NestedExpression *node) {
     if (node->isConst()) {
-        // std::vector<llvm::Constant *> array;
-        // array.push_back(_int32One);
-        // array.push_back(_int32One);
-        // llvm::ArrayRef<llvm::Constant *> arrayRef = array;
-        // auto arrayType = llvm::ArrayType::get(_int32Ty, 0);
-        // auto arrayType1 = llvm::ArrayType::get(arrayType, 0);
-        // auto tmp1 = llvm::ConstantArray::get(arrayType, array);
-        // std::vector<llvm::Constant *> array1;
-        // array1.push_back(tmp1);
-        // array1.push_back(tmp1);
-        // _value = llvm::ConstantArray::get(arrayType, array1);
     }
 }
 
@@ -282,8 +270,11 @@ void IRBuilder::visit(BinaryExpression *node) {
 
 void IRBuilder::visit(FunctionCall *node) {
     std::vector<llvm::Value *> params;
+    llvm::Function *function = node->getFunctionDef()->getFunction();
+    int i = 0;
     for (auto rParam : node->getParams()) {
         rParam->accept(this);
+        _value = _theIRBuilder->CreateBitCast(_value, function->getArg(i++)->getType());
         params.push_back(_value);
     }
     _value = _theIRBuilder->CreateCall(node->getFunctionDef()->getFunction(), params);

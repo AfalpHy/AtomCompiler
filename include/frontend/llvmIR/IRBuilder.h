@@ -15,15 +15,7 @@ public:
     IRBuilder();
     ~IRBuilder();
 
-    // virtual void visit(TreeNode *) override;
-
-    // virtual void visit(CompUnit *) override;
-
-    // virtual void visit(Decl *) override;
-
     virtual void visit(FunctionDef *) override;
-
-    // virtual void visit(DataType *) override;
 
     virtual void visit(Variable *) override;
 
@@ -47,13 +39,9 @@ public:
 
     virtual void visit(IfStatement *) override;
 
-    // virtual void visit(ElseStatement *) override;
-
     virtual void visit(WhileStatement *) override;
 
     virtual void visit(ReturnStatement *) override;
-
-    // virtual void visit(OtherStatement *) override;
 
 private:
     llvm::Type *convertToLLVMType(int type);
