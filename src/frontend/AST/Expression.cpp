@@ -8,7 +8,7 @@ float ExpressionHandle::evaluateConstExpr(Expression* expr) {
     switch (expr->getClassId()) {
         case ID_CONST_VAL: {
             auto constVal = (ConstVal*)expr;
-            if (constVal->getBaseType() == INT) {
+            if (constVal->getBasicType() == BasicType::INT) {
                 return constVal->getIntValue();
             } else {
                 return constVal->getFloatValue();
@@ -77,7 +77,7 @@ void ExpressionHandle::setShortCircuit(Expression* expr) {
     }
 }
 
-bool ArrayExpression::isConst() {
+bool NestedExpression::isConst() {
     for (auto expr : _elements) {
         if (!expr->isConst()) {
             return false;

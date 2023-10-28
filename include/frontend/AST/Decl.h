@@ -10,21 +10,27 @@ class Decl : public TreeNode {
 public:
     Decl() = default;
     Decl(TreeNode* parent) : TreeNode(parent) {}
+};
 
-    virtual int getClassId() { return ID_DECL; }
+class VarDecl : public Decl {
+public:
+    VarDecl() = default;
+    VarDecl(TreeNode* parent) : Decl(parent) {}
 
-    DataType* getDataType() { return _dataType; }
+    virtual int getClassId() { return ID_VAR_DECL; }
+
+    DataType* getDataType() { return _declType; }
     const std::vector<Variable*>& getVariables() { return _vars; }
 
-    void setDataType(DataType* dataType) { _dataType = dataType; }
+    void setDataType(DataType* declType) { _declType = declType; }
     void addVariable(Variable* var) { _vars.push_back(var); }
 
     ACCEPT
+
 private:
-    DataType* _dataType;
+    DataType* _declType;
     std::vector<Variable*> _vars;
 };
-
 }  // namespace ATC
 
 #endif

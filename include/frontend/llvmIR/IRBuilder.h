@@ -8,6 +8,7 @@
 namespace ATC {
 
 class Scope;
+class DataType;
 
 class IRBuilder : public ASTVisitor {
 public:
@@ -30,7 +31,9 @@ public:
 
     virtual void visit(VarRef *) override;
 
-    virtual void visit(ArrayExpression *) override;
+    virtual void visit(IndexedRef *) override;
+
+    virtual void visit(NestedExpression *) override;
 
     virtual void visit(UnaryExpression *) override;
 
@@ -60,6 +63,8 @@ private:
     // check if there is a return statement in the current basic block, and create the br if not
     void checkAndCreateBr(llvm::BasicBlock *destBlk);
     void checkAndCreateCondBr(llvm::Value *value, llvm::BasicBlock *trueBlk, llvm::BasicBlock *falseBlck);
+
+    llvm::Value *getIndexedRefAddress(IndexedRef *varRef);
 
     llvm::Module *_module;
     llvm::IRBuilder<> *_theIRBuilder;

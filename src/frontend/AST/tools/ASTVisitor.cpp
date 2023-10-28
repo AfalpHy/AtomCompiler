@@ -24,8 +24,7 @@ void ASTVisitor::visit(CompUnit* node) {
     }
 }
 
-void ASTVisitor::visit(Decl* node) {
-    node->getDataType()->accept(this);
+void ASTVisitor::visit(VarDecl* node) {
     for (auto var : node->getVariables()) {
         var->accept(this);
     }
@@ -38,9 +37,14 @@ void ASTVisitor::visit(FunctionDef* node) {
     node->getBlock()->accept(this);
 }
 
-void ASTVisitor::visit(DataType* node) {}
+void ASTVisitor::visit(BasicType* node) {}
+
+void ASTVisitor::visit(ArrayType* node) { node->getBaseDataType()->accept(this); }
+
+void ASTVisitor::visit(PointerType* node) { node->getBaseDataType()->accept(this); }
 
 void ASTVisitor::visit(Variable* node) {
+    node->getDataType()->accept(this);
     if (node->getInitValue()) {
         node->getInitValue()->accept(this);
     }
@@ -48,13 +52,15 @@ void ASTVisitor::visit(Variable* node) {
 
 void ASTVisitor::visit(ConstVal* node) {}
 
-void ASTVisitor::visit(VarRef* node) {
+void ASTVisitor::visit(VarRef* node) {}
+
+void ASTVisitor::visit(IndexedRef* node) {
     for (auto dimension : node->getDimensions()) {
         dimension->accept(this);
     }
 }
 
-void ASTVisitor::visit(ArrayExpression* node) {
+void ASTVisitor::visit(NestedExpression* node) {
     for (auto expr : node->getElements()) {
         expr->accept(this);
     }
@@ -80,8 +86,8 @@ void ASTVisitor::visit(Block* node) {
 }
 
 void ASTVisitor::visit(AssignStatement* node) {
-    node->getVar()->accept(this);
-    node->getValue()->accept(this);
+    node->getLval()->accept(this);
+    node->getRval()->accept(this);
 }
 
 void ASTVisitor::visit(IfStatement* node) {

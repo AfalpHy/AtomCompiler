@@ -16,21 +16,21 @@ public:
 
     virtual int getClassId() override { return ID_FUNCTION_DEF; }
 
-    int getRetType() { return _retType; }
-    const std::vector<Decl*>& getParams() { return _params; }
+    DataType* getRetType() { return _retType; }
+    const std::vector<VarDecl*>& getParams() { return _params; }
     Block* getBlock() { return _block; }
     llvm::Function* getFunction() { return _function; }
 
-    void setRetType(BaseType retType) { _retType = retType; }
-    void addParams(Decl* decl) { _params.push_back(decl); }
+    void setRetType(DataType* retType) { _retType = retType; }
+    void addParams(VarDecl* decl) { _params.push_back(decl); }
     void setBlock(Block* block) { _block = block; }
     void setFunction(llvm::Function* function) { _function = function; }
 
     ACCEPT
 
 private:
-    BaseType _retType;
-    std::vector<Decl*> _params;
+    DataType* _retType;
+    std::vector<VarDecl*> _params;
     Block* _block;
     llvm::Function* _function;
 };

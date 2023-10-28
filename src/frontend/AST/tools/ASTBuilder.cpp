@@ -26,8 +26,8 @@ antlrcpp::Any ASTBuilder::visitCompUnit(ATCParser::CompUnitContext *ctx) {
     _lastNode = compUnit;
     for (size_t i = 0; i < ctx->children.size(); i++) {
         auto any = ctx->children[i]->accept(this);
-        if (any.is<Decl *>()) {
-            compUnit->addElement(any.as<Decl *>());
+        if (any.is<VarDecl *>()) {
+            compUnit->addElement(any.as<VarDecl *>());
         } else if (any.is<FunctionDef *>()) {
             compUnit->addElement(any.as<FunctionDef *>());
         }
@@ -37,13 +37,50 @@ antlrcpp::Any ASTBuilder::visitCompUnit(ATCParser::CompUnitContext *ctx) {
     return nullptr;
 }
 
-antlrcpp::Any ASTBuilder::visitVarDecl(ATCParser::VarDeclContext *ctx) {
-    auto decl = new Decl(_lastNode);
-    decl->setPosition(ctx->getStart(), ctx->getStop());
+antlrcpp::Any ASTBuilder::visitCType(ATCParser::CTypeContext *ctx) {
+    DataType *cType = nullptr;
+    if (!ctx->Star().empty()) {
+        cType = new PointerType(_lastNode);
+        cType->setPosition(ctx->Star()[0]->getSymbol(), ctx->Star()[0]->getSymbol());
+        PointerType *tmp = (PointerType *)cType;
+        for (auto i = 1; i < ctx->Star().size(); i++) {
+            auto deepPointer = new PointerType(tmp);
+            deepPointer->setPosition(ctx->Star()[i]->getSymbol(), ctx->Star()[i]->getSymbol());
+            tmp->setBaseDataType(deepPointer);
+            tmp = deepPointer;
+        }
+        BasicType *basicType = new BasicType(tmp);
+        if (ctx->Int()) {
+            basicType->setType(BasicType::Type::INT);
+            basicType->setPosition(ctx->Int()->getSymbol(), ctx->Int()->getSymbol());
+        } else if (ctx->Float()) {
+            basicType->setType(BasicType::Type::FLOAT);
+            basicType->setPosition(ctx->Float()->getSymbol(), ctx->Float()->getSymbol());
+        } else {
+            assert(false && "not supported");
+        }
+        tmp->setBaseDataType(basicType);
+    } else {
+        cType = new BasicType(_lastNode);
+        if (ctx->Int()) {
+            static_cast<BasicType *>(cType)->setType(BasicType::Type::INT);
+            cType->setPosition(ctx->Int()->getSymbol(), ctx->Int()->getSymbol());
+        } else if (ctx->Float()) {
+            static_cast<BasicType *>(cType)->setType(BasicType::Type::FLOAT);
+            cType->setPosition(ctx->Float()->getSymbol(), ctx->Float()->getSymbol());
+        } else {
+            assert(false && "not supported");
+        }
+    }
+    return cType;
+}
 
-    _lastNode = decl;
-    auto dataType = new DataType(_lastNode);
-    decl->setDataType(dataType);
+antlrcpp::Any ASTBuilder::visitVarDecl(ATCParser::VarDeclContext *ctx) {
+    auto varDecl = new VarDecl(_lastNode);
+    varDecl->setPosition(ctx->getStart(), ctx->getStop());
+
+    _lastNode = varDecl;
+    varDecl->setDataType(ctx->cType()->accept(this).as<DataType *>());
     for (auto varDef : ctx->varDef()) {
         auto var = varDef->accept(this).as<Variable *>();
         if (ctx->Const()) {
@@ -52,29 +89,34 @@ antlrcpp::Any ASTBuilder::visitVarDecl(ATCParser::VarDeclContext *ctx) {
         if (CurrentScope->getParent() == nullptr) {
             var->setIsGlobal(true);
         }
-        if (ctx->Int()) {
-            dataType->setBaseType(INT);
-        } else {
-            dataType->setBaseType(FLOAT);
-        }
-        decl->addVariable(var);
+        varDecl->addVariable(var);
     }
-    _lastNode = decl->getParent();
+    _lastNode = varDecl->getParent();
 
-    return decl;
+    return varDecl;
 }
 
 antlrcpp::Any ASTBuilder::visitVarDef(ATCParser::VarDefContext *ctx) {
     auto var = new Variable(_lastNode);
     var->setName(ctx->Ident()->getText());
     var->setPosition(ctx->Ident()->getSymbol(), ctx->Ident()->getSymbol());
-    auto dataType = static_cast<Decl *>(_lastNode)->getDataType();
 
-    _lastNode = dataType;
-    for (auto constExpr : ctx->expr()) {
-        auto dimension = constExpr->accept(this).as<Expression *>();
-        assert(dimension->isConst());
-        dataType->addDimension(dimension);
+    auto declType = static_cast<VarDecl *>(var->getParent())->getDataType();
+    if (!ctx->expr().empty()) {
+        auto arrayType = new ArrayType(var);
+        arrayType->setPosition(ctx->LeftBracket().front()->getSymbol(), ctx->RightBracket().back()->getSymbol());
+
+        _lastNode = arrayType;
+        for (auto constExpr : ctx->expr()) {
+            auto dimension = constExpr->accept(this).as<Expression *>();
+            arrayType->addDimension(dimension);
+        }
+        _lastNode = arrayType->getParent();
+
+        arrayType->setBaseDataType(declType);
+        var->setDataType(arrayType);
+    } else {
+        var->setDataType(declType);
     }
 
     _lastNode = var;
@@ -92,29 +134,21 @@ antlrcpp::Any ASTBuilder::visitInitVal(ATCParser::InitValContext *ctx) {
     if (ctx->expr()) {
         return ctx->expr()->accept(this);
     }
-    auto arrayExpr = new ArrayExpression(_lastNode);
-    arrayExpr->setPosition(ctx->getStart(), ctx->getStop());
-    _lastNode = arrayExpr;
+    auto nestedExpr = new NestedExpression(_lastNode);
+    nestedExpr->setPosition(ctx->getStart(), ctx->getStop());
+    _lastNode = nestedExpr;
     for (auto element : ctx->initVal()) {
-        arrayExpr->addElement(element->accept(this).as<Expression *>());
+        nestedExpr->addElement(element->accept(this).as<Expression *>());
     }
-    _lastNode = arrayExpr->getParent();
+    _lastNode = nestedExpr->getParent();
 
-    return (Expression *)arrayExpr;
+    return (Expression *)nestedExpr;
 }
 
 antlrcpp::Any ASTBuilder::visitFunctionDef(ATCParser::FunctionDefContext *ctx) {
     auto functionDef = new FunctionDef(_lastNode);
     functionDef->setName(ctx->Ident()->getText());
     functionDef->setPosition(ctx->getStart(), ctx->getStop());
-
-    if (ctx->Void()) {
-        functionDef->setRetType(VOID);
-    } else if (ctx->Int()) {
-        functionDef->setRetType(INT);
-    } else {
-        functionDef->setRetType(FLOAT);
-    }
     CurrentScope->insertFunctionDef(functionDef->getName(), functionDef);
 
     auto parentScope = CurrentScope;
@@ -124,8 +158,9 @@ antlrcpp::Any ASTBuilder::visitFunctionDef(ATCParser::FunctionDefContext *ctx) {
     functionDef->setScope(CurrentScope);
 
     _lastNode = functionDef;
+    functionDef->setRetType(ctx->cType()->accept(this).as<DataType *>());
     if (ctx->funcFParams()) {
-        auto fParams = ctx->funcFParams()->accept(this).as<std::vector<Decl *>>();
+        auto fParams = ctx->funcFParams()->accept(this).as<std::vector<VarDecl *>>();
         for (auto fParam : fParams) {
             functionDef->addParams(fParam);
         }
@@ -140,44 +175,46 @@ antlrcpp::Any ASTBuilder::visitFunctionDef(ATCParser::FunctionDefContext *ctx) {
 }
 
 antlrcpp::Any ASTBuilder::visitFuncFParams(ATCParser::FuncFParamsContext *ctx) {
-    std::vector<Decl *> fParams;
+    std::vector<VarDecl *> fParams;
     for (auto fParam : ctx->funcFParam()) {
-        fParams.push_back(fParam->accept(this).as<Decl *>());
+        fParams.push_back(fParam->accept(this).as<VarDecl *>());
     }
     return fParams;
 }
 
 antlrcpp::Any ASTBuilder::visitFuncFParam(ATCParser::FuncFParamContext *ctx) {
-    auto decl = new Decl(_lastNode);
-    decl->setPosition(ctx->getStart(), ctx->getStop());
-    auto dataType = new DataType(decl);
-    auto var = new Variable(decl);
-    var->setPosition(ctx->Ident()->getSymbol(), ctx->Ident()->getSymbol());
+    auto varDecl = new VarDecl(_lastNode);
+    varDecl->setPosition(ctx->getStart(), ctx->getStop());
+    _lastNode = varDecl;
+    auto declType = ctx->cType()->accept(this).as<DataType *>();
+    varDecl->setDataType(declType);
+
+    auto var = new Variable(varDecl);
     var->setName(ctx->Ident()->getText());
-    if (ctx->expr().size()) {
-        auto baseDataType = new DataType(dataType);
-        if (ctx->Int()) {
-            baseDataType->setBaseType(INT);
+    var->setPosition(ctx->Ident()->getSymbol(), ctx->Ident()->getSymbol());
+
+    if (ctx->getStop()->getText() != ctx->Ident()->getText()) {
+        auto pointerType = new PointerType(var);
+        if (!ctx->expr().empty()) {
+            auto arrayType = new ArrayType(pointerType);
+            _lastNode = arrayType;
+            for (auto expr : ctx->expr()) {
+                arrayType->addDimension(expr->accept(this).as<Expression *>());
+            }
+            arrayType->setBaseDataType(declType);
+            pointerType->setBaseDataType(arrayType);
         } else {
-            baseDataType->setBaseType(FLOAT);
+            pointerType->setBaseDataType(declType);
         }
-        _lastNode = baseDataType;
-        for (auto expr : ctx->expr()) {
-            baseDataType->addDimension(expr->accept(this).as<Expression *>());
-        }
-        _lastNode = decl->getParent();
-        dataType->setBaseDataType(baseDataType);
+        var->setDataType(pointerType);
     } else {
-        if (ctx->Int()) {
-            dataType->setBaseType(INT);
-        } else {
-            dataType->setBaseType(FLOAT);
-        }
+        var->setDataType(declType);
     }
-    decl->setDataType(dataType);
-    decl->addVariable(var);
+    _lastNode = varDecl->getParent();
+
+    varDecl->addVariable(var);
     CurrentScope->insertVariable(var->getName(), var);
-    return decl;
+    return varDecl;
 }
 
 antlrcpp::Any ASTBuilder::visitBlock(ATCParser::BlockContext *ctx) {
@@ -193,8 +230,8 @@ antlrcpp::Any ASTBuilder::visitBlock(ATCParser::BlockContext *ctx) {
     _lastNode = block;
     for (size_t i = 0; i < ctx->children.size(); i++) {
         auto any = ctx->children[i]->accept(this);
-        if (any.is<Decl *>()) {
-            block->addElement(any.as<Decl *>());
+        if (any.is<VarDecl *>()) {
+            block->addElement(any.as<VarDecl *>());
         } else if (any.is<Statement *>()) {
             block->addElement(any.as<Statement *>());
         }
@@ -207,15 +244,14 @@ antlrcpp::Any ASTBuilder::visitBlock(ATCParser::BlockContext *ctx) {
 }
 
 antlrcpp::Any ASTBuilder::visitStmt(ATCParser::StmtContext *ctx) {
-    if (ctx->varRef()) {
+    if (ctx->lval()) {
         auto stmt = new AssignStatement(_lastNode);
         stmt->setPosition(ctx->getStart(), ctx->getStop());
 
         _lastNode = stmt;
-        auto varRef = ctx->varRef()->accept(this).as<Expression *>();
-        assert(varRef->getClassId() == ID_VAR_REF);
-        stmt->setVar((VarRef *)varRef);
-        stmt->setValue(ctx->expr()->accept(this).as<Expression *>());
+        auto lval = ctx->lval()->accept(this).as<Expression *>();
+        stmt->setLval(lval);
+        stmt->setRval(ctx->expr()->accept(this).as<Expression *>());
         _lastNode = stmt->getParent();
 
         return (Statement *)stmt;
@@ -226,7 +262,7 @@ antlrcpp::Any ASTBuilder::visitStmt(ATCParser::StmtContext *ctx) {
         stmt->setPosition(ctx->getStart(), ctx->getStop());
 
         _lastNode = stmt;
-        auto cond = ctx->cond()->accept(this).as<Expression *>();
+        auto cond = ctx->expr()->accept(this).as<Expression *>();
         ExpressionHandle::setShortCircuit(cond);
         stmt->setCond(cond);
         stmt->setStmt(ctx->stmt(0)->accept(this).as<Statement *>());
@@ -243,7 +279,7 @@ antlrcpp::Any ASTBuilder::visitStmt(ATCParser::StmtContext *ctx) {
         stmt->setPosition(ctx->getStart(), ctx->getStop());
 
         _lastNode = stmt;
-        auto cond = ctx->cond()->accept(this).as<Expression *>();
+        auto cond = ctx->expr()->accept(this).as<Expression *>();
         ExpressionHandle::setShortCircuit(cond);
         stmt->setCond(cond);
         stmt->setStmt(ctx->stmt(0)->accept(this).as<Statement *>());
@@ -287,19 +323,27 @@ antlrcpp::Any ASTBuilder::visitVarRef(ATCParser::VarRefContext *ctx) {
     auto varRef = new VarRef(_lastNode);
     varRef->setPosition(ctx->getStart(), ctx->getStop());
     varRef->setName(ctx->getStart()->getText());
-
-    _lastNode = varRef;
-    for (auto expr : ctx->expr()) {
-        varRef->addDimension(expr->accept(this).as<Expression *>());
-    }
-    _lastNode = varRef->getParent();
-
     varRef->setVariable(CurrentScope->getVariable(varRef->getName()));
     return (Expression *)varRef;
 }
 
+antlrcpp::Any ASTBuilder::visitIndexedRef(ATCParser::IndexedRefContext *ctx) {
+    auto indexedRef = new IndexedRef(_lastNode);
+    indexedRef->setPosition(ctx->getStart(), ctx->getStop());
+    indexedRef->setName(ctx->Ident()->getText());
+    indexedRef->setVariable(CurrentScope->getVariable(indexedRef->getName()));
+
+    _lastNode = indexedRef;
+    for (auto dimension : ctx->expr()) {
+        indexedRef->addDimension(dimension->accept(this).as<Expression *>());
+    }
+    _lastNode = indexedRef->getParent();
+
+    return (Expression *)indexedRef;
+}
+
 antlrcpp::Any ASTBuilder::visitPrimaryExpr(ATCParser::PrimaryExprContext *ctx) {
-    if (!ctx->varRef() && !ctx->number()) {
+    if (ctx->LeftParenthesis()) {
         auto expr = ctx->expr()->accept(this).as<Expression *>();
         expr->setPosition(ctx->getStart(), ctx->getStop());
         return expr;
@@ -312,12 +356,13 @@ antlrcpp::Any ASTBuilder::visitNumber(ATCParser::NumberContext *ctx) {
     auto constVal = new ConstVal(_lastNode);
     constVal->setPosition(ctx->getStart(), ctx->getStop());
     if (ctx->IntConst()) {
-        constVal->setBaseType(INT);
+        constVal->setBasicType(BasicType::INT);
         constVal->setIntValue(std::stoi(ctx->IntConst()->getText()));
     } else {
-        constVal->setBaseType(FLOAT);
+        constVal->setBasicType(BasicType::FLOAT);
         constVal->setFloatValue(std::stof(ctx->FloatConst()->getText()));
     }
+
     return (Expression *)constVal;
 }
 

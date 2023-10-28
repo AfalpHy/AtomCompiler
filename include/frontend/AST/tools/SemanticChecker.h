@@ -24,7 +24,9 @@ public:
 
     virtual void visit(VarRef*) override;
 
-    // virtual void visit(ArrayExpression*) override;
+    virtual void visit(IndexedRef*) override;
+
+    // virtual void visit(NestedExpression*) override;
 
     // virtual void visit(UnaryExpression*) override;
 

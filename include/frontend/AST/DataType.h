@@ -11,22 +11,73 @@ public:
     DataType() = default;
     DataType(TreeNode* parent) : TreeNode(parent) {}
 
-    virtual int getClassId() { return ID_DATA_TYPE; }
+    virtual int getBasicType() = 0;
+    virtual DataType* getBaseDataType() { return nullptr; }
+};
 
-    int getBaseType() { return _baseType; }
-    const std::vector<Expression*>& getDimensions() { return _dimensions; }
-    bool isPointer() { return _baseDataType != nullptr; }
-    DataType* getBaseDataType() { return _baseDataType; }
+class BasicType : public DataType {
+public:
+    BasicType() = default;
+    BasicType(TreeNode* parent) : DataType(parent) {}
 
-    void setBaseType(BaseType baseType) { _baseType = baseType; }
-    void addDimension(Expression* dimension) { _dimensions.push_back(dimension); }
-    void setBaseDataType(DataType* dataType) { _baseDataType = dataType; }
+    virtual int getClassId() override { return ID_BASIC_TYPE; }
+
+    enum Type { UNKOWN, VOID, BOOL, INT, FLOAT };
+    void setType(Type type) { _type = type; }
+
+    virtual int getBasicType() { return _type; }
 
     ACCEPT
 
 private:
-    BaseType _baseType = UNKOWN;
+    Type _type = UNKOWN;
+};
+
+class ArrayType : public DataType {
+public:
+    ArrayType() = default;
+    ArrayType(TreeNode* parent) : DataType(parent) {}
+
+    virtual int getClassId() override { return ID_ARRAY_TYPE; }
+
+    const std::vector<Expression*>& getDimensions() { return _dimensions; }
+    const std::vector<int>& getElementSize() { return _elementSize; }
+    int getTotalSize() { return _totalSize; }
+    virtual DataType* getBaseDataType() override { return _baseDataType; }
+
+    void addDimension(Expression* dimension) { _dimensions.push_back(dimension); }
+    void setElementSize(const std::vector<int>& elementSize) { _elementSize = elementSize; }
+    void setTotalSize(int size) { _totalSize = size; }
+    void setBaseDataType(DataType* dataType) { _baseDataType = dataType; }
+
+    virtual int getBasicType() { return _baseDataType->getBasicType(); }
+
+    ACCEPT
+
+private:
     std::vector<Expression*> _dimensions;
+    // Save the number of elements represented by each dimension
+    std::vector<int> _elementSize;
+    int _totalSize = 0;
+    DataType* _baseDataType = nullptr;
+};
+
+class PointerType : public DataType {
+public:
+    PointerType() = default;
+    PointerType(TreeNode* parent) : DataType(parent) {}
+
+    virtual int getClassId() override { return ID_POINTER_TYPE; }
+
+    virtual DataType* getBaseDataType() override { return _baseDataType; }
+
+    void setBaseDataType(DataType* dataType) { _baseDataType = dataType; }
+
+    virtual int getBasicType() { return _baseDataType->getBasicType(); }
+
+    ACCEPT
+
+private:
     DataType* _baseDataType = nullptr;
 };
 

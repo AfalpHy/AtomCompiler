@@ -25,18 +25,18 @@ public:
 
     virtual bool isConst() override { return true; }
 
-    int getBaseType() { return _baseType; }
+    int getBasicType() { return _basicType; }
     int getIntValue() { return _intValue; }
     float getFloatValue() { return _floatValue; }
 
-    void setBaseType(BaseType baseType) { _baseType = baseType; }
+    void setBasicType(BasicType::Type basicType) { _basicType = basicType; }
     void setIntValue(int value) { _intValue = value; }
     void setFloatValue(float value) { _floatValue = value; }
 
     ACCEPT
 
 private:
-    BaseType _baseType;
+    BasicType::Type _basicType;
     int _intValue = 0;
     float _floatValue = 0;
 };
@@ -47,6 +47,25 @@ public:
     VarRef(TreeNode* parent) : Expression(parent) {}
 
     virtual int getClassId() override { return ID_VAR_REF; }
+    virtual bool isConst() { return _var->isConst(); }
+
+    Variable* getVariable() { return _var; }
+
+    void setVariable(Variable* var) { _var = var; }
+
+    ACCEPT
+
+private:
+    Variable* _var;
+};
+
+class IndexedRef : public Expression {
+public:
+    IndexedRef() = default;
+    IndexedRef(TreeNode* parent) : Expression(parent) {}
+
+    virtual int getClassId() override { return ID_INDEXED_REF; }
+
     virtual bool isConst() { return _var->isConst(); }
 
     Variable* getVariable() { return _var; }
@@ -62,12 +81,12 @@ private:
     std::vector<Expression*> _dimensions;
 };
 
-class ArrayExpression : public Expression {
+class NestedExpression : public Expression {
 public:
-    ArrayExpression() = default;
-    ArrayExpression(TreeNode* parent) : Expression(parent) {}
+    NestedExpression() = default;
+    NestedExpression(TreeNode* parent) : Expression(parent) {}
 
-    virtual int getClassId() override { return ID_ARRAY_EXPRESSION; }
+    virtual int getClassId() override { return ID_NESTED_EXPRESSION; }
 
     virtual bool isConst();
 
@@ -119,6 +138,7 @@ public:
     void setLeft(Expression* left) { _left = left; }
     void setRight(Expression* right) { _right = right; }
     void setIsShortCircuit() { _isShortCircuit = true; }
+
     ACCEPT
 
 private:

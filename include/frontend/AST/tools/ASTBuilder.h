@@ -11,9 +11,13 @@ class ASTBuilder : public ATCBaseVisitor {
 public:
     virtual antlrcpp::Any visitCompUnit(ATCParser::CompUnitContext *ctx) override;
 
+    virtual antlrcpp::Any visitCType(ATCParser::CTypeContext *ctx) override;
+
     virtual antlrcpp::Any visitVarDecl(ATCParser::VarDeclContext *ctx) override;
 
     virtual antlrcpp::Any visitVarDef(ATCParser::VarDefContext *ctx) override;
+
+    // virtual antlrcpp::Any visitFunctionDecl(ATCParser::FunctionDeclContext *ctx) override;
 
     virtual antlrcpp::Any visitInitVal(ATCParser::InitValContext *ctx) override;
 
@@ -23,15 +27,15 @@ public:
 
     virtual antlrcpp::Any visitFuncFParam(ATCParser::FuncFParamContext *ctx) override;
 
-    virtual antlrcpp::Any visitBlock(ATCParser::BlockContext *ctx) override;
-
-    virtual antlrcpp::Any visitStmt(ATCParser::StmtContext *ctx) override;
-
     virtual antlrcpp::Any visitVarRef(ATCParser::VarRefContext *ctx) override;
 
-    virtual antlrcpp::Any visitPrimaryExpr(ATCParser::PrimaryExprContext *ctx) override;
+    virtual antlrcpp::Any visitIndexedRef(ATCParser::IndexedRefContext *ctx) override;
+
+    // virtual antlrcpp::Any visitDereference(ATCParser::DereferenceContext *ctx) override;
 
     virtual antlrcpp::Any visitNumber(ATCParser::NumberContext *ctx) override;
+
+    virtual antlrcpp::Any visitPrimaryExpr(ATCParser::PrimaryExprContext *ctx) override;
 
     virtual antlrcpp::Any visitUnaryExpr(ATCParser::UnaryExprContext *ctx) override;
 
@@ -48,6 +52,10 @@ public:
     virtual antlrcpp::Any visitLAndExpr(ATCParser::LAndExprContext *ctx) override;
 
     virtual antlrcpp::Any visitLOrExpr(ATCParser::LOrExprContext *ctx) override;
+
+    virtual antlrcpp::Any visitBlock(ATCParser::BlockContext *ctx) override;
+
+    virtual antlrcpp::Any visitStmt(ATCParser::StmtContext *ctx) override;
 
     void setTokenStream(antlr4::CommonTokenStream *token) { _token = token; }
 

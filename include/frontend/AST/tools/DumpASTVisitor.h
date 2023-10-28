@@ -12,11 +12,15 @@ public:
 
     virtual void visit(CompUnit*) override;
 
-    virtual void visit(Decl*) override;
+    virtual void visit(VarDecl*) override;
 
     virtual void visit(FunctionDef*) override;
 
-    virtual void visit(DataType*) override;
+    virtual void visit(BasicType*) override;
+
+    virtual void visit(ArrayType*) override;
+
+    virtual void visit(PointerType*) override;
 
     virtual void visit(Variable*) override;
 
@@ -24,7 +28,9 @@ public:
 
     virtual void visit(VarRef*) override;
 
-    virtual void visit(ArrayExpression*) override;
+    virtual void visit(IndexedRef*) override;
+
+    virtual void visit(NestedExpression*) override;
 
     virtual void visit(UnaryExpression*) override;
 

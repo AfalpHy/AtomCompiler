@@ -19,18 +19,19 @@ namespace ATC {
 unordered_map<int, string> ClassName = {
     // clang-format off
     {ID_COMP_UNIT,              "CompUint"},
-    {ID_DATA_TYPE,              "DataType"},
-    {ID_DECL,                   "Decl"},
+    {ID_BASIC_TYPE,             "BasicType"},
+    {ID_ARRAY_TYPE,             "ArrayType"},
+    {ID_POINTER_TYPE,           "PointerType"},
+    {ID_VAR_DECL,               "VarDecl"},
     {ID_FUNCTION_DEF,           "FunctionDef"},
     {ID_VARIABLE,               "Variable"},
-    {ID_EXPRESSION,             "Expression"},
     {ID_CONST_VAL,              "ConstVal"},
     {ID_VAR_REF,                "VarRef"},
-    {ID_ARRAY_EXPRESSION,       "ArrayExpression"},
+    {ID_INDEXED_REF,            "IndexedRef"},
+    {ID_NESTED_EXPRESSION,      "NestedExpression"},
     {ID_UNARY_EXPRESSION,       "UnaryExpression"},
     {ID_BINARY_EXPRESSION,      "BinaryExpression"},
     {ID_FUNCTION_CALL,          "FunctionCall"},
-    {ID_STATEMENT,              "Statement"},
     {ID_BLOCK,                  "Block"},
     {ID_ASSIGN_STATEMENT,       "AssignStatement"},
     {ID_BLANK_STATEMENT,        "BlankStatement"},
@@ -44,12 +45,13 @@ unordered_map<int, string> ClassName = {
     // clang-format on
 };
 
-unordered_map<int, string> BaseTypeName = {
+unordered_map<int, string> TypeName = {
     // clang-format off
-    {UNKOWN,    "unkown"},
-    {INT,       "int"},
-    {FLOAT,     "float"},
-    {VOID,      "void"}
+    {BasicType::Type::UNKOWN,    "unkown"},
+    {BasicType::Type::BOOL,      "bool"},
+    {BasicType::Type::INT,       "int"},
+    {BasicType::Type::FLOAT,     "float"},
+    {BasicType::Type::VOID,      "void"}
     // clang-format on
 };
 
@@ -77,9 +79,8 @@ void DumpASTVisitor::printNode(TreeNode* node, bool newLine) {
         cout << "  ";
     }
     Position position = node->getPosition();
-    printf("%s %p <%d:%d-%d:%d> %s", ClassName[node->getClassId()].c_str(), node,
-           position._leftLine, position._leftColumn, position._rightLine, position._rightColumn,
-           node->getName().c_str());
+    printf("%s %p <%d:%d-%d:%d> %s", ClassName[node->getClassId()].c_str(), node, position._leftLine,
+           position._leftColumn, position._rightLine, position._rightColumn, node->getName().c_str());
     if (newLine) {
         cout << endl;
     }
@@ -95,7 +96,7 @@ void DumpASTVisitor::visit(CompUnit* node) {
     _indent--;
 }
 
-void DumpASTVisitor::visit(Decl* node) {
+void DumpASTVisitor::visit(VarDecl* node) {
     printNode(node);
     _indent++;
     ASTVisitor::visit(node);
@@ -109,18 +110,41 @@ void DumpASTVisitor::visit(FunctionDef* node) {
     _indent--;
 }
 
-void DumpASTVisitor::visit(DataType* node) {
-    printNode(node,false);
-    if (node->isPointer()) {
-        cout << "<Pointer> ";
-        node->getBaseDataType()->accept(this);
-    } else {
-        cout << "<" << BaseTypeName[node->getBaseType()];
-        for (auto dimension : node->getDimensions()) {
-            cout << "[" << ExpressionHandle::evaluateConstExpr(dimension) << "]";
-        }
-        cout << ">" << endl;
+void DumpASTVisitor::visit(BasicType* node) {
+    for (int i = 0; i < _indent; i++) {
+        cout << "  ";
     }
+    Position position = node->getPosition();
+    printf("%s %p ", ClassName[node->getClassId()].c_str(), node);
+    cout << "<" << TypeName[node->getBasicType()] << ">" << endl;
+}
+
+void DumpASTVisitor::visit(ArrayType* node) {
+    for (int i = 0; i < _indent; i++) {
+        cout << "  ";
+    }
+    Position position = node->getPosition();
+    printf("%s %p ", ClassName[node->getClassId()].c_str(), node);
+    cout << "<";
+    for (auto dimension : node->getDimensions()) {
+        cout << "[" << ExpressionHandle::evaluateConstExpr(dimension) << "]";
+    }
+    cout << ">" << endl;
+    _indent++;
+    ASTVisitor::visit(node);
+    _indent--;
+}
+
+void DumpASTVisitor::visit(PointerType* node) {
+    for (int i = 0; i < _indent; i++) {
+        cout << "  ";
+    }
+    Position position = node->getPosition();
+    printf("%s %p ", ClassName[node->getClassId()].c_str(), node);
+    cout << "<Pointer>" << endl;
+    _indent++;
+    ASTVisitor::visit(node);
+    _indent--;
 }
 
 void DumpASTVisitor::visit(Variable* node) {
@@ -134,7 +158,7 @@ void DumpASTVisitor::visit(Variable* node) {
 
 void DumpASTVisitor::visit(ConstVal* node) {
     printNode(node, false);
-    if (node->getBaseType() == INT) {
+    if (node->getBasicType() == BasicType::INT) {
         cout << "<" << node->getIntValue() << ">" << endl;
     } else {
         cout << "<" << node->getFloatValue() << ">" << endl;
@@ -144,12 +168,17 @@ void DumpASTVisitor::visit(ConstVal* node) {
 void DumpASTVisitor::visit(VarRef* node) {
     printNode(node, false);
     cout << " ref to " << node->getVariable() << endl;
+}
+
+void DumpASTVisitor::visit(IndexedRef* node) {
+    printNode(node, false);
+    cout << " ref to " << node->getVariable() << endl;
     _indent++;
     ASTVisitor::visit(node);
     _indent--;
 }
 
-void DumpASTVisitor::visit(ArrayExpression* node) {
+void DumpASTVisitor::visit(NestedExpression* node) {
     printNode(node);
     _indent++;
     ASTVisitor::visit(node);

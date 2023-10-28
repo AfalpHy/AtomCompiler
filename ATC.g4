@@ -2,52 +2,55 @@ grammar ATC;
 
 compUnit: (decl | functionDef)* EOF;
 
-decl: varDecl;
+decl: varDecl | functionDecl;
 
-varDecl: Const? (Int | Float) varDef ( ',' varDef)* ';';
+cType: (Int | Float | Void) Star*;
+
+varDecl: Const? cType varDef (Comma varDef)* Semicolon;
 
 varDef:
-	Ident ('[' expr ']')*
-	| Ident ('[' expr ']')* '=' initVal;
+	Ident (LeftBracket expr RightBracket)*
+	| Ident (LeftBracket expr RightBracket)* '=' initVal;
 
-initVal: expr | '{' ( initVal ( ',' initVal)*)? '}';
+functionDecl:
+	cType Ident LeftParenthesis funcFParams? RightParenthesis Semicolon;
 
-functionDef: (Int | Float | Void) Ident '(' funcFParams? ')' block;
+initVal:
+	expr
+	| LeftCurlyBracket (initVal ( Comma initVal)*)? RightCurlyBracket;
 
-funcFParams: funcFParam ( ',' funcFParam)*;
+functionDef: cType Ident LeftParenthesis funcFParams? RightParenthesis block;
 
-funcFParam: (Int | Float) Ident ('[' ']' ( '[' expr ']')*)?;
+funcFParams: funcFParam ( Comma funcFParam)*;
 
-block: '{' (decl | stmt)* '}';
-
-stmt:
-	varRef '=' expr ';'
-	| expr? ';'
-	| block
-	| If '(' cond ')' stmt ( Else stmt)?
-	| While '(' cond ')' stmt
-	| Break ';'
-	| Continue ';'
-	| Return expr? ';';
+funcFParam:
+	cType Ident (LeftBracket RightBracket (LeftBracket expr RightBracket)*)?;
 
 expr: lOrExpr;
 
-cond: lOrExpr;
+varRef: Ident;
 
-varRef: Ident ('[' expr ']')*;
+indexedRef: Ident (LeftBracket expr RightBracket)+;
 
-primaryExpr: '(' expr ')' | varRef | number;
+dereference: Star expr;
 
 number: IntConst | FloatConst;
 
+primaryExpr:
+	LeftParenthesis expr RightParenthesis
+	| varRef
+	| indexedRef
+	| number
+	| dereference;
+
 unaryExpr:
 	primaryExpr
-	| Ident '(' funcRParams? ')'
+	| Ident LeftParenthesis funcRParams? RightParenthesis
 	| unaryOp unaryExpr;
 
-unaryOp: PlusMinus | '!';
+unaryOp: PlusMinus | Not;
 
-funcRParams: expr (',' expr)*;
+funcRParams: expr (Comma expr)*;
 
 mulExpr: unaryExpr (MulDIV unaryExpr)*;
 
@@ -60,6 +63,20 @@ eqExpr: relExpr ( EqNe relExpr)*;
 lAndExpr: eqExpr (And eqExpr)*;
 
 lOrExpr: lAndExpr (Or lAndExpr)*;
+
+block: LeftCurlyBracket (decl | stmt)* RightCurlyBracket;
+
+lval: varRef | indexedRef;
+
+stmt:
+	lval '=' expr Semicolon
+	| expr? Semicolon
+	| block
+	| If LeftParenthesis expr RightParenthesis stmt (Else stmt)?
+	| While LeftParenthesis expr RightParenthesis stmt
+	| Break Semicolon
+	| Continue Semicolon
+	| Return expr? Semicolon;
 
 Const: 'const';
 
@@ -80,6 +97,26 @@ Break: 'break';
 Continue: 'continue';
 
 Return: 'return';
+
+Comma: ',';
+
+Semicolon: ';';
+
+LeftParenthesis: '(';
+
+RightParenthesis: ')';
+
+LeftBracket: '[';
+
+RightBracket: ']';
+
+LeftCurlyBracket: '{';
+
+RightCurlyBracket: '}';
+
+Star: '*';
+
+Not: '!';
 
 MulDIV: '*' | '/' | '%';
 
@@ -105,9 +142,7 @@ fragment HexConst: ('0x' | '0X') [0-9a-fA-F]+;
 
 FloatConst: DecimalFloatingConst | HexFloatingConst;
 
-fragment DecimalFloatingConst:
-	FractionalConst Exponent?
-	| Digit Exponent;
+fragment DecimalFloatingConst: FractionalConst Exponent? | Digit Exponent;
 
 fragment FractionalConst: Digit? '.' Digit?;
 
@@ -126,5 +161,5 @@ fragment HexDigit: [a-fA-F0-9]+;
 
 WS: [ \r\n\t]+ -> skip;
 
-LineComment: '//' .*? '\r'? '\n' -> skip;
-MultLineComment: '/*' .*? '*/' -> skip;
+LineComment: '//' .*? '\r'? '\n' EOF? -> skip;
+MultLineComment: '/*' .*? '*/' EOF? -> skip;

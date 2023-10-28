@@ -46,17 +46,17 @@ public:
 
     virtual int getClassId() override { return ID_ASSIGN_STATEMENT; }
 
-    void setVar(VarRef* varRef) { _varRef = varRef; }
-    void setValue(Expression* value) { _value = value; }
+    void setLval(Expression* lval) { _lval = lval; }
+    void setRval(Expression* rval) { _rval = rval; }
 
-    VarRef* getVar() { return _varRef; }
-    Expression* getValue() { return _value; }
+    Expression* getLval() { return _lval; }
+    Expression* getRval() { return _rval; }
 
     ACCEPT
 
 private:
-    VarRef* _varRef;
-    Expression* _value;
+    Expression* _lval;
+    Expression* _rval;
 };
 
 class IfStatement : public Statement {

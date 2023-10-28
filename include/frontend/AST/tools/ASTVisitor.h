@@ -5,18 +5,19 @@ namespace ATC {
 
 class TreeNode;
 class CompUnit;
-class Decl;
+class VarDecl;
 class FunctionDef;
-class DataType;
+class BasicType;
+class ArrayType;
+class PointerType;
 class Variable;
-class Expression;
 class ConstVal;
 class VarRef;
-class ArrayExpression;
+class IndexedRef;
+class NestedExpression;
 class UnaryExpression;
 class BinaryExpression;
 class FunctionCall;
-class Statement;
 class Block;
 class AssignStatement;
 class IfStatement;
@@ -30,11 +31,15 @@ public:
 
     virtual void visit(CompUnit*);
 
-    virtual void visit(Decl*);
+    virtual void visit(VarDecl*);
 
     virtual void visit(FunctionDef*);
 
-    virtual void visit(DataType*);
+    virtual void visit(BasicType*);
+
+    virtual void visit(ArrayType*);
+
+    virtual void visit(PointerType*);
 
     virtual void visit(Variable*);
 
@@ -42,7 +47,9 @@ public:
 
     virtual void visit(VarRef*);
 
-    virtual void visit(ArrayExpression*);
+    virtual void visit(IndexedRef*);
+
+    virtual void visit(NestedExpression*);
 
     virtual void visit(UnaryExpression*);
 

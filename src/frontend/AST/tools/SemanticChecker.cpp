@@ -32,15 +32,24 @@ namespace ATC {
 void SemanticChecker::visit(VarRef* node) {
     if (node->getVariable() == nullptr) {
         Position position = node->getPosition();
-        printf("variable %s %p <%d:%d-%d:%d> not defined\n", node->getName().c_str(), node,
-               position._leftLine, position._leftColumn, position._rightLine,
-               position._rightColumn);
+        printf("variable %s %p <%d:%d-%d:%d> not defined\n", node->getName().c_str(), node, position._leftLine,
+               position._leftColumn, position._rightLine, position._rightColumn);
         exit(0);
     }
     ASTVisitor::visit(node);
 }
 
-// void SemanticChecker::visit(ArrayExpression* node) { ASTVisitor::visit(node); }
+void SemanticChecker::visit(IndexedRef* node) {
+    if (node->getVariable() == nullptr) {
+        Position position = node->getPosition();
+        printf("variable %s %p <%d:%d-%d:%d> not defined\n", node->getName().c_str(), node, position._leftLine,
+               position._leftColumn, position._rightLine, position._rightColumn);
+        exit(0);
+    }
+    ASTVisitor::visit(node);
+}
+
+// void SemanticChecker::visit(NestedExpression* node) { ASTVisitor::visit(node); }
 
 // void SemanticChecker::visit(UnaryExpression* node) { ASTVisitor::visit(node); }
 
@@ -49,9 +58,8 @@ void SemanticChecker::visit(VarRef* node) {
 void SemanticChecker::visit(FunctionCall* node) {
     if (node->getFunctionDef() == nullptr) {
         Position position = node->getPosition();
-        printf("function %s %p <%d:%d-%d:%d> not defined\n", node->getName().c_str(), node,
-               position._leftLine, position._leftColumn, position._rightLine,
-               position._rightColumn);
+        printf("function %s %p <%d:%d-%d:%d> not defined\n", node->getName().c_str(), node, position._leftLine,
+               position._leftColumn, position._rightLine, position._rightColumn);
         exit(0);
     }
     ASTVisitor::visit(node);

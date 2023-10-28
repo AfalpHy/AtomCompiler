@@ -4,22 +4,25 @@
 namespace ATC {
 enum NodeType {
     ID_COMP_UNIT,
-    ID_DATA_TYPE,
-    ID_DECL,
+    
+    ID_BASIC_TYPE,
+    ID_ARRAY_TYPE,
+    ID_POINTER_TYPE,
+
+    ID_VAR_DECL,
     ID_FUNCTION_DEF,
     ID_VARIABLE,
 
     // expression
-    ID_EXPRESSION,
     ID_CONST_VAL,
     ID_VAR_REF,
-    ID_ARRAY_EXPRESSION,
+    ID_INDEXED_REF,
+    ID_NESTED_EXPRESSION,
     ID_UNARY_EXPRESSION,
     ID_BINARY_EXPRESSION,
     ID_FUNCTION_CALL,
 
     // statement
-    ID_STATEMENT,
     ID_BLOCK,
     ID_ASSIGN_STATEMENT,
     ID_BLANK_STATEMENT,
@@ -33,7 +36,5 @@ enum NodeType {
 };
 
 enum Operator { PLUS, MINUS, NOT, MUL, DIV, MOD, LT, GT, LE, GE, EQ, NE, AND, OR };
-
-enum BaseType { UNKOWN, VOID, BOOL, INT, FLOAT };
 }  // namespace ATC
 #endif

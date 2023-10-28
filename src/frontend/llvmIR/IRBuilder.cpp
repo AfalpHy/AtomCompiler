@@ -37,7 +37,8 @@ IRBuilder::~IRBuilder() { _module->print(llvm::outs(), nullptr); }
 void IRBuilder::visit(FunctionDef *node) {
     std::vector<llvm::Type *> params;
     for (auto param : node->getParams()) {
-        DataType *dataType = param->getDataType();
+        // every decl of param expression has only one variable
+        DataType *dataType = param->getVariables()[0]->getDataType();
         params.push_back(convertToLLVMType(dataType));
     }
     llvm::FunctionType *funcTy = llvm::FunctionType::get(convertToLLVMType(node->getRetType()), params, false);
@@ -66,7 +67,7 @@ void IRBuilder::visit(FunctionDef *node) {
 
     // if the function didn't execute return before, than return the default value
     if (_retBlk.find(_theIRBuilder->GetInsertBlock()) == _retBlk.end()) {
-        if (node->getRetType() == INT) {
+        if (node->getRetType()->getBasicType() == BasicType::INT) {
             _theIRBuilder->CreateRet(_int32Zero);
         } else {
             _theIRBuilder->CreateRet(_floatZero);
@@ -77,7 +78,7 @@ void IRBuilder::visit(FunctionDef *node) {
 void IRBuilder::visit(Variable *node) {
     if (node->isGlobal()) {
         // create global variable
-        llvm::Type *type = node->getDataType()->getBaseType() == INT ? _int32Ty : _floatTy;
+        llvm::Type *type = node->getDataType()->getBasicType() == BasicType::INT ? _int32Ty : _floatTy;
         _module->getOrInsertGlobal(node->getName(), type);
         auto globalVar = _module->getNamedGlobal(node->getName());
 
@@ -97,7 +98,7 @@ void IRBuilder::visit(Variable *node) {
 }
 
 void IRBuilder::visit(ConstVal *node) {
-    if (node->getBaseType() == INT) {
+    if (node->getBasicType() == BasicType::INT) {
         _value = llvm::ConstantInt::get(_int32Ty, node->getIntValue());
     } else {
         _value = llvm::ConstantFP::get(_floatTy, node->getFloatValue());
@@ -105,14 +106,16 @@ void IRBuilder::visit(ConstVal *node) {
 }
 
 void IRBuilder::visit(VarRef *node) {
-    if (node->getVariable()->getDataType()->getBaseType() == INT) {
-        _value = _theIRBuilder->CreateLoad(_int32Ty, node->getVariable()->getAddr());
-    } else {
-        _value = _theIRBuilder->CreateLoad(_floatTy, node->getVariable()->getAddr());
-    }
+    auto addr = node->getVariable()->getAddr();
+    _value = _theIRBuilder->CreateLoad(addr->getType()->getPointerElementType(), addr);
 }
 
-void IRBuilder::visit(ArrayExpression *node) {
+void IRBuilder::visit(IndexedRef *node) {
+    auto addr = getIndexedRefAddress(node);
+    _value = _theIRBuilder->CreateLoad(addr->getType()->getPointerElementType(), addr);
+}
+
+void IRBuilder::visit(NestedExpression *node) {
     if (node->isConst()) {
         // std::vector<llvm::Constant *> array;
         // array.push_back(_int32One);
@@ -273,22 +276,25 @@ void IRBuilder::visit(FunctionCall *node) {
     _value = _theIRBuilder->CreateCall(node->getFunctionDef()->getFunction(), params);
 }
 
-void IRBuilder::visit(Block* node) {
+void IRBuilder::visit(Block *node) {
     for (auto element : node->getElements()) {
         element->accept(this);
         // skip the statements following the return statement
-        if(element->getClassId() == ID_RETURN_STATEMENT){
+        if (element->getClassId() == ID_RETURN_STATEMENT) {
             break;
         }
     }
 }
 
 void IRBuilder::visit(AssignStatement *node) {
-    node->getValue()->accept(this);
-    llvm::Value *addr = node->getVar()->getVariable()->getAddr();
-    assert(addr->getType()->isPointerTy());
-    llvm::Type *destTy = addr->getType()->getPointerElementType();
-    _value = convertToDestTy(_value, destTy);
+    llvm::Value *addr = nullptr;
+    if (node->getLval()->getClassId() == ID_VAR_REF) {
+        addr = static_cast<VarRef *>(node->getLval())->getVariable()->getAddr();
+    } else {
+        addr = getIndexedRefAddress((IndexedRef *)node->getLval());
+    }
+    node->getRval()->accept(this);
+    _value = convertToDestTy(_value, addr->getType()->getPointerElementType());
     _theIRBuilder->CreateStore(_value, addr);
 }
 
@@ -354,15 +360,15 @@ void IRBuilder::visit(ReturnStatement *node) {
     }
 }
 
-llvm::Type *IRBuilder::convertToLLVMType(int type) {
-    switch (type) {
-        case BOOL:
+llvm::Type *IRBuilder::convertToLLVMType(int basicType) {
+    switch (basicType) {
+        case BasicType::BOOL:
             return _int1Ty;
-        case INT:
+        case BasicType::INT:
             return _int32Ty;
-        case FLOAT:
+        case BasicType::FLOAT:
             return _floatTy;
-        case VOID:
+        case BasicType::VOID:
             return _voidTy;
         default:
             assert(false && "should not reach here");
@@ -370,17 +376,38 @@ llvm::Type *IRBuilder::convertToLLVMType(int type) {
 }
 
 llvm::Type *IRBuilder::convertToLLVMType(DataType *dataType) {
-    if (dataType->isPointer()) {
-        // TODO:
-        return nullptr;
+    if (dataType->getClassId() == ID_POINTER_TYPE) {
+        return llvm::PointerType::get(convertToLLVMType(dataType->getBaseDataType()), 0);
+    } else if (dataType->getClassId() == ID_ARRAY_TYPE) {
+        auto arrayType = (ArrayType *)dataType;
+        // int size = 1;
+        // if (arrayType->getTotalSize()) {
+        //     size = arrayType->getTotalSize();
+        // } else {
+        //     const auto &dimensions = arrayType->getDimensions();
+        //     std::vector<int> elementSize(dimensions.size());
+        //     for (int i = dimensions.size() - 1; i >= 0; i--) {
+        //         elementSize[i] = size;
+        //         size *= ExpressionHandle::evaluateConstExpr(dimensions[i]);
+        //     }
+        //     arrayType->setElementSize(elementSize);
+        //     arrayType->setTotalSize(size);
+        // }
+        const auto &dimensions = arrayType->getDimensions();
+        llvm::Type *tmpType = convertToLLVMType(arrayType->getBaseDataType());
+        for (auto rbegin = dimensions.rbegin(); rbegin != dimensions.rend(); rbegin++) {
+            tmpType = llvm::ArrayType::get(tmpType, ExpressionHandle::evaluateConstExpr(*rbegin));
+        }
+        return tmpType;
     } else {
-        return convertToLLVMType(dataType->getBaseType());
+        return convertToLLVMType(dataType->getBasicType());
     }
 }
 
 void IRBuilder::allocForScopeVars(Scope *currentScope) {
-    for (auto [name, var] : currentScope->getVarMap()) {
-        auto addr = _theIRBuilder->CreateAlloca(convertToLLVMType(var->getDataType()), nullptr, name);
+    for (const auto &[name, var] : currentScope->getVarMap()) {
+        llvm::Value *addr = nullptr;
+        addr = _theIRBuilder->CreateAlloca(convertToLLVMType(var->getDataType()), nullptr, name);
         var->setAddr(addr);
     }
     for (auto child : currentScope->getChildren()) {
@@ -423,4 +450,22 @@ void IRBuilder::checkAndCreateCondBr(llvm::Value *value, llvm::BasicBlock *trueB
     }
 }
 
+llvm::Value *IRBuilder::getIndexedRefAddress(IndexedRef *indexedRef) {
+    Variable *var = indexedRef->getVariable();
+    llvm::Value *addr = var->getAddr();
+    assert(addr->getType()->isPointerTy());
+    const auto &dimension = indexedRef->getDimensions();
+    auto begin = dimension.begin();
+    if (var->getDataType()->getClassId() == ID_POINTER_TYPE) {
+        addr = _theIRBuilder->CreateLoad(addr->getType()->getPointerElementType(), addr);
+
+        (*begin++)->accept(this);
+        addr = _theIRBuilder->CreateInBoundsGEP(addr->getType()->getPointerElementType(), addr, _value);
+    }
+    for (; begin != dimension.end(); begin++) {
+        (*begin)->accept(this);
+        addr = _theIRBuilder->CreateInBoundsGEP(addr->getType()->getPointerElementType(), addr, {_int32Zero, _value});
+    }
+    return addr;
+}
 }  // namespace ATC
