@@ -88,9 +88,17 @@ void IRBuilder::visit(Variable *node) {
             if (initValue->getClassId() == ID_NESTED_EXPRESSION) {
                 _value = convertNestedValuesToConstant(static_cast<ArrayType *>(node->getDataType())->getDimensions(),
                                                        0, 0, convertToLLVMType(node->getBasicType()));
+                _nestedExpressionValues.clear();
             }
-            globalVar->setInitializer((llvm::Constant *)_value);
+        } else {
+            if (node->getDataType()->getClassId() == ID_ARRAY_TYPE) {
+                _value = convertNestedValuesToConstant(static_cast<ArrayType *>(node->getDataType())->getDimensions(),
+                                                       0, 0, convertToLLVMType(node->getBasicType()));
+            } else {
+                _value = node->getBasicType() == BasicType::INT ? _int32Zero : _floatZero;
+            }
         }
+        globalVar->setInitializer((llvm::Constant *)_value);
         node->setAddr(globalVar);
     } else {
         if (auto initValue = node->getInitValue()) {
@@ -110,6 +118,7 @@ void IRBuilder::visit(Variable *node) {
                     }
                     _theIRBuilder->CreateStore(item.second, addr);
                 }
+                _nestedExpressionValues.clear();
             } else {
                 _value = convertToDestTy(_value, node->getAddr()->getType()->getPointerElementType());
                 _theIRBuilder->CreateStore(_value, node->getAddr());
@@ -195,6 +204,10 @@ void IRBuilder::visit(NestedExpression *node) {
                 scalar = true;
                 elements[i]->accept(this);
                 _nestedExpressionValues.insert({index++, _value});
+                // ignore the remaining elements
+                if (index == targetIndex) {
+                    break;
+                }
             }
         }
         index = targetIndex;
