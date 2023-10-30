@@ -85,14 +85,35 @@ void IRBuilder::visit(Variable *node) {
         if (auto initValue = node->getInitValue()) {
             assert(initValue->isConst());
             initValue->accept(this);
+            if (initValue->getClassId() == ID_NESTED_EXPRESSION) {
+                _value = convertNestedValuesToConstant(static_cast<ArrayType *>(node->getDataType())->getDimensions(),
+                                                       0, 0, convertToLLVMType(node->getBasicType()));
+            }
             globalVar->setInitializer((llvm::Constant *)_value);
         }
         node->setAddr(globalVar);
     } else {
         if (auto initValue = node->getInitValue()) {
             initValue->accept(this);
-            _value = convertToDestTy(_value, node->getAddr()->getType()->getPointerElementType());
-            _theIRBuilder->CreateStore(_value, node->getAddr());
+            if (initValue->getClassId() == ID_NESTED_EXPRESSION) {
+                auto dimension = static_cast<ArrayType *>(node->getDataType())->getDimensions();
+                auto elementSize = static_cast<ArrayType *>(node->getDataType())->getElementSize();
+                for (auto item : _nestedExpressionValues) {
+                    // get address of the array element from the index
+                    int index = item.first;
+                    auto addr = node->getAddr();
+                    for (int i = 0; i < elementSize.size(); i++) {
+                        addr = _theIRBuilder->CreateInBoundsGEP(
+                            addr->getType()->getPointerElementType(), addr,
+                            {_int32Zero, llvm::ConstantInt::get(_int32Ty, index / elementSize[i])});
+                        index -= index / elementSize[i] * elementSize[i];
+                    }
+                    _theIRBuilder->CreateStore(item.second, addr);
+                }
+            } else {
+                _value = convertToDestTy(_value, node->getAddr()->getType()->getPointerElementType());
+                _theIRBuilder->CreateStore(_value, node->getAddr());
+            }
         }
     }
 }
@@ -128,8 +149,57 @@ void IRBuilder::visit(IndexedRef *node) {
 }
 
 void IRBuilder::visit(NestedExpression *node) {
-    if (node->isConst()) {
+    static int deep = 0;
+    static int index;
+    static bool scalar;
+    // dimensions of definded variable
+    static std::vector<int> dimensions;
+
+    if (deep == 0) {
+        index = 0;
+        scalar = false;
+        dimensions.clear();
+        _nestedExpressionValues.clear();
+        assert(node->getParent()->getClassId() == ID_VARIABLE);
+        auto var = (Variable *)node->getParent();
+        assert(var->getDataType()->getClassId() == ID_ARRAY_TYPE);
+        dimensions = ((ArrayType *)var->getDataType())->getDimensions();
     }
+
+    // The maximum number of elements in a nested expression
+    int maxSize = 1;
+    for (int i = deep; i < dimensions.size(); i++) {
+        maxSize *= dimensions[i];
+    }
+    int targetIndex = index + maxSize;
+    deep++;
+    const auto &elements = node->getElements();
+    // get one value when there are excess elements in a scalar initializer or
+    // when there are too many braces around a scalar initializer.
+    if (scalar || deep > dimensions.size()) {
+        if (elements[0]->getClassId() == ID_NESTED_EXPRESSION) {
+            bool tmp = scalar;
+            elements[0]->accept(this);
+            scalar = tmp;
+        } else {
+            elements[0]->accept(this);
+            _nestedExpressionValues.insert({index++, _value});
+        }
+    } else {
+        for (size_t i = 0; i < elements.size(); i++) {
+            if (elements[i]->getClassId() == ID_NESTED_EXPRESSION) {
+                bool tmp = scalar;
+                elements[i]->accept(this);
+                scalar = tmp;
+            } else {
+                scalar = true;
+                elements[i]->accept(this);
+                _nestedExpressionValues.insert({index++, _value});
+            }
+        }
+        index = targetIndex;
+    }
+    deep--;
 }
 
 void IRBuilder::visit(UnaryExpression *node) {
@@ -384,23 +454,10 @@ llvm::Type *IRBuilder::convertToLLVMType(DataType *dataType) {
         return llvm::PointerType::get(convertToLLVMType(dataType->getBaseDataType()), 0);
     } else if (dataType->getClassId() == ID_ARRAY_TYPE) {
         auto arrayType = (ArrayType *)dataType;
-        // int size = 1;
-        // if (arrayType->getTotalSize()) {
-        //     size = arrayType->getTotalSize();
-        // } else {
-        //     const auto &dimensions = arrayType->getDimensions();
-        //     std::vector<int> elementSize(dimensions.size());
-        //     for (int i = dimensions.size() - 1; i >= 0; i--) {
-        //         elementSize[i] = size;
-        //         size *= ExpressionHandle::evaluateConstExpr(dimensions[i]);
-        //     }
-        //     arrayType->setElementSize(elementSize);
-        //     arrayType->setTotalSize(size);
-        // }
         const auto &dimensions = arrayType->getDimensions();
         llvm::Type *tmpType = convertToLLVMType(arrayType->getBaseDataType());
         for (auto rbegin = dimensions.rbegin(); rbegin != dimensions.rend(); rbegin++) {
-            tmpType = llvm::ArrayType::get(tmpType, ExpressionHandle::evaluateConstExpr(*rbegin));
+            tmpType = llvm::ArrayType::get(tmpType, *rbegin);
         }
         return tmpType;
     } else {
@@ -471,5 +528,60 @@ llvm::Value *IRBuilder::getIndexedRefAddress(IndexedRef *indexedRef) {
         addr = _theIRBuilder->CreateInBoundsGEP(addr->getType()->getPointerElementType(), addr, {_int32Zero, _value});
     }
     return addr;
+}
+
+llvm::Value *IRBuilder::convertNestedValuesToConstant(const std::vector<int> &dimensions, int deep, int begin,
+                                                      llvm::Type *basicType) {
+    if (deep == dimensions.size()) {
+        return _nestedExpressionValues[begin];
+    }
+
+    llvm::Type *partType = basicType;
+    for (int i = dimensions.size() - 1; i > deep; i--) {
+        partType = llvm::ArrayType::get(partType, dimensions[i]);
+    }
+    llvm::Constant *zeroInitializer = llvm::ConstantAggregateZero::get(partType);
+
+    std::vector<llvm::Constant *> ret;
+    int partSize = 1;
+    for (int i = deep + 1; i < dimensions.size(); i++) {
+        partSize *= dimensions[i];
+    }
+
+    int right = begin + dimensions[deep] * partSize;
+    int left = right - partSize;
+
+    // Traverse from the rear to reduce the 'push zeroInitializer' operation
+    bool valid = false;
+    for (int i = dimensions[deep] - 1; i >= 0; i--) {
+        bool pushed = false;
+        for (auto item : _nestedExpressionValues) {
+            if (item.first >= left && item.first < right) {
+                ret.push_back((llvm::Constant *)convertNestedValuesToConstant(dimensions, deep + 1, left, basicType));
+                valid = true;
+                pushed = true;
+                break;
+            }
+        }
+        if (valid && !pushed) {
+            ret.push_back(zeroInitializer);
+        }
+        left -= partSize;
+        right -= partSize;
+    }
+
+    std::reverse(ret.begin(), ret.end());
+
+    if (ret.size() != dimensions[deep]) {
+        // create the type for structType
+        std::vector<llvm::Type *> elementTypes(ret.size(), partType);
+        // type of remain elements
+        llvm::ArrayType *remainType = llvm::ArrayType::get(partType, dimensions[deep] - ret.size());
+        elementTypes.push_back(remainType);
+        ret.push_back(llvm::ConstantAggregateZero::get(remainType));
+        llvm::StructType *retType = llvm::StructType::create(elementTypes);
+        return llvm::ConstantStruct::get(retType, ret);
+    }
+    return llvm::ConstantArray::get(llvm::ArrayType::get(partType, ret.size()), ret);
 }
 }  // namespace ATC

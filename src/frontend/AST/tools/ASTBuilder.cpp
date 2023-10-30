@@ -14,6 +14,22 @@ Scope *CurrentScope = nullptr;
 
 std::vector<CompUnit *> CompUnit::AllCompUnits;
 
+static void fixupArrayType(ArrayType *arrayType) {
+    const auto &dimensionExprs = arrayType->getDimensionExprs();
+    for (auto expr : dimensionExprs) {
+        arrayType->addDimension(ExpressionHandle::evaluateConstExpr(expr));
+    }
+    const auto &dimensions = arrayType->getDimensions();
+    std::vector<int> elementSize(dimensionExprs.size());
+    int size = 1;
+    for (int i = dimensions.size() - 1; i >= 0; i--) {
+        elementSize[i] = size;
+        size *= dimensions[i];
+    }
+    arrayType->setElementSize(elementSize);
+    arrayType->setTotalSize(size);
+}
+
 antlrcpp::Any ASTBuilder::visitCompUnit(ATCParser::CompUnitContext *ctx) {
     auto compUnit = new CompUnit();
     // 取EOF前一个元素作为stop
@@ -110,10 +126,11 @@ antlrcpp::Any ASTBuilder::visitVarDef(ATCParser::VarDefContext *ctx) {
         _lastNode = arrayType;
         for (auto constExpr : ctx->expr()) {
             auto dimension = constExpr->accept(this).as<Expression *>();
-            arrayType->addDimension(dimension);
+            arrayType->addDimensionExpr(dimension);
         }
         _lastNode = arrayType->getParent();
 
+        fixupArrayType(arrayType);
         arrayType->setBaseDataType(declType);
         var->setDataType(arrayType);
     } else {
@@ -200,8 +217,9 @@ antlrcpp::Any ASTBuilder::visitFuncFParam(ATCParser::FuncFParamContext *ctx) {
             auto arrayType = new ArrayType(pointerType);
             _lastNode = arrayType;
             for (auto expr : ctx->expr()) {
-                arrayType->addDimension(expr->accept(this).as<Expression *>());
+                arrayType->addDimensionExpr(expr->accept(this).as<Expression *>());
             }
+            fixupArrayType(arrayType);
             arrayType->setBaseDataType(declType);
             pointerType->setBaseDataType(arrayType);
         } else {

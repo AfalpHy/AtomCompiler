@@ -127,7 +127,7 @@ void DumpASTVisitor::visit(ArrayType* node) {
     printf("%s %p ", ClassName[node->getClassId()].c_str(), node);
     cout << "<";
     for (auto dimension : node->getDimensions()) {
-        cout << "[" << ExpressionHandle::evaluateConstExpr(dimension) << "]";
+        cout << "[" << dimension << "]";
     }
     cout << ">" << endl;
     _indent++;

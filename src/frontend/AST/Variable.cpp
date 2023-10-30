@@ -1,4 +1,6 @@
 #include "AST/Variable.h"
 
 #include "AST/Decl.h"
-namespace ATC {}  // namespace ATC
+namespace ATC {
+int Variable::getBasicType() { return _dataType->getBasicType(); }
+}  // namespace ATC

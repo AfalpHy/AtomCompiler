@@ -40,12 +40,15 @@ public:
 
     virtual int getClassId() override { return ID_ARRAY_TYPE; }
 
-    const std::vector<Expression*>& getDimensions() { return _dimensions; }
+    const std::vector<Expression*>& getDimensionExprs() { return _dimensionExprs; }
+    const std::vector<int>& getDimensions() { return _dimensions; }
     const std::vector<int>& getElementSize() { return _elementSize; }
     int getTotalSize() { return _totalSize; }
     virtual DataType* getBaseDataType() override { return _baseDataType; }
 
-    void addDimension(Expression* dimension) { _dimensions.push_back(dimension); }
+    
+    void addDimensionExpr(Expression* dimension) { _dimensionExprs.push_back(dimension); }
+    void addDimension(int dimension) { _dimensions.push_back(dimension); }
     void setElementSize(const std::vector<int>& elementSize) { _elementSize = elementSize; }
     void setTotalSize(int size) { _totalSize = size; }
     void setBaseDataType(DataType* dataType) { _baseDataType = dataType; }
@@ -55,7 +58,8 @@ public:
     ACCEPT
 
 private:
-    std::vector<Expression*> _dimensions;
+    std::vector<Expression*> _dimensionExprs;
+    std::vector<int> _dimensions;
     // Save the number of elements represented by each dimension
     std::vector<int> _elementSize;
     int _totalSize = 0;

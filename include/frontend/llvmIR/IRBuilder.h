@@ -1,10 +1,11 @@
 #ifndef IR_BUILDER_H
 #define IR_BUILDER_H
 
+#include <map>
+
 #include "AST/tools/ASTVisitor.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
-
 namespace ATC {
 
 class Scope;
@@ -53,6 +54,7 @@ private:
     void checkAndCreateCondBr(llvm::Value *value, llvm::BasicBlock *trueBlk, llvm::BasicBlock *falseBlck);
 
     llvm::Value *getIndexedRefAddress(IndexedRef *varRef);
+    llvm::Value *convertNestedValuesToConstant(const std::vector<int> &dimensions, int deep, int begin, llvm::Type *basicType);
 
     llvm::Module *_module;
     llvm::IRBuilder<> *_theIRBuilder;
@@ -77,6 +79,7 @@ private:
     llvm::Function *_currentFunction;
 
     std::set<llvm::BasicBlock *> _retBlk;
+    std::map<int, llvm::Value *> _nestedExpressionValues;
 };
 }  // namespace ATC
 #endif
