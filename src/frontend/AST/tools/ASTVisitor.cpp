@@ -105,6 +105,10 @@ void ASTVisitor::visit(WhileStatement* node) {
     node->getStmt()->accept(this);
 }
 
+void ASTVisitor::visit(BreakStatement*) {}
+
+void ASTVisitor::visit(ContinueStatement*) {}
+
 void ASTVisitor::visit(ReturnStatement* node) {
     if (node->getExpr()) {
         node->getExpr()->accept(this);

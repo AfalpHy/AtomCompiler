@@ -23,6 +23,8 @@ class AssignStatement;
 class IfStatement;
 class ElseStatement;
 class WhileStatement;
+class BreakStatement;
+class ContinueStatement;
 class ReturnStatement;
 class OtherStatement;
 class ASTVisitor {
@@ -66,6 +68,10 @@ public:
     virtual void visit(ElseStatement*);
 
     virtual void visit(WhileStatement*);
+
+    virtual void visit(BreakStatement*);
+
+    virtual void visit(ContinueStatement*);
 
     virtual void visit(ReturnStatement*);
 

@@ -125,6 +125,8 @@ public:
     BreakStatement(TreeNode* parent) : Statement(parent) {}
 
     virtual int getClassId() override { return ID_BREAK_STATEMENT; }
+
+    ACCEPT
 };
 
 class ContinueStatement : public Statement {
@@ -133,6 +135,8 @@ public:
     ContinueStatement(TreeNode* parent) : Statement(parent) {}
 
     virtual int getClassId() override { return ID_CONTINUE_STATEMENT; }
+
+    ACCEPT
 };
 
 class ReturnStatement : public Statement {

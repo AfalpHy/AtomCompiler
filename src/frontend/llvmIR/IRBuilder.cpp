@@ -30,9 +30,68 @@ IRBuilder::IRBuilder() {
     _floatOne = llvm::ConstantFP::get(_floatTy, 1);
 
     _module->setTargetTriple(llvm::sys::getProcessTriple());
+
+    // int getint
+    llvm::FunctionType *getint = llvm::FunctionType::get(_int32Ty, {}, false);
+    _definedElseWhere["getint"] = llvm::Function::Create(getint, llvm::GlobalValue::ExternalLinkage, "getint", _module);
+    // int getch
+    llvm::FunctionType *getch = llvm::FunctionType::get(_int32Ty, {}, false);
+    _definedElseWhere["getch"] = llvm::Function::Create(getch, llvm::GlobalValue::ExternalLinkage, "getch", _module);
+    // float getfloat
+    llvm::FunctionType *getfloat = llvm::FunctionType::get(_floatTy, {}, false);
+    _definedElseWhere["getfloat"] =
+        llvm::Function::Create(getfloat, llvm::GlobalValue::ExternalLinkage, "getfloat", _module);
+    // int getarray
+    llvm::FunctionType *getarray = llvm::FunctionType::get(_int32Ty, {_int32PtrTy}, false);
+    _definedElseWhere["getarray"] =
+        llvm::Function::Create(getarray, llvm::GlobalValue::ExternalLinkage, "getarray", _module);
+    // int getfarray
+    llvm::FunctionType *getfarray = llvm::FunctionType::get(_int32Ty, {_floatPtrTy}, false);
+    _definedElseWhere["getfarray"] =
+        llvm::Function::Create(getfarray, llvm::GlobalValue::ExternalLinkage, "getfarray", _module);
+    // int putint
+    llvm::FunctionType *putint = llvm::FunctionType::get(_voidTy, {_int32Ty}, false);
+    _definedElseWhere["putint"] = llvm::Function::Create(putint, llvm::GlobalValue::ExternalLinkage, "putint", _module);
+    // int putch
+    llvm::FunctionType *putch = llvm::FunctionType::get(_voidTy, {_int32Ty}, false);
+    _definedElseWhere["putch"] = llvm::Function::Create(putch, llvm::GlobalValue::ExternalLinkage, "putch", _module);
+    // int putarray
+    llvm::FunctionType *putarray = llvm::FunctionType::get(_voidTy, {_int32Ty, _int32PtrTy}, false);
+    _definedElseWhere["putarray"] =
+        llvm::Function::Create(putarray, llvm::GlobalValue::ExternalLinkage, "putarray", _module);
+    // int putfloat
+    llvm::FunctionType *putfloat = llvm::FunctionType::get(_voidTy, {_floatTy}, false);
+    _definedElseWhere["putfloat"] =
+        llvm::Function::Create(putfloat, llvm::GlobalValue::ExternalLinkage, "putfloat", _module);
+    // int putfarray
+    llvm::FunctionType *putfarray = llvm::FunctionType::get(_voidTy, {_int32Ty, _floatPtrTy}, false);
+    _definedElseWhere["putfarray"] =
+        llvm::Function::Create(putfarray, llvm::GlobalValue::ExternalLinkage, "putfarray", _module);
+    // int putf
+    llvm::FunctionType *putf =
+        llvm::FunctionType::get(_voidTy, {llvm::Type::getInt8PtrTy(_module->getContext())}, true);
+    _definedElseWhere["putf"] = llvm::Function::Create(putf, llvm::GlobalValue::ExternalLinkage, "putf", _module);
+    // int before_main
+    llvm::FunctionType *before_main = llvm::FunctionType::get(_voidTy, {}, false);
+    _definedElseWhere["before_main"] =
+        llvm::Function::Create(before_main, llvm::GlobalValue::ExternalLinkage, "before_main", _module);
+    // int after_main
+    llvm::FunctionType *after_main = llvm::FunctionType::get(_voidTy, {}, false);
+    _definedElseWhere["after_main"] =
+        llvm::Function::Create(after_main, llvm::GlobalValue::ExternalLinkage, "after_main", _module);
+    // int _sysy_starttime
+    llvm::FunctionType *_sysy_starttime = llvm::FunctionType::get(_voidTy, {_int32Ty}, false);
+    _definedElseWhere["_sysy_starttime"] =
+        llvm::Function::Create(_sysy_starttime, llvm::GlobalValue::ExternalLinkage, "_sysy_starttime", _module);
+    // int _sysy_stoptime
+    llvm::FunctionType *_sysy_stoptime = llvm::FunctionType::get(_voidTy, {_int32Ty}, false);
+    _definedElseWhere["_sysy_stoptime"] =
+        llvm::Function::Create(_sysy_stoptime, llvm::GlobalValue::ExternalLinkage, "_sysy_stoptime", _module);
 }
 
-IRBuilder::~IRBuilder() { _module->print(llvm::outs(), nullptr); }
+IRBuilder::~IRBuilder() {
+    //_module->print(llvm::outs(), nullptr);
+}
 
 void IRBuilder::visit(FunctionDef *node) {
     std::vector<llvm::Type *> params;
@@ -66,11 +125,13 @@ void IRBuilder::visit(FunctionDef *node) {
     node->getBlock()->accept(this);
 
     // if the function didn't execute return before, than return the default value
-    if (_retBlk.find(_theIRBuilder->GetInsertBlock()) == _retBlk.end()) {
+    if (_hasBrOrRetBlk.find(_theIRBuilder->GetInsertBlock()) == _hasBrOrRetBlk.end()) {
         if (node->getRetType()->getBasicType() == BasicType::INT) {
             _theIRBuilder->CreateRet(_int32Zero);
-        } else {
+        } else if (node->getRetType()->getBasicType() == BasicType::FLOAT) {
             _theIRBuilder->CreateRet(_floatZero);
+        } else {
+            _theIRBuilder->CreateRetVoid();
         }
     }
 }
@@ -136,6 +197,14 @@ void IRBuilder::visit(ConstVal *node) {
 }
 
 void IRBuilder::visit(VarRef *node) {
+    if (node->isConst()) {
+        if (node->getVariable()->getBasicType() == BasicType::INT) {
+            _value = llvm::ConstantInt::get(_int32Ty, ExpressionHandle::evaluateConstExpr(node));
+        } else {
+            _value = llvm::ConstantFP::get(_floatTy, ExpressionHandle::evaluateConstExpr(node));
+        }
+        return;
+    }
     auto addr = node->getVariable()->getAddr();
     if (addr->getType()->getPointerElementType()->isArrayTy()) {
         // cast the array to pointer,
@@ -353,21 +422,27 @@ void IRBuilder::visit(BinaryExpression *node) {
 
 void IRBuilder::visit(FunctionCall *node) {
     std::vector<llvm::Value *> params;
-    llvm::Function *function = node->getFunctionDef()->getFunction();
+    llvm::Function *function = nullptr;
+    if (node->getFunctionDef()) {
+        function = node->getFunctionDef()->getFunction();
+    } else {
+        function = _definedElseWhere[node->getName()];
+    }
     int i = 0;
     for (auto rParam : node->getParams()) {
         rParam->accept(this);
         _value = _theIRBuilder->CreateBitCast(_value, function->getArg(i++)->getType());
         params.push_back(_value);
     }
-    _value = _theIRBuilder->CreateCall(node->getFunctionDef()->getFunction(), params);
+    _value = _theIRBuilder->CreateCall(function, params);
 }
 
 void IRBuilder::visit(Block *node) {
     for (auto element : node->getElements()) {
         element->accept(this);
         // skip the statements following the return statement
-        if (element->getClassId() == ID_RETURN_STATEMENT) {
+        if (element->getClassId() == ID_RETURN_STATEMENT || element->getClassId() == ID_CONTINUE_STATEMENT ||
+            element->getClassId() == ID_BREAK_STATEMENT) {
             break;
         }
     }
@@ -430,15 +505,25 @@ void IRBuilder::visit(WhileStatement *node) {
     node->getCond()->accept(this);
     checkAndCreateCondBr(convertToDestTy(_value, _int1Ty), _trueBB, _falseBB);
 
+    auto tmpCondBB = _condBB;
+    auto tmpAfterBB = _afterBB;
+    _condBB = condBB;
+    _afterBB = afterWhileBB;
     _theIRBuilder->SetInsertPoint(whileBB);
     node->getStmt()->accept(this);
     checkAndCreateBr(condBB);
+    _condBB = tmpCondBB;
+    _afterBB = tmpAfterBB;
 
     _theIRBuilder->SetInsertPoint(afterWhileBB);
 }
 
+void IRBuilder::visit(BreakStatement *node) { checkAndCreateBr(_afterBB); }
+
+void IRBuilder::visit(ContinueStatement *node) { checkAndCreateBr(_condBB); }
+
 void IRBuilder::visit(ReturnStatement *node) {
-    _retBlk.insert(_theIRBuilder->GetInsertBlock());
+    _hasBrOrRetBlk.insert(_theIRBuilder->GetInsertBlock());
     if (node->getExpr()) {
         node->getExpr()->accept(this);
         _theIRBuilder->CreateRet(convertToDestTy(_value, _currentFunction->getReturnType()));
@@ -513,14 +598,16 @@ llvm::Value *IRBuilder::convertToDestTy(llvm::Value *value, llvm::Type *destTy) 
 }
 
 void IRBuilder::checkAndCreateBr(llvm::BasicBlock *destBlk) {
-    if (_retBlk.find(_theIRBuilder->GetInsertBlock()) == _retBlk.end()) {
+    if (_hasBrOrRetBlk.find(_theIRBuilder->GetInsertBlock()) == _hasBrOrRetBlk.end()) {
         _theIRBuilder->CreateBr(destBlk);
+        _hasBrOrRetBlk.insert(_theIRBuilder->GetInsertBlock());
     }
 }
 
 void IRBuilder::checkAndCreateCondBr(llvm::Value *value, llvm::BasicBlock *trueBlk, llvm::BasicBlock *falseBlck) {
-    if (_retBlk.find(_theIRBuilder->GetInsertBlock()) == _retBlk.end()) {
+    if (_hasBrOrRetBlk.find(_theIRBuilder->GetInsertBlock()) == _hasBrOrRetBlk.end()) {
         _theIRBuilder->CreateCondBr(value, _trueBB, _falseBB);
+        _hasBrOrRetBlk.insert(_theIRBuilder->GetInsertBlock());
     }
 }
 
@@ -532,7 +619,6 @@ llvm::Value *IRBuilder::getIndexedRefAddress(IndexedRef *indexedRef) {
     auto begin = dimension.begin();
     if (var->getDataType()->getClassId() == ID_POINTER_TYPE) {
         addr = _theIRBuilder->CreateLoad(addr->getType()->getPointerElementType(), addr);
-
         (*begin++)->accept(this);
         addr = _theIRBuilder->CreateInBoundsGEP(addr->getType()->getPointerElementType(), addr, _value);
     }

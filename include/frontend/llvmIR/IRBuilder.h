@@ -6,6 +6,7 @@
 #include "AST/tools/ASTVisitor.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
+
 namespace ATC {
 
 class Scope;
@@ -42,7 +43,17 @@ public:
 
     virtual void visit(WhileStatement *) override;
 
+    virtual void visit(BreakStatement *) override;
+
+    virtual void visit(ContinueStatement *) override;
+
     virtual void visit(ReturnStatement *) override;
+
+    void dumpLL(std::string path) {
+        std::error_code EC;
+        llvm::raw_fd_ostream outputFile(path, EC);
+        _module->print(outputFile, nullptr);
+    }
 
 private:
     llvm::Type *convertToLLVMType(int type);
@@ -54,7 +65,8 @@ private:
     void checkAndCreateCondBr(llvm::Value *value, llvm::BasicBlock *trueBlk, llvm::BasicBlock *falseBlck);
 
     llvm::Value *getIndexedRefAddress(IndexedRef *varRef);
-    llvm::Value *convertNestedValuesToConstant(const std::vector<int> &dimensions, int deep, int begin, llvm::Type *basicType);
+    llvm::Value *convertNestedValuesToConstant(const std::vector<int> &dimensions, int deep, int begin,
+                                               llvm::Type *basicType);
 
     llvm::Module *_module;
     llvm::IRBuilder<> *_theIRBuilder;
@@ -72,14 +84,21 @@ private:
     llvm::Constant *_int32One;
     llvm::Constant *_floatOne;
 
-    // 保存遍历表达式节点后的求出的值
+    // keep the value of expression
     llvm::Value *_value;
+
     llvm::BasicBlock *_trueBB;
     llvm::BasicBlock *_falseBB;
+
+    // for break/continue statement
+    llvm::BasicBlock *_condBB;
+    llvm::BasicBlock *_afterBB;
+
     llvm::Function *_currentFunction;
 
-    std::set<llvm::BasicBlock *> _retBlk;
+    std::set<llvm::BasicBlock *> _hasBrOrRetBlk;
     std::map<int, llvm::Value *> _nestedExpressionValues;
+    std::map<std::string, llvm::Function *> _definedElseWhere;
 };
 }  // namespace ATC
 #endif

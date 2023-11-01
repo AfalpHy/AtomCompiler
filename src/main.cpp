@@ -38,10 +38,10 @@ int main(int argc, const char *argv[]) {
     astBuilder.setTokenStream(&token);
     context->accept(&astBuilder);
 
-    ATC::SemanticChecker checker;
-    for (auto compUnit : ATC::CompUnit::AllCompUnits) {
-        compUnit->accept(&checker);
-    }
+    // ATC::SemanticChecker checker;
+    // for (auto compUnit : ATC::CompUnit::AllCompUnits) {
+    //     compUnit->accept(&checker);
+    // }
 
     if (argc > 2 && strcmp(argv[2], "--dump-ast") == 0) {
         ATC::DumpASTVisitor dump;
@@ -54,6 +54,6 @@ int main(int argc, const char *argv[]) {
     for (auto compUnit : ATC::CompUnit::AllCompUnits) {
         compUnit->accept(&irBuilder);
     }
-
+    irBuilder.dumpLL("main.ll");
     return 0;
 }
