@@ -1,5 +1,4 @@
 .antlr/
 .vscode/
-tests/
 build/
 src/frontend/antlr/
