@@ -30,6 +30,7 @@ IRBuilder::IRBuilder() {
     _floatOne = llvm::ConstantFP::get(_floatTy, 1);
 
     _module->setTargetTriple(llvm::sys::getProcessTriple());
+    _module->setDataLayout(llvm::DataLayout(_module));
 
     // int getint
     llvm::FunctionType *getint = llvm::FunctionType::get(_int32Ty, {}, false);
@@ -165,21 +166,32 @@ void IRBuilder::visit(Variable *node) {
         if (auto initValue = node->getInitValue()) {
             initValue->accept(this);
             if (initValue->getClassId() == ID_NESTED_EXPRESSION) {
-                auto dimension = static_cast<ArrayType *>(node->getDataType())->getDimensions();
-                auto elementSize = static_cast<ArrayType *>(node->getDataType())->getElementSize();
-                for (auto item : _nestedExpressionValues) {
-                    // get address of the array element from the index
-                    int index = item.first;
-                    auto addr = node->getAddr();
-                    for (int i = 0; i < elementSize.size(); i++) {
-                        addr = _theIRBuilder->CreateInBoundsGEP(
-                            addr->getType()->getPointerElementType(), addr,
-                            {_int32Zero, llvm::ConstantInt::get(_int32Ty, index / elementSize[i])});
-                        index -= index / elementSize[i] * elementSize[i];
+                auto addr = node->getAddr();
+                if (_nestedExpressionValues.empty()) {
+                    auto memsetFunc = _module->getOrInsertFunction(
+                        "llvm.memset.p0i8.i64", _voidTy, _theIRBuilder->getInt8PtrTy(), _theIRBuilder->getInt8Ty(),
+                        _theIRBuilder->getInt64Ty(), _theIRBuilder->getInt1Ty());
+                    auto size = _module->getDataLayout().getTypeAllocSize(addr->getType()->getPointerElementType());
+                    _theIRBuilder->CreateCall(
+                        memsetFunc,
+                        {_theIRBuilder->CreateBitCast(addr, _theIRBuilder->getInt8PtrTy()), _theIRBuilder->getInt8(0),
+                         _theIRBuilder->getInt64(size), _theIRBuilder->getInt1(true)});
+                } else {
+                    auto dimension = static_cast<ArrayType *>(node->getDataType())->getDimensions();
+                    auto elementSize = static_cast<ArrayType *>(node->getDataType())->getElementSize();
+                    for (auto item : _nestedExpressionValues) {
+                        // get address of the array element from the index
+                        int index = item.first;
+                        for (int i = 0; i < elementSize.size(); i++) {
+                            addr = _theIRBuilder->CreateInBoundsGEP(
+                                addr->getType()->getPointerElementType(), addr,
+                                {_int32Zero, llvm::ConstantInt::get(_int32Ty, index / elementSize[i])});
+                            index -= index / elementSize[i] * elementSize[i];
+                        }
+                        _theIRBuilder->CreateStore(item.second, addr);
                     }
-                    _theIRBuilder->CreateStore(item.second, addr);
+                    _nestedExpressionValues.clear();
                 }
-                _nestedExpressionValues.clear();
             } else {
                 _value = convertToDestTy(_value, node->getAddr()->getType()->getPointerElementType());
                 _theIRBuilder->CreateStore(_value, node->getAddr());
