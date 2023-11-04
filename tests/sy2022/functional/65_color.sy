@@ -64,6 +64,6 @@ int main(){
     int ans = dfs(cns[1], cns[2], cns[3], cns[4], cns[5], 0);
 
     putint(ans);
-
+    putch(10);
     return ans;
 }

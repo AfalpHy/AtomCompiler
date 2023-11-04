@@ -23,5 +23,6 @@ int main() {
 		putint(1);
 	else
 		putint(0);
+	putch(10);
 	return 0;
 }

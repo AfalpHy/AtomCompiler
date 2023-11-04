@@ -14,5 +14,6 @@ void reverse(int n) {
 int main() {
 	int i=200;
 	reverse(i);
+    putch(10);
 	return 0;
 }

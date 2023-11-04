@@ -22,5 +22,6 @@ int main() {
     }
     putint(k);
   }
+  putch(10);
   return k;
 }

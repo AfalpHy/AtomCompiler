@@ -14,5 +14,6 @@ int main () {
     result = ((d % 2 + 67) + -(a - b) - -((c + 2) % 2));
     result = result + 3;
     putint(result);
+    putch(10);
     return 0;
 }

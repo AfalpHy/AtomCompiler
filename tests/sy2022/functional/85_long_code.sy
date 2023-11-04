@@ -299,5 +299,6 @@ int main() {
         putint(t);
         i = i + 1;
     }
+    putch(10);
     return 0;
 }

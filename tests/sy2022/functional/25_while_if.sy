@@ -27,5 +27,6 @@ int main() {
   p = 2;
   p = deepWhileBr(p, p);
   putint(p);
+  putch(10);
   return 0;
 }

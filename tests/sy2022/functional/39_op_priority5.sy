@@ -11,5 +11,6 @@ int main()
 		flag=1;
 	}
 	putint(flag);
+	putch(10);
 	return flag;
 }

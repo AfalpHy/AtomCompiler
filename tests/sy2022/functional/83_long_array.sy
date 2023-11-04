@@ -57,5 +57,7 @@ int long_array(int k) {
 }
 
 int main() {
-  return long_array(9);
+  int ret = long_array(9);
+  putch(10);
+  return ret;
 }

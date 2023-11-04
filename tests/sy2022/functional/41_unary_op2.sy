@@ -10,5 +10,6 @@ int main() {
         a = 0 + + b;
     }
     putint(a);
+    putch(10);
     return 0;
 }

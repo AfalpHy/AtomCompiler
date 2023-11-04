@@ -17,5 +17,6 @@ int main () {
         result = 4;
         putint(result);
     }
+    putch(10);
     return 0;
 }

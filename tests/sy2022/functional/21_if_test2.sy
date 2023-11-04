@@ -21,5 +21,6 @@ int ifElseIf() {
 
 int main(){
   putint(ifElseIf());
+  putch(10);
   return 0;
 }

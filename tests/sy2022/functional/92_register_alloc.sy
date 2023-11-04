@@ -90,5 +90,6 @@ int main(){
     b = a + 2 * 9;
     a = func(a, b);
     putint(a);
+    putch(10);
     return a;
 }

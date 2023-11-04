@@ -18,5 +18,6 @@ int main() {
 	exgcd(a, b, x, y);
 	x[0] = (x[0] % b + b) % b;
 	putint(x[0]);
+	putch(10);
 	return 0;
 }
