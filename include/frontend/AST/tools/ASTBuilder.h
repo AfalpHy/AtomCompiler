@@ -57,6 +57,10 @@ public:
 
     virtual antlrcpp::Any visitStmt(ATCParser::StmtContext *ctx) override;
 
+    virtual antlrcpp::Any visitIntConst(ATCParser::IntConstContext *ctx) override;
+
+    virtual antlrcpp::Any visitFloatConst(ATCParser::FloatConstContext *ctx) override;
+
     void setTokenStream(antlr4::CommonTokenStream *token) { _token = token; }
 
 private:

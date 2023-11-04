@@ -374,12 +374,12 @@ antlrcpp::Any ASTBuilder::visitPrimaryExpr(ATCParser::PrimaryExprContext *ctx) {
 antlrcpp::Any ASTBuilder::visitNumber(ATCParser::NumberContext *ctx) {
     auto constVal = new ConstVal(_lastNode);
     constVal->setPosition(ctx->getStart(), ctx->getStop());
-    if (ctx->IntConst()) {
+    if (ctx->intConst()) {
         constVal->setBasicType(BasicType::INT);
-        constVal->setIntValue(std::stoi(ctx->IntConst()->getText()));
+        constVal->setIntValue(ctx->intConst()->accept(this).as<int>());
     } else {
         constVal->setBasicType(BasicType::FLOAT);
-        constVal->setFloatValue(std::stof(ctx->FloatConst()->getText()));
+        constVal->setFloatValue(ctx->floatConst()->accept(this).as<float>());
     }
 
     return (Expression *)constVal;
@@ -593,4 +593,21 @@ antlrcpp::Any ASTBuilder::visitLOrExpr(ATCParser::LOrExprContext *ctx) {
     return (Expression *)left;
 }
 
+antlrcpp::Any ASTBuilder::visitIntConst(ATCParser::IntConstContext *ctx) {
+    if (ctx->DecimalConst()) {
+        return std::stoi(ctx->getText());
+    } else if (ctx->OctConst()) {
+        return std::stoi(ctx->getText(), 0, 8);
+    } else {
+        return std::stoi(ctx->getText(), 0, 16);
+    }
+}
+
+antlrcpp::Any ASTBuilder::visitFloatConst(ATCParser::FloatConstContext *ctx) {
+    if (ctx->DecimalFloatingConst()) {
+        return std::stof(ctx->getText());
+    } else {
+        return std::stof(ctx->getText());
+    }
+}
 }  // namespace ATC

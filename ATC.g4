@@ -34,7 +34,7 @@ indexedRef: Ident (LeftBracket expr RightBracket)+;
 
 dereference: Star expr;
 
-number: IntConst | FloatConst;
+number: intConst | floatConst;
 
 primaryExpr:
 	LeftParenthesis expr RightParenthesis
@@ -134,17 +134,17 @@ Or: '||';
 
 Ident: [_a-zA-Z] [_a-zA-Z0-9]*;
 
-IntConst: DecimalConst | OctConst | HexConst;
+intConst: DecimalConst | OctConst | HexConst;
 
-fragment DecimalConst: [1-9] [0-9]* | '0';
+DecimalConst: [1-9] [0-9]* | '0';
 
-fragment OctConst: '0' [0-7] [0-8]*;
+OctConst: '0' [0-7] [0-8]*;
 
-fragment HexConst: ('0x' | '0X') [0-9a-fA-F]+;
+HexConst: ('0x' | '0X') [0-9a-fA-F]+;
 
-FloatConst: DecimalFloatingConst | HexFloatingConst;
+floatConst: DecimalFloatingConst | HexFloatingConst;
 
-fragment DecimalFloatingConst: FractionalConst Exponent? | Digit Exponent;
+DecimalFloatingConst: FractionalConst Exponent? | Digit Exponent;
 
 fragment FractionalConst: Digit? '.' Digit?;
 
@@ -152,7 +152,7 @@ fragment Exponent: ( 'E' | 'e') ( '+' | '-')? Digit;
 
 fragment Digit: [0-9]+;
 
-fragment HexFloatingConst: ('0x' | '0X') HexFractionalConst BinaryExponent?
+HexFloatingConst: ('0x' | '0X') HexFractionalConst BinaryExponent?
 	| ('0x' | '0X') HexDigit BinaryExponent?;
 
 fragment HexFractionalConst: HexDigit? '.' HexDigit?;
