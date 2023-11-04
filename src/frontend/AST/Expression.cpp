@@ -15,7 +15,11 @@ float ExpressionHandle::evaluateConstExpr(Expression* expr) {
             }
         }
         case ID_VAR_REF: {
-            return evaluateConstExpr(((VarRef*)expr)->getVariable()->getInitValue());
+            auto ret = evaluateConstExpr(((VarRef*)expr)->getVariable()->getInitValue());
+            if (((VarRef*)expr)->getVariable()->getBasicType() == BasicType::INT) {
+                ret = (int)ret;
+            }
+            return ret;
         }
         case ID_UNARY_EXPRESSION: {
             auto unaryExpr = (UnaryExpression*)expr;

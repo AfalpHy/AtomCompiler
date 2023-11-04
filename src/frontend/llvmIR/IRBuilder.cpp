@@ -22,10 +22,8 @@ IRBuilder::IRBuilder() {
     _floatTy = llvm::Type::getFloatTy(*ctx);
     _int32PtrTy = llvm::Type::getInt32PtrTy(*ctx);
     _floatPtrTy = llvm::Type::getFloatPtrTy(*ctx);
-    _int1Zero == llvm::ConstantInt::get(_int1Ty, 0);
     _int32Zero = llvm::ConstantInt::get(_int32Ty, 0, true);
     _floatZero = llvm::ConstantFP::get(_floatTy, 0);
-    _int1One == llvm::ConstantInt::get(_int1Ty, 1);
     _int32One = llvm::ConstantInt::get(_int32Ty, 1, true);
     _floatOne = llvm::ConstantFP::get(_floatTy, 1);
 
@@ -138,28 +136,24 @@ void IRBuilder::visit(FunctionDef *node) {
 }
 
 void IRBuilder::visit(Variable *node) {
+    llvm::Type *basicLLVMType = convertToLLVMType(node->getBasicType());
     if (node->isGlobal()) {
         // create global variable
-        llvm::Type *type = convertToLLVMType(node->getDataType());
-        _module->getOrInsertGlobal(node->getName(), type);
-        auto globalVar = _module->getNamedGlobal(node->getName());
-
         if (auto initValue = node->getInitValue()) {
-            assert(initValue->isConst());
             initValue->accept(this);
-            if (initValue->getClassId() == ID_NESTED_EXPRESSION) {
-                _value = convertNestedValuesToConstant(static_cast<ArrayType *>(node->getDataType())->getDimensions(),
-                                                       0, 0, convertToLLVMType(node->getBasicType()));
-                _nestedExpressionValues.clear();
-            }
-        } else {
-            if (node->getDataType()->getClassId() == ID_ARRAY_TYPE) {
-                _value = convertNestedValuesToConstant(static_cast<ArrayType *>(node->getDataType())->getDimensions(),
-                                                       0, 0, convertToLLVMType(node->getBasicType()));
-            } else {
-                _value = node->getBasicType() == BasicType::INT ? _int32Zero : _floatZero;
-            }
         }
+        if (node->getDataType()->getClassId() == ID_ARRAY_TYPE) {
+            _value = convertNestedValuesToConstant(static_cast<ArrayType *>(node->getDataType())->getDimensions(), 0, 0,
+                                                   basicLLVMType);
+        } else {
+            if (node->getInitValue() == nullptr) {
+                _value = basicLLVMType == _int32Ty ? _int32Zero : _floatZero;
+            }
+            _value = castToDestTy(_value, basicLLVMType);
+        }
+        assert(llvm::isa<llvm::Constant>(_value));
+        _module->getOrInsertGlobal(node->getName(), _value->getType());
+        auto globalVar = _module->getNamedGlobal(node->getName());
         globalVar->setInitializer((llvm::Constant *)_value);
         node->setAddr(globalVar);
     } else {
@@ -167,33 +161,34 @@ void IRBuilder::visit(Variable *node) {
             initValue->accept(this);
             if (initValue->getClassId() == ID_NESTED_EXPRESSION) {
                 auto addr = node->getAddr();
-                if (_nestedExpressionValues.empty()) {
-                    auto memsetFunc = _module->getOrInsertFunction(
-                        "llvm.memset.p0i8.i64", _voidTy, _theIRBuilder->getInt8PtrTy(), _theIRBuilder->getInt8Ty(),
-                        _theIRBuilder->getInt64Ty(), _theIRBuilder->getInt1Ty());
-                    auto size = _module->getDataLayout().getTypeAllocSize(addr->getType()->getPointerElementType());
-                    _theIRBuilder->CreateCall(
-                        memsetFunc,
-                        {_theIRBuilder->CreateBitCast(addr, _theIRBuilder->getInt8PtrTy()), _theIRBuilder->getInt8(0),
-                         _theIRBuilder->getInt64(size), _theIRBuilder->getInt1(true)});
-                } else {
-                    auto dimension = static_cast<ArrayType *>(node->getDataType())->getDimensions();
-                    auto elementSize = static_cast<ArrayType *>(node->getDataType())->getElementSize();
-                    for (auto item : _nestedExpressionValues) {
-                        // get address of the array element from the index
-                        int index = item.first;
-                        for (int i = 0; i < elementSize.size(); i++) {
-                            addr = _theIRBuilder->CreateInBoundsGEP(
-                                addr->getType()->getPointerElementType(), addr,
-                                {_int32Zero, llvm::ConstantInt::get(_int32Ty, index / elementSize[i])});
-                            index -= index / elementSize[i] * elementSize[i];
-                        }
-                        _theIRBuilder->CreateStore(item.second, addr);
+
+                auto memsetFunc = _module->getOrInsertFunction(
+                    "llvm.memset.p0i8.i64", _voidTy, _theIRBuilder->getInt8PtrTy(), _theIRBuilder->getInt8Ty(),
+                    _theIRBuilder->getInt64Ty(), _theIRBuilder->getInt1Ty());
+                auto size = _module->getDataLayout().getTypeAllocSize(addr->getType()->getPointerElementType());
+                _theIRBuilder->CreateCall(
+                    memsetFunc,
+                    {_theIRBuilder->CreateBitCast(addr, _theIRBuilder->getInt8PtrTy()), _theIRBuilder->getInt8(0),
+                     _theIRBuilder->getInt64(size), _theIRBuilder->getInt1(true)});
+
+                auto dimension = static_cast<ArrayType *>(node->getDataType())->getDimensions();
+                auto elementSize = static_cast<ArrayType *>(node->getDataType())->getElementSize();
+                for (auto item : _nestedExpressionValues) {
+                    // get address of the array element from the index
+                    int index = item.first;
+                    auto tmpAddr = addr;
+                    for (int i = 0; i < elementSize.size(); i++) {
+                        tmpAddr = _theIRBuilder->CreateInBoundsGEP(
+                            tmpAddr->getType()->getPointerElementType(), tmpAddr,
+                            {_int32Zero, llvm::ConstantInt::get(_int32Ty, index / elementSize[i])});
+                        index -= index / elementSize[i] * elementSize[i];
                     }
-                    _nestedExpressionValues.clear();
+                    _theIRBuilder->CreateStore(castToDestTy(item.second, basicLLVMType), tmpAddr);
                 }
+                _nestedExpressionValues.clear();
+
             } else {
-                _value = convertToDestTy(_value, node->getAddr()->getType()->getPointerElementType());
+                _value = castToDestTy(_value, basicLLVMType);
                 _theIRBuilder->CreateStore(_value, node->getAddr());
             }
         }
@@ -218,11 +213,10 @@ void IRBuilder::visit(VarRef *node) {
         return;
     }
     auto addr = node->getVariable()->getAddr();
-    if (addr->getType()->getPointerElementType()->isArrayTy()) {
+    if (node->getVariable()->getDataType()->getClassId() == ID_ARRAY_TYPE) {
         // cast the array to pointer,
         // int a[10]; 'a' is treated as a pointer when used as a function argument
-        _value =
-            _theIRBuilder->CreateInBoundsGEP(addr->getType()->getPointerElementType(), addr, {_int32Zero, _int32Zero});
+        _value = addr;
     } else {
         _value = _theIRBuilder->CreateLoad(addr->getType()->getPointerElementType(), addr);
     }
@@ -241,13 +235,11 @@ void IRBuilder::visit(IndexedRef *node) {
 void IRBuilder::visit(NestedExpression *node) {
     static int deep = 0;
     static int index;
-    static bool scalar;
     // dimensions of definded variable
     static std::vector<int> dimensions;
 
     if (deep == 0) {
         index = 0;
-        scalar = false;
         dimensions.clear();
         _nestedExpressionValues.clear();
         assert(node->getParent()->getClassId() == ID_VARIABLE);
@@ -261,34 +253,30 @@ void IRBuilder::visit(NestedExpression *node) {
     for (int i = deep; i < dimensions.size(); i++) {
         maxSize *= dimensions[i];
     }
-    int targetIndex = index + maxSize;
+
     deep++;
     const auto &elements = node->getElements();
     // get one value when there are excess elements in a scalar initializer or
     // when there are too many braces around a scalar initializer.
-    if (scalar || deep > dimensions.size()) {
+    if (index % maxSize || deep > dimensions.size()) {
         if (elements[0]->getClassId() == ID_NESTED_EXPRESSION) {
-            bool tmp = scalar;
             elements[0]->accept(this);
-            scalar = tmp;
         } else {
             elements[0]->accept(this);
             _nestedExpressionValues.insert({index++, _value});
         }
     } else {
+        int targetIndex = index + maxSize;
         for (size_t i = 0; i < elements.size(); i++) {
+            // ignore the remaining elements
+            if (index == targetIndex) {
+                break;
+            }
             if (elements[i]->getClassId() == ID_NESTED_EXPRESSION) {
-                bool tmp = scalar;
                 elements[i]->accept(this);
-                scalar = tmp;
             } else {
-                scalar = true;
                 elements[i]->accept(this);
                 _nestedExpressionValues.insert({index++, _value});
-                // ignore the remaining elements
-                if (index == targetIndex) {
-                    break;
-                }
             }
         }
         index = targetIndex;
@@ -303,9 +291,11 @@ void IRBuilder::visit(UnaryExpression *node) {
             _value = _theIRBuilder->CreateFSub(_floatZero, _value);
         } else if (_value->getType() == _int32Ty) {
             _value = _theIRBuilder->CreateSub(_int32Zero, _value);
+        } else {
+            _value = _theIRBuilder->CreateSub(_int32Zero, castToDestTy(_value, _int32Ty));
         }
     } else if (node->getOperator() == NOT) {
-        _value = _theIRBuilder->CreateNot(convertToDestTy(_value, _int1Ty));
+        _value = _theIRBuilder->CreateNot(castToDestTy(_value, _int1Ty));
     }
 }
 
@@ -318,13 +308,13 @@ void IRBuilder::visit(BinaryExpression *node) {
             auto tmpTrueBB = _trueBB;
             _trueBB = rhsCondBB;
             node->getLeft()->accept(this);
-            checkAndCreateCondBr(convertToDestTy(_value, _int1Ty), rhsCondBB, _falseBB);
+            checkAndCreateCondBr(castToDestTy(_value, _int1Ty), rhsCondBB, _falseBB);
             _trueBB = tmpTrueBB;
         } else {
             auto tmpFalseBB = _falseBB;
             _falseBB = rhsCondBB;
             node->getLeft()->accept(this);
-            checkAndCreateCondBr(convertToDestTy(_value, _int1Ty), _trueBB, rhsCondBB);
+            checkAndCreateCondBr(castToDestTy(_value, _int1Ty), _trueBB, rhsCondBB);
             _falseBB = tmpFalseBB;
         }
 
@@ -339,17 +329,17 @@ void IRBuilder::visit(BinaryExpression *node) {
     auto right = _value;
 
     if (node->getOperator() == AND) {
-        _value = _theIRBuilder->CreateAnd(convertToDestTy(left, _int1Ty), convertToDestTy(right, _int1Ty));
+        _value = _theIRBuilder->CreateAnd(castToDestTy(left, _int1Ty), castToDestTy(right, _int1Ty));
         return;
     } else if (node->getOperator() == OR) {
-        _value = _theIRBuilder->CreateOr(convertToDestTy(left, _int1Ty), convertToDestTy(right, _int1Ty));
+        _value = _theIRBuilder->CreateOr(castToDestTy(left, _int1Ty), castToDestTy(right, _int1Ty));
         return;
     }
 
     // make the left expr and right expr has the same type
     if (left->getType() == _floatTy || right->getType() == _floatTy) {
-        left = convertToDestTy(left, _floatTy);
-        right = convertToDestTy(right, _floatTy);
+        left = castToDestTy(left, _floatTy);
+        right = castToDestTy(right, _floatTy);
         switch (node->getOperator()) {
             case PLUS:
                 _value = _theIRBuilder->CreateFAdd(left, right);
@@ -389,8 +379,8 @@ void IRBuilder::visit(BinaryExpression *node) {
                 break;
         }
     } else {
-        left = convertToDestTy(left, _int32Ty);
-        right = convertToDestTy(right, _int32Ty);
+        left = castToDestTy(left, _int32Ty);
+        right = castToDestTy(right, _int32Ty);
         switch (node->getOperator()) {
             case PLUS:
                 _value = _theIRBuilder->CreateAdd(left, right);
@@ -443,7 +433,7 @@ void IRBuilder::visit(FunctionCall *node) {
     int i = 0;
     for (auto rParam : node->getParams()) {
         rParam->accept(this);
-        _value = _theIRBuilder->CreateBitCast(_value, function->getArg(i++)->getType());
+        _value = castToDestTy(_value, function->getArg(i++)->getType());
         params.push_back(_value);
     }
     _value = _theIRBuilder->CreateCall(function, params);
@@ -468,7 +458,7 @@ void IRBuilder::visit(AssignStatement *node) {
         addr = getIndexedRefAddress((IndexedRef *)node->getLval());
     }
     node->getRval()->accept(this);
-    _value = convertToDestTy(_value, addr->getType()->getPointerElementType());
+    _value = castToDestTy(_value, addr->getType()->getPointerElementType());
     _theIRBuilder->CreateStore(_value, addr);
 }
 
@@ -484,7 +474,7 @@ void IRBuilder::visit(IfStatement *node) {
         elseBB->insertInto(_currentFunction);
         _falseBB = elseBB;
         node->getCond()->accept(this);
-        checkAndCreateCondBr(convertToDestTy(_value, _int1Ty), _trueBB, _falseBB);
+        checkAndCreateCondBr(castToDestTy(_value, _int1Ty), _trueBB, _falseBB);
 
         _theIRBuilder->SetInsertPoint(elseBB);
         node->getElseStmt()->accept(this);
@@ -492,7 +482,7 @@ void IRBuilder::visit(IfStatement *node) {
     } else {
         _falseBB = afterIfBB;
         node->getCond()->accept(this);
-        checkAndCreateCondBr(convertToDestTy(_value, _int1Ty), _trueBB, _falseBB);
+        checkAndCreateCondBr(castToDestTy(_value, _int1Ty), _trueBB, _falseBB);
     }
 
     _theIRBuilder->SetInsertPoint(ifBB);
@@ -515,7 +505,7 @@ void IRBuilder::visit(WhileStatement *node) {
     _trueBB = whileBB;
     _falseBB = afterWhileBB;
     node->getCond()->accept(this);
-    checkAndCreateCondBr(convertToDestTy(_value, _int1Ty), _trueBB, _falseBB);
+    checkAndCreateCondBr(castToDestTy(_value, _int1Ty), _trueBB, _falseBB);
 
     auto tmpCondBB = _condBB;
     auto tmpAfterBB = _afterBB;
@@ -538,7 +528,7 @@ void IRBuilder::visit(ReturnStatement *node) {
     _hasBrOrRetBlk.insert(_theIRBuilder->GetInsertBlock());
     if (node->getExpr()) {
         node->getExpr()->accept(this);
-        _theIRBuilder->CreateRet(convertToDestTy(_value, _currentFunction->getReturnType()));
+        _theIRBuilder->CreateRet(castToDestTy(_value, _currentFunction->getReturnType()));
     } else {
         _theIRBuilder->CreateRetVoid();
     }
@@ -586,7 +576,11 @@ void IRBuilder::allocForScopeVars(Scope *currentScope) {
     }
 }
 
-llvm::Value *IRBuilder::convertToDestTy(llvm::Value *value, llvm::Type *destTy) {
+llvm::Value *IRBuilder::castToDestTy(llvm::Value *value, llvm::Type *destTy) {
+    if (destTy->isPointerTy()) {
+        assert(value->getType()->isPointerTy());
+        return _theIRBuilder->CreateBitCast(value, destTy);
+    }
     if (destTy == _floatTy) {
         if (value->getType() == _int32Ty) {
             return _theIRBuilder->CreateSIToFP(value, _floatTy);
@@ -626,6 +620,9 @@ void IRBuilder::checkAndCreateCondBr(llvm::Value *value, llvm::BasicBlock *trueB
 llvm::Value *IRBuilder::getIndexedRefAddress(IndexedRef *indexedRef) {
     Variable *var = indexedRef->getVariable();
     llvm::Value *addr = var->getAddr();
+    if (var->isGlobal() && var->getDataType()->getClassId() == ID_ARRAY_TYPE) {
+        addr = _theIRBuilder->CreateBitCast(addr, llvm::PointerType::get(convertToLLVMType(var->getDataType()), 0));
+    }
     assert(addr->getType()->isPointerTy());
     const auto &dimension = indexedRef->getDimensions();
     auto begin = dimension.begin();
@@ -644,7 +641,8 @@ llvm::Value *IRBuilder::getIndexedRefAddress(IndexedRef *indexedRef) {
 llvm::Value *IRBuilder::convertNestedValuesToConstant(const std::vector<int> &dimensions, int deep, int begin,
                                                       llvm::Type *basicType) {
     if (deep == dimensions.size()) {
-        return _nestedExpressionValues[begin];
+        // convert if need
+        return castToDestTy(_nestedExpressionValues[begin], basicType);
     }
 
     llvm::Type *partType = basicType;
@@ -654,6 +652,7 @@ llvm::Value *IRBuilder::convertNestedValuesToConstant(const std::vector<int> &di
     llvm::Constant *zeroInitializer = llvm::ConstantAggregateZero::get(partType);
 
     std::vector<llvm::Constant *> ret;
+    std::vector<llvm::Type *> elementTypes;
     int partSize = 1;
     for (int i = deep + 1; i < dimensions.size(); i++) {
         partSize *= dimensions[i];
@@ -668,7 +667,9 @@ llvm::Value *IRBuilder::convertNestedValuesToConstant(const std::vector<int> &di
         bool pushed = false;
         for (auto item : _nestedExpressionValues) {
             if (item.first >= left && item.first < right) {
-                ret.push_back((llvm::Constant *)convertNestedValuesToConstant(dimensions, deep + 1, left, basicType));
+                auto partValue = convertNestedValuesToConstant(dimensions, deep + 1, left, basicType);
+                ret.push_back((llvm::Constant *)partValue);
+                elementTypes.push_back(partValue->getType());
                 valid = true;
                 pushed = true;
                 break;
@@ -676,23 +677,22 @@ llvm::Value *IRBuilder::convertNestedValuesToConstant(const std::vector<int> &di
         }
         if (valid && !pushed) {
             ret.push_back(zeroInitializer);
+            elementTypes.push_back(partType);
         }
         left -= partSize;
         right -= partSize;
     }
 
     std::reverse(ret.begin(), ret.end());
+    std::reverse(elementTypes.begin(), elementTypes.end());
 
     if (ret.size() != dimensions[deep]) {
-        // create the type for structType
-        std::vector<llvm::Type *> elementTypes(ret.size(), partType);
         // type of remain elements
         llvm::ArrayType *remainType = llvm::ArrayType::get(partType, dimensions[deep] - ret.size());
         elementTypes.push_back(remainType);
         ret.push_back(llvm::ConstantAggregateZero::get(remainType));
-        llvm::StructType *retType = llvm::StructType::create(elementTypes);
-        return llvm::ConstantStruct::get(retType, ret);
     }
-    return llvm::ConstantArray::get(llvm::ArrayType::get(partType, ret.size()), ret);
+    llvm::StructType *retType = llvm::StructType::create(elementTypes);
+    return llvm::ConstantStruct::get(retType, ret);
 }
 }  // namespace ATC
