@@ -163,5 +163,5 @@ fragment HexDigit: [a-fA-F0-9]+;
 
 WS: [ \r\n\t]+ -> skip;
 
-LineComment: '//' .*? '\r'? '\n' EOF? -> skip;
-MultLineComment: '/*' .*? '*/' EOF? -> skip;
+LineComment: '//' ~[\r\n]* -> skip;
+MultLineComment: '/*' .*? '*/' -> skip;
