@@ -12,6 +12,7 @@ namespace ATC {
 class Scope;
 class DataType;
 
+namespace LLVMIR {
 class IRBuilder : public ASTVisitor {
 public:
     IRBuilder();
@@ -98,5 +99,6 @@ private:
     std::map<int, llvm::Value *> _nestedExpressionValues;
     std::map<std::string, llvm::Function *> _definedElseWhere;
 };
+}  // namespace LLVMIR
 }  // namespace ATC
 #endif

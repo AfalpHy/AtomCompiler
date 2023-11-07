@@ -89,7 +89,7 @@ int main(int argc, const char *argv[]) {
     }
 
     if (useLLVM) {
-        ATC::IRBuilder irBuilder;
+        ATC::LLVMIR::IRBuilder irBuilder;
         for (auto compUnit : ATC::CompUnit::AllCompUnits) {
             compUnit->accept(&irBuilder);
         }

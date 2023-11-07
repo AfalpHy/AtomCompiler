@@ -12,6 +12,7 @@
 
 namespace ATC {
 
+namespace LLVMIR {
 IRBuilder::IRBuilder() {
     llvm::LLVMContext *ctx = new llvm::LLVMContext();
     _theIRBuilder = new llvm::IRBuilder<>(*ctx);
@@ -695,4 +696,5 @@ llvm::Value *IRBuilder::convertNestedValuesToConstant(const std::vector<int> &di
     llvm::StructType *retType = llvm::StructType::create(elementTypes);
     return llvm::ConstantStruct::get(retType, ret);
 }
+}  // namespace LLVMIR
 }  // namespace ATC
