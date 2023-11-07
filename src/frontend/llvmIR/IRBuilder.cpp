@@ -260,11 +260,13 @@ void IRBuilder::visit(NestedExpression *node) {
     // get one value when there are excess elements in a scalar initializer or
     // when there are too many braces around a scalar initializer.
     if (index % maxSize || deep > dimensions.size()) {
-        if (elements[0]->getClassId() == ID_NESTED_EXPRESSION) {
-            elements[0]->accept(this);
-        } else {
-            elements[0]->accept(this);
-            _nestedExpressionValues.insert({index++, _value});
+        if (!elements.empty()) {
+            if (elements[0]->getClassId() == ID_NESTED_EXPRESSION) {
+                elements[0]->accept(this);
+            } else {
+                elements[0]->accept(this);
+                _nestedExpressionValues.insert({index++, _value});
+            }
         }
     } else {
         int targetIndex = index + maxSize;
@@ -443,9 +445,8 @@ void IRBuilder::visit(FunctionCall *node) {
 void IRBuilder::visit(Block *node) {
     for (auto element : node->getElements()) {
         element->accept(this);
-        // skip the statements following the return statement
-        if (element->getClassId() == ID_RETURN_STATEMENT || element->getClassId() == ID_CONTINUE_STATEMENT ||
-            element->getClassId() == ID_BREAK_STATEMENT) {
+        // skip the statements following the jump statement
+        if (_hasBrOrRetBlk.find(_theIRBuilder->GetInsertBlock()) != _hasBrOrRetBlk.end()) {
             break;
         }
     }
