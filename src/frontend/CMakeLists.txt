@@ -13,5 +13,4 @@ target_include_directories(
   PUBLIC /usr/include/antlr4-runtime
   PUBLIC ${CMAKE_SOURCE_DIR}/include/frontend)
 
-find_package(LLVM REQUIRED CONFIG)
-target_link_libraries(${PROJECT_NAME} antlr4-runtime "LLVM-${LLVM_VERSION_MAJOR}")
+target_link_libraries(${PROJECT_NAME} antlr4-runtime "LLVM-14")
