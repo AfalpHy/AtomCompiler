@@ -32,7 +32,9 @@ varRef: Ident;
 
 indexedRef: Ident (LeftBracket expr RightBracket)+;
 
-dereference: Star expr;
+dereference: Star+ expr;
+
+addressOf: BitAnd expr;
 
 number: intConst | floatConst;
 
@@ -41,7 +43,8 @@ primaryExpr:
 	| varRef
 	| indexedRef
 	| number
-	| dereference;
+	| dereference
+	| addressOf;
 
 unaryExpr:
 	primaryExpr
@@ -131,6 +134,10 @@ EqNe: '==' | '!=';
 And: '&&';
 
 Or: '||';
+
+BitAnd: '&';
+
+BitOr: '|';
 
 Ident: [_a-zA-Z] [_a-zA-Z0-9]*;
 
