@@ -586,7 +586,7 @@ llvm::Value *IRBuilder::castToDestTyIfNeed(llvm::Value *value, llvm::Type *destT
     if (destTy == _floatTy) {
         if (value->getType() == _int32Ty) {
             return _theIRBuilder->CreateSIToFP(value, _floatTy);
-        } else if (_value->getType() == _int1Ty) {
+        } else if (value->getType() == _int1Ty) {
             return _theIRBuilder->CreateUIToFP(value, _floatTy);
         }
     } else if (destTy == _int32Ty) {

@@ -36,7 +36,7 @@ int main(int argc, const char *argv[]) {
             otherSrcFile = argv[current];
         } else if (strcmp(argv[current], "-R") == 0) {
             runAfterCompile = true;
-        } else if (strcmp(argv[current], "-R-in") == 0) {
+        } else if (strcmp(argv[current], "--R-input") == 0) {
             current++;
             runtimeInput = argv[current];
         } else if (strcmp(argv[current], "--dump-ast") == 0) {
@@ -69,8 +69,8 @@ int main(int argc, const char *argv[]) {
     ATCParser parser(&token);
     auto context = parser.compUnit();
     if (parser.getNumberOfSyntaxErrors() != 0) {
-        cerr << "There are syntax errors" << endl;
-        return 0;
+        cerr << "There are syntax errors in " << filesystem::absolute(sourceFile) << endl;
+        return -1;
     }
     ATC::ASTBuilder astBuilder;
     astBuilder.setTokenStream(&token);
@@ -115,6 +115,9 @@ int main(int argc, const char *argv[]) {
                 system(cmd.c_str());
                 cmd = "diff";
                 cmd.append(" ").append(outFile).append(" ").append(compareFile).append(" >> ").append(compareResult);
+                system(cmd.c_str());
+                cmd = "echo";
+                cmd.append(" \"").append(filePath).append("\"").append(" >> ").append(compareResult);
                 system(cmd.c_str());
             }
         }
