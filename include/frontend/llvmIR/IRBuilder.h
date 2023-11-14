@@ -60,7 +60,7 @@ private:
     llvm::Type *convertToLLVMType(int type);
     llvm::Type *convertToLLVMType(DataType *dataType);
     void allocForScopeVars(Scope *currentScope);
-    llvm::Value *castToDestTy(llvm::Value *value, llvm::Type *destTy);
+    llvm::Value *castToDestTyIfNeed(llvm::Value *value, llvm::Type *destTy);
     // check if there is a return statement in the current basic block, and create the br if not
     void checkAndCreateBr(llvm::BasicBlock *destBlk);
     void checkAndCreateCondBr(llvm::Value *value, llvm::BasicBlock *trueBlk, llvm::BasicBlock *falseBlck);
