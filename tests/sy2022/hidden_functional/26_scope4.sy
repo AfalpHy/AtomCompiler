@@ -109,5 +109,6 @@ int main() {
     break;
   }
   putint(sum);
+  putch(10);
   return 0;
 }

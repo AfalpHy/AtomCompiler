@@ -43,5 +43,6 @@ int main() {
     i = i + 1;
   }
   putint(clusters);
+  putch(10);
   return 0;
 }

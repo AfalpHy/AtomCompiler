@@ -52,5 +52,6 @@ int main() {
     i = i + 1;
   }
   putint(maxCliques(0, 1));
+  putch(10);
   return 0;
 }

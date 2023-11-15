@@ -125,5 +125,6 @@ int main() {
              array[0][0],
              array[0],
              array));
+  putch(10);
   return 0;
 }

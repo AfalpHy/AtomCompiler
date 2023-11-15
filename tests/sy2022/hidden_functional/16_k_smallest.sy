@@ -54,5 +54,6 @@ int main() {
   }
   int low = 0, high = n - 1;
   findSmallest(low, high, k, n);
+  putch(10);
   return 0;
 }
