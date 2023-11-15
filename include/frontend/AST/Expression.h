@@ -132,12 +132,10 @@ public:
     Operator getOperator() { return _operator; }
     Expression* getLeft() { return _left; }
     Expression* getRight() { return _right; }
-    bool isShortCircuit() { return _isShortCircuit; }
 
     void setOperator(Operator op) { _operator = op; }
     void setLeft(Expression* left) { _left = left; }
     void setRight(Expression* right) { _right = right; }
-    void setIsShortCircuit() { _isShortCircuit = true; }
 
     ACCEPT
 
@@ -145,7 +143,6 @@ private:
     Operator _operator;
     Expression* _left;
     Expression* _right;
-    bool _isShortCircuit = false;
 };
 
 class FunctionCall : public Expression {
@@ -172,7 +169,6 @@ private:
 class ExpressionHandle {
 public:
     static float evaluateConstExpr(Expression* expr);
-    static void setShortCircuit(Expression* expr);
 };
 }  // namespace ATC
 #endif

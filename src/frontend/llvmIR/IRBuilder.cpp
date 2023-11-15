@@ -303,7 +303,43 @@ void IRBuilder::visit(UnaryExpression *node) {
 }
 
 void IRBuilder::visit(BinaryExpression *node) {
-    if (node->isShortCircuit()) {
+    if (node->getOperator() == AND || node->getOperator() == OR) {
+        // calculate the value of short circuit expr, not for condition
+        bool forValue = true;
+        auto parent = node->getParent();
+        assert(parent && "the expr must have a parent node");
+        switch (parent->getClassId()) {
+            case ID_IF_STATEMENT:
+            case ID_WHILE_STATEMENT:
+                forValue = false;
+                break;
+            case ID_BINARY_EXPRESSION: {
+                BinaryExpression *parentExpr = (BinaryExpression *)parent;
+                if (parentExpr->getOperator() == AND || parentExpr->getOperator() == OR) {
+                    forValue = false;
+                }
+                break;
+            }
+            default:
+                break;
+        }
+        llvm::Value *valueAddr = nullptr;
+        llvm::BasicBlock *saveTrueBB = nullptr;
+        llvm::BasicBlock *saveFalseBB = nullptr;
+        if (forValue) {
+            saveTrueBB = _trueBB;
+            saveFalseBB = _falseBB;
+            _trueBB = llvm::BasicBlock::Create(_module->getContext(), "valueOneBB");
+            _falseBB = llvm::BasicBlock::Create(_module->getContext(), "valueZeroBB");
+            _trueBB->insertInto(_currentFunction);
+            _falseBB->insertInto(_currentFunction);
+
+            auto currentBB = _theIRBuilder->GetInsertBlock();
+            _theIRBuilder->SetInsertPoint(&_currentFunction->getEntryBlock().getInstList().front());
+            valueAddr = _theIRBuilder->CreateAlloca(_int32Ty);
+            _theIRBuilder->SetInsertPoint(currentBB);
+        }
+
         llvm::BasicBlock *rhsCondBB = llvm::BasicBlock::Create(_module->getContext(), "rhsCondBB");
         rhsCondBB->insertInto(_currentFunction);
 
@@ -323,6 +359,27 @@ void IRBuilder::visit(BinaryExpression *node) {
 
         _theIRBuilder->SetInsertPoint(rhsCondBB);
         node->getRight()->accept(this);
+
+        if (forValue) {
+            checkAndCreateCondBr(castToDestTyIfNeed(_value, _int1Ty), _trueBB, _falseBB);
+            llvm::BasicBlock *afterCalcShortCircuitBB =
+                llvm::BasicBlock::Create(_module->getContext(), "afterCalcShortCircuitBB");
+            afterCalcShortCircuitBB->insertInto(_currentFunction);
+
+            _theIRBuilder->SetInsertPoint(_trueBB);
+            _theIRBuilder->CreateStore(_int32One, valueAddr);
+            _theIRBuilder->CreateBr(afterCalcShortCircuitBB);
+
+            _theIRBuilder->SetInsertPoint(_falseBB);
+            _theIRBuilder->CreateStore(_int32Zero, valueAddr);
+            _theIRBuilder->CreateBr(afterCalcShortCircuitBB);
+
+            _theIRBuilder->SetInsertPoint(afterCalcShortCircuitBB);
+            _value = _theIRBuilder->CreateLoad(_int32Ty, valueAddr);
+
+            _trueBB = saveTrueBB;
+            _falseBB = saveFalseBB;
+        }
         return;
     }
 
@@ -330,14 +387,6 @@ void IRBuilder::visit(BinaryExpression *node) {
     auto left = _value;
     node->getRight()->accept(this);
     auto right = _value;
-
-    if (node->getOperator() == AND) {
-        _value = _theIRBuilder->CreateAnd(castToDestTyIfNeed(left, _int1Ty), castToDestTyIfNeed(right, _int1Ty));
-        return;
-    } else if (node->getOperator() == OR) {
-        _value = _theIRBuilder->CreateOr(castToDestTyIfNeed(left, _int1Ty), castToDestTyIfNeed(right, _int1Ty));
-        return;
-    }
 
     // make the left expr and right expr has the same type
     if (left->getType() == _floatTy || right->getType() == _floatTy) {
@@ -492,6 +541,9 @@ void IRBuilder::visit(IfStatement *node) {
     checkAndCreateBr(afterIfBB);
 
     _theIRBuilder->SetInsertPoint(afterIfBB);
+
+    _trueBB = nullptr;
+    _falseBB = nullptr;
 }
 
 void IRBuilder::visit(WhileStatement *node) {
@@ -520,6 +572,9 @@ void IRBuilder::visit(WhileStatement *node) {
     _afterBB = tmpAfterBB;
 
     _theIRBuilder->SetInsertPoint(afterWhileBB);
+
+    _trueBB = nullptr;
+    _falseBB = nullptr;
 }
 
 void IRBuilder::visit(BreakStatement *node) { checkAndCreateBr(_afterBB); }

@@ -70,17 +70,6 @@ float ExpressionHandle::evaluateConstExpr(Expression* expr) {
     }
 }
 
-void ExpressionHandle::setShortCircuit(Expression* expr) {
-    if (expr->getClassId() == ID_BINARY_EXPRESSION) {
-        auto binaryExpr = (BinaryExpression*)expr;
-        if (binaryExpr->getOperator() == AND || binaryExpr->getOperator() == OR) {
-            binaryExpr->setIsShortCircuit();
-            setShortCircuit(binaryExpr->getLeft());
-            setShortCircuit(binaryExpr->getRight());
-        }
-    }
-}
-
 bool NestedExpression::isConst() {
     for (auto expr : _elements) {
         if (!expr->isConst()) {

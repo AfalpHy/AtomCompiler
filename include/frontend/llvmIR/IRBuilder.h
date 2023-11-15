@@ -84,16 +84,16 @@ private:
     llvm::Constant *_floatOne;
 
     // keep the value of expression
-    llvm::Value *_value;
+    llvm::Value *_value = nullptr;
 
-    llvm::BasicBlock *_trueBB;
-    llvm::BasicBlock *_falseBB;
+    llvm::BasicBlock *_trueBB = nullptr;
+    llvm::BasicBlock *_falseBB = nullptr;
 
     // for break/continue statement
-    llvm::BasicBlock *_condBB;
-    llvm::BasicBlock *_afterBB;
+    llvm::BasicBlock *_condBB = nullptr;
+    llvm::BasicBlock *_afterBB = nullptr;
 
-    llvm::Function *_currentFunction;
+    llvm::Function *_currentFunction = nullptr;
 
     std::set<llvm::BasicBlock *> _hasBrOrRetBlk;
     std::map<int, llvm::Value *> _nestedExpressionValues;
