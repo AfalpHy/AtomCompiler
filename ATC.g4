@@ -141,28 +141,33 @@ BitOr: '|';
 
 Ident: [_a-zA-Z] [_a-zA-Z0-9]*;
 
-intConst: DecimalConst | OctConst | HexConst;
+intConst: DecIntConst | OctIntConst | HexIntConst;
 
-DecimalConst: [1-9] [0-9]* | '0';
+DecIntConst: [1-9] [0-9]* | '0'+;
 
-OctConst: '0' [0-7] [0-8]*;
+OctIntConst: '0' [1-7] [0-8]*;
 
-HexConst: ('0x' | '0X') [0-9a-fA-F]+;
+HexIntConst: ('0x' | '0X') [0-9a-fA-F]+;
 
-floatConst: DecimalFloatingConst | HexFloatingConst;
+floatConst: DecFloatConst | HexFloatConst;
 
-DecimalFloatingConst: FractionalConst Exponent? | Digit Exponent;
+DecFloatConst: FractionalConst Exponent? | Digit Exponent;
 
-fragment FractionalConst: Digit? '.' Digit?;
+fragment FractionalConst: Digit '.' Digit | '.' Digit | Digit '.';
 
 fragment Exponent: ( 'E' | 'e') ( '+' | '-')? Digit;
 
 fragment Digit: [0-9]+;
 
-HexFloatingConst: ('0x' | '0X') HexFractionalConst BinaryExponent?
-	| ('0x' | '0X') HexDigit BinaryExponent?;
+HexFloatConst: ('0x' | '0X') (
+		HexFractionalConst BinaryExponent?
+		| HexDigit BinaryExponent
+	);
 
-fragment HexFractionalConst: HexDigit? '.' HexDigit?;
+fragment HexFractionalConst:
+	HexDigit '.' HexDigit
+	| '.' HexDigit
+	| HexDigit '.';
 
 fragment BinaryExponent: ('p' | 'P') ('+' | '-')? Digit;
 

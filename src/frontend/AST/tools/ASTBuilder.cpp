@@ -592,9 +592,9 @@ antlrcpp::Any ASTBuilder::visitLOrExpr(ATCParser::LOrExprContext *ctx) {
 }
 
 antlrcpp::Any ASTBuilder::visitIntConst(ATCParser::IntConstContext *ctx) {
-    if (ctx->DecimalConst()) {
+    if (ctx->DecIntConst()) {
         return std::stoi(ctx->getText());
-    } else if (ctx->OctConst()) {
+    } else if (ctx->OctIntConst()) {
         return std::stoi(ctx->getText(), 0, 8);
     } else {
         return std::stoi(ctx->getText(), 0, 16);
@@ -602,7 +602,7 @@ antlrcpp::Any ASTBuilder::visitIntConst(ATCParser::IntConstContext *ctx) {
 }
 
 antlrcpp::Any ASTBuilder::visitFloatConst(ATCParser::FloatConstContext *ctx) {
-    if (ctx->DecimalFloatingConst()) {
+    if (ctx->DecFloatConst()) {
         return std::stof(ctx->getText());
     } else {
         return std::stof(ctx->getText());
