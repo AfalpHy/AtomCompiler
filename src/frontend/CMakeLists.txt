@@ -2,11 +2,10 @@ project(frontend)
 
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/antlr ANTLR4)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/AST AST)
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/AST/tools AST_TOOLS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/llvmIR LLVM_IR)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/atomIR ATOM_IR)
 
-add_library(${PROJECT_NAME} ${ANTLR4} ${AST} ${AST_TOOLS} ${LLVM_IR} ${ATOM_IR})
+add_library(${PROJECT_NAME} ${ANTLR4} ${AST} ${LLVM_IR} ${ATOM_IR})
 
 target_include_directories(
   ${PROJECT_NAME}

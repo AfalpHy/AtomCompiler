@@ -3,7 +3,7 @@
 
 #include <map>
 
-#include "AST/tools/ASTVisitor.h"
+#include "AST/AtomASTVisitor.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 
@@ -13,7 +13,7 @@ class Scope;
 class DataType;
 
 namespace LLVMIR {
-class IRBuilder : public ASTVisitor {
+class IRBuilder : public AtomASTVisitor {
 public:
     IRBuilder();
     ~IRBuilder();

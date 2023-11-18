@@ -3,10 +3,10 @@
 
 #include <iostream>
 
-#include "ASTVisitor.h"
+#include "AtomASTVisitor.h"
 
 namespace ATC {
-class SemanticChecker : public ASTVisitor {
+class SemanticChecker : public AtomASTVisitor {
 public:
     // virtual void visit(TreeNode*) override;
 

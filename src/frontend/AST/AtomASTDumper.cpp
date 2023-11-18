@@ -1,5 +1,5 @@
 
-#include "AST/tools/DumpASTVisitor.h"
+#include "AST/AtomASTDumper.h"
 
 #include <filesystem>
 #include <iostream>
@@ -74,7 +74,7 @@ unordered_map<int, string> OperatorName = {
     // clang-format on
 };
 
-void DumpASTVisitor::printNode(TreeNode* node, bool newLine) {
+void AtomASTDumper::printNode(TreeNode* node, bool newLine) {
     for (int i = 0; i < _indent; i++) {
         cout << "  ";
     }
@@ -86,31 +86,31 @@ void DumpASTVisitor::printNode(TreeNode* node, bool newLine) {
     }
 }
 
-void DumpASTVisitor::visit(TreeNode* node) { printNode(node); }
+void AtomASTDumper::visit(TreeNode* node) { printNode(node); }
 
-void DumpASTVisitor::visit(CompUnit* node) {
+void AtomASTDumper::visit(CompUnit* node) {
     cout << filesystem::absolute(node->getPosition()._fileName) << endl;
     printNode(node);
     _indent++;
-    ASTVisitor::visit(node);
+    AtomASTVisitor::visit(node);
     _indent--;
 }
 
-void DumpASTVisitor::visit(VarDecl* node) {
+void AtomASTDumper::visit(VarDecl* node) {
     printNode(node);
     _indent++;
-    ASTVisitor::visit(node);
+    AtomASTVisitor::visit(node);
     _indent--;
 }
 
-void DumpASTVisitor::visit(FunctionDef* node) {
+void AtomASTDumper::visit(FunctionDef* node) {
     printNode(node);
     _indent++;
-    ASTVisitor::visit(node);
+    AtomASTVisitor::visit(node);
     _indent--;
 }
 
-void DumpASTVisitor::visit(BasicType* node) {
+void AtomASTDumper::visit(BasicType* node) {
     for (int i = 0; i < _indent; i++) {
         cout << "  ";
     }
@@ -119,7 +119,7 @@ void DumpASTVisitor::visit(BasicType* node) {
     cout << "<" << TypeName[node->getBasicType()] << ">" << endl;
 }
 
-void DumpASTVisitor::visit(ArrayType* node) {
+void AtomASTDumper::visit(ArrayType* node) {
     for (int i = 0; i < _indent; i++) {
         cout << "  ";
     }
@@ -131,11 +131,11 @@ void DumpASTVisitor::visit(ArrayType* node) {
     }
     cout << ">" << endl;
     _indent++;
-    ASTVisitor::visit(node);
+    AtomASTVisitor::visit(node);
     _indent--;
 }
 
-void DumpASTVisitor::visit(PointerType* node) {
+void AtomASTDumper::visit(PointerType* node) {
     for (int i = 0; i < _indent; i++) {
         cout << "  ";
     }
@@ -143,20 +143,20 @@ void DumpASTVisitor::visit(PointerType* node) {
     printf("%s %p ", ClassName[node->getClassId()].c_str(), node);
     cout << "<Pointer>" << endl;
     _indent++;
-    ASTVisitor::visit(node);
+    AtomASTVisitor::visit(node);
     _indent--;
 }
 
-void DumpASTVisitor::visit(Variable* node) {
+void AtomASTDumper::visit(Variable* node) {
     printNode(node, false);
     cout << " ";
     cout << (node->isConst() ? " const" : "") << endl;
     _indent++;
-    ASTVisitor::visit(node);
+    AtomASTVisitor::visit(node);
     _indent--;
 }
 
-void DumpASTVisitor::visit(ConstVal* node) {
+void AtomASTDumper::visit(ConstVal* node) {
     printNode(node, false);
     if (node->getBasicType() == BasicType::INT) {
         cout << "<" << node->getIntValue() << ">" << endl;
@@ -165,95 +165,95 @@ void DumpASTVisitor::visit(ConstVal* node) {
     }
 }
 
-void DumpASTVisitor::visit(VarRef* node) {
+void AtomASTDumper::visit(VarRef* node) {
     printNode(node, false);
     cout << " ref to " << node->getVariable() << endl;
 }
 
-void DumpASTVisitor::visit(IndexedRef* node) {
+void AtomASTDumper::visit(IndexedRef* node) {
     printNode(node, false);
     cout << " ref to " << node->getVariable() << endl;
     _indent++;
-    ASTVisitor::visit(node);
+    AtomASTVisitor::visit(node);
     _indent--;
 }
 
-void DumpASTVisitor::visit(NestedExpression* node) {
+void AtomASTDumper::visit(NestedExpression* node) {
     printNode(node);
     _indent++;
-    ASTVisitor::visit(node);
+    AtomASTVisitor::visit(node);
     _indent--;
 }
 
-void DumpASTVisitor::visit(UnaryExpression* node) {
+void AtomASTDumper::visit(UnaryExpression* node) {
     printNode(node, false);
     cout << "<" << OperatorName[node->getOperator()] << ">" << endl;
     _indent++;
-    ASTVisitor::visit(node);
+    AtomASTVisitor::visit(node);
     _indent--;
 }
 
-void DumpASTVisitor::visit(BinaryExpression* node) {
+void AtomASTDumper::visit(BinaryExpression* node) {
     printNode(node, false);
     cout << "<" << OperatorName[node->getOperator()] << ">" << endl;
     _indent++;
-    ASTVisitor::visit(node);
+    AtomASTVisitor::visit(node);
     _indent--;
 }
 
-void DumpASTVisitor::visit(FunctionCall* node) {
+void AtomASTDumper::visit(FunctionCall* node) {
     printNode(node);
     _indent++;
-    ASTVisitor::visit(node);
+    AtomASTVisitor::visit(node);
     _indent--;
 }
 
-void DumpASTVisitor::visit(Block* node) {
+void AtomASTDumper::visit(Block* node) {
     printNode(node);
     _indent++;
-    ASTVisitor::visit(node);
+    AtomASTVisitor::visit(node);
     _indent--;
 }
 
-void DumpASTVisitor::visit(AssignStatement* node) {
+void AtomASTDumper::visit(AssignStatement* node) {
     printNode(node);
     _indent++;
-    ASTVisitor::visit(node);
+    AtomASTVisitor::visit(node);
     _indent--;
 }
 
-void DumpASTVisitor::visit(IfStatement* node) {
+void AtomASTDumper::visit(IfStatement* node) {
     printNode(node);
     _indent++;
-    ASTVisitor::visit(node);
+    AtomASTVisitor::visit(node);
     _indent--;
 }
 
-void DumpASTVisitor::visit(ElseStatement* node) {
+void AtomASTDumper::visit(ElseStatement* node) {
     printNode(node);
     _indent++;
-    ASTVisitor::visit(node);
+    AtomASTVisitor::visit(node);
     _indent--;
 }
 
-void DumpASTVisitor::visit(WhileStatement* node) {
+void AtomASTDumper::visit(WhileStatement* node) {
     printNode(node);
     _indent++;
-    ASTVisitor::visit(node);
+    AtomASTVisitor::visit(node);
     _indent--;
 }
 
-void DumpASTVisitor::visit(ReturnStatement* node) {
+void AtomASTDumper::visit(ReturnStatement* node) {
     printNode(node);
     _indent++;
-    ASTVisitor::visit(node);
+    AtomASTVisitor::visit(node);
     _indent--;
 }
 
-void DumpASTVisitor::visit(OtherStatement* node) {
+void AtomASTDumper::visit(OtherStatement* node) {
     printNode(node);
     _indent++;
-    ASTVisitor::visit(node);
+    AtomASTVisitor::visit(node);
     _indent--;
 }
 }  // namespace ATC

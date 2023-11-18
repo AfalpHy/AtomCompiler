@@ -3,10 +3,10 @@
 
 #include <iostream>
 
-#include "ASTVisitor.h"
+#include "AtomASTVisitor.h"
 
 namespace ATC {
-class DumpASTVisitor : public ASTVisitor {
+class AtomASTDumper : public AtomASTVisitor {
 public:
     virtual void visit(TreeNode*) override;
 

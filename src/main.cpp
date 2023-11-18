@@ -4,11 +4,11 @@
 #include <iostream>
 #include <string>
 
+#include "AST/AtomASTBuilder.h"
 #include "AST/CompUnit.h"
 #include "AST/Scope.h"
-#include "AST/tools/ASTBuilder.h"
-#include "AST/tools/DumpASTVisitor.h"
-#include "AST/tools/SemanticChecker.h"
+#include "AST/AtomASTDumper.h"
+#include "AST/SemanticChecker.h"
 #include "ATCLexer.h"
 #include "ATCParser.h"
 #include "antlr4-runtime.h"
@@ -72,9 +72,9 @@ int main(int argc, const char *argv[]) {
         cerr << "There are syntax errors in " << filesystem::absolute(sourceFile) << endl;
         return -1;
     }
-    ATC::ASTBuilder astBuilder;
-    astBuilder.setTokenStream(&token);
-    context->accept(&astBuilder);
+    ATC::AtomASTBuilder AtomASTBuilder;
+    AtomASTBuilder.setTokenStream(&token);
+    context->accept(&AtomASTBuilder);
 
     // ATC::SemanticChecker checker;
     // for (auto compUnit : ATC::CompUnit::AllCompUnits) {
@@ -82,7 +82,7 @@ int main(int argc, const char *argv[]) {
     // }
 
     if (dumpAst) {
-        ATC::DumpASTVisitor dump;
+        ATC::AtomASTDumper dump;
         for (auto compUnit : ATC::CompUnit::AllCompUnits) {
             compUnit->accept(&dump);
         }

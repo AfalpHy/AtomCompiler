@@ -5,13 +5,13 @@
 
 #include "../../Common.h"
 #include "antlr4-runtime.h"
-#include "tools/ASTVisitor.h"
+#include "AtomASTVisitor.h"
 
 #define ACCEPT \
-    virtual void accept(ASTVisitor* visitor) { visitor->visit(this); }
+    virtual void accept(AtomASTVisitor* visitor) { visitor->visit(this); }
 namespace ATC {
 
-class ASTVisitor;
+class AtomASTVisitor;
 class Scope;
 
 typedef struct {

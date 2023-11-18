@@ -1,12 +1,12 @@
 #ifndef IR_BUILDER_H
 #define IR_BUILDER_H
 
-#include "AST/tools/ASTVisitor.h"
+#include "AST/AtomASTVisitor.h"
 
 namespace ATC {
 
 namespace AtomIR {
-class IRBuilder : public ASTVisitor {
+class IRBuilder : public AtomASTVisitor {
 public:
     IRBuilder();
     ~IRBuilder();

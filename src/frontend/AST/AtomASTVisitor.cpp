@@ -1,5 +1,5 @@
 
-#include "AST/tools/ASTVisitor.h"
+#include "AST/AtomASTVisitor.h"
 
 #include <filesystem>
 #include <iostream>
@@ -16,81 +16,81 @@ using namespace std;
 
 namespace ATC {
 
-void ASTVisitor::visit(TreeNode* node) {}
+void AtomASTVisitor::visit(TreeNode* node) {}
 
-void ASTVisitor::visit(CompUnit* node) {
+void AtomASTVisitor::visit(CompUnit* node) {
     for (auto element : node->getElements()) {
         element->accept(this);
     }
 }
 
-void ASTVisitor::visit(VarDecl* node) {
+void AtomASTVisitor::visit(VarDecl* node) {
     for (auto var : node->getVariables()) {
         var->accept(this);
     }
 }
 
-void ASTVisitor::visit(FunctionDef* node) {
+void AtomASTVisitor::visit(FunctionDef* node) {
     for (auto fParam : node->getParams()) {
         fParam->accept(this);
     }
     node->getBlock()->accept(this);
 }
 
-void ASTVisitor::visit(BasicType* node) {}
+void AtomASTVisitor::visit(BasicType* node) {}
 
-void ASTVisitor::visit(ArrayType* node) { node->getBaseDataType()->accept(this); }
+void AtomASTVisitor::visit(ArrayType* node) { node->getBaseDataType()->accept(this); }
 
-void ASTVisitor::visit(PointerType* node) { node->getBaseDataType()->accept(this); }
+void AtomASTVisitor::visit(PointerType* node) { node->getBaseDataType()->accept(this); }
 
-void ASTVisitor::visit(Variable* node) {
+void AtomASTVisitor::visit(Variable* node) {
     node->getDataType()->accept(this);
     if (node->getInitValue()) {
         node->getInitValue()->accept(this);
     }
 }
 
-void ASTVisitor::visit(ConstVal* node) {}
+void AtomASTVisitor::visit(ConstVal* node) {}
 
-void ASTVisitor::visit(VarRef* node) {}
+void AtomASTVisitor::visit(VarRef* node) {}
 
-void ASTVisitor::visit(IndexedRef* node) {
+void AtomASTVisitor::visit(IndexedRef* node) {
     for (auto dimension : node->getDimensions()) {
         dimension->accept(this);
     }
 }
 
-void ASTVisitor::visit(NestedExpression* node) {
+void AtomASTVisitor::visit(NestedExpression* node) {
     for (auto expr : node->getElements()) {
         expr->accept(this);
     }
 }
 
-void ASTVisitor::visit(UnaryExpression* node) { node->getOperand()->accept(this); }
+void AtomASTVisitor::visit(UnaryExpression* node) { node->getOperand()->accept(this); }
 
-void ASTVisitor::visit(BinaryExpression* node) {
+void AtomASTVisitor::visit(BinaryExpression* node) {
     node->getLeft()->accept(this);
     node->getRight()->accept(this);
 }
 
-void ASTVisitor::visit(FunctionCall* node) {
+void AtomASTVisitor::visit(FunctionCall* node) {
     for (auto rParam : node->getParams()) {
         rParam->accept(this);
     }
 }
 
-void ASTVisitor::visit(Block* node) {
+void AtomASTVisitor::visit(Block* node) {
     for (auto element : node->getElements()) {
         element->accept(this);
     }
 }
 
-void ASTVisitor::visit(AssignStatement* node) {
+void AtomASTVisitor::visit(AssignStatement* node) {
     node->getLval()->accept(this);
     node->getRval()->accept(this);
 }
 
-void ASTVisitor::visit(IfStatement* node) {
+void AtomASTVisitor::visit(IfStatement* node) {
     node->getCond()->accept(this);
     node->getStmt()->accept(this);
     if (node->getElseStmt()) {
@@ -98,22 +98,22 @@ void ASTVisitor::visit(IfStatement* node) {
     }
 }
 
-void ASTVisitor::visit(ElseStatement* node) { node->getStmt()->accept(this); }
+void AtomASTVisitor::visit(ElseStatement* node) { node->getStmt()->accept(this); }
 
-void ASTVisitor::visit(WhileStatement* node) {
+void AtomASTVisitor::visit(WhileStatement* node) {
     node->getCond()->accept(this);
     node->getStmt()->accept(this);
 }
 
-void ASTVisitor::visit(BreakStatement*) {}
+void AtomASTVisitor::visit(BreakStatement*) {}
 
-void ASTVisitor::visit(ContinueStatement*) {}
+void AtomASTVisitor::visit(ContinueStatement*) {}
 
-void ASTVisitor::visit(ReturnStatement* node) {
+void AtomASTVisitor::visit(ReturnStatement* node) {
     if (node->getExpr()) {
         node->getExpr()->accept(this);
     }
 }
 
-void ASTVisitor::visit(OtherStatement* node) { node->getExpr()->accept(this); }
+void AtomASTVisitor::visit(OtherStatement* node) { node->getExpr()->accept(this); }
 }  // namespace ATC

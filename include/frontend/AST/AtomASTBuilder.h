@@ -3,11 +3,11 @@
 
 #include <iostream>
 
-#include "../TreeNode.h"
+#include "TreeNode.h"
 #include "ATCBaseVisitor.h"
 
 namespace ATC {
-class ASTBuilder : public ATCBaseVisitor {
+class AtomASTBuilder : public ATCBaseVisitor {
 public:
     virtual antlrcpp::Any visitCompUnit(ATCParser::CompUnitContext *ctx) override;
 

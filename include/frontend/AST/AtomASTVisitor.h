@@ -27,7 +27,7 @@ class BreakStatement;
 class ContinueStatement;
 class ReturnStatement;
 class OtherStatement;
-class ASTVisitor {
+class AtomASTVisitor {
 public:
     virtual void visit(TreeNode*);
 
