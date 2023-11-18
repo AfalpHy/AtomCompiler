@@ -1,5 +1,5 @@
-#ifndef DUMP_AST_VISITOR_H
-#define DUMP_AST_VISITOR_H
+#ifndef ATOM_AST_DUMPER_H
+#define ATOM_AST_DUMPER_H
 
 #include <iostream>
 

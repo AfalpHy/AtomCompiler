@@ -1,5 +1,5 @@
-#ifndef AST_VISITOR_H
-#define AST_VISITOR_H
+#ifndef ATOM_AST_VISITOR_H
+#define ATOM_AST_VISITOR_H
 
 namespace ATC {
 

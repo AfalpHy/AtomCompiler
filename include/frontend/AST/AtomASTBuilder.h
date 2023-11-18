@@ -1,5 +1,5 @@
-#ifndef AST_BUILDER_VISITOR_H
-#define AST_BUILDER_VISITOR_H
+#ifndef ATOM_AST_BUILDER_H
+#define ATOM_AST_BUILDER_H
 
 #include <iostream>
 
