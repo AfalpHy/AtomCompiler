@@ -271,15 +271,15 @@ void IRBuilder::visit(NestedExpression *node) {
     } else {
         int targetIndex = index + maxSize;
         for (size_t i = 0; i < elements.size(); i++) {
-            // ignore the remaining elements
-            if (index == targetIndex) {
-                break;
-            }
             if (elements[i]->getClassId() == ID_NESTED_EXPRESSION) {
                 elements[i]->accept(this);
             } else {
                 elements[i]->accept(this);
                 _nestedExpressionValues.insert({index++, _value});
+            }
+            // ignore the remaining elements
+            if (index == targetIndex) {
+                break;
             }
         }
         index = targetIndex;
@@ -745,8 +745,8 @@ llvm::Value *IRBuilder::convertNestedValuesToConstant(const std::vector<int> &di
     if (ret.size() != dimensions[deep]) {
         // type of remain elements
         llvm::ArrayType *remainType = llvm::ArrayType::get(partType, dimensions[deep] - ret.size());
-        elementTypes.push_back(remainType);
         ret.push_back(llvm::ConstantAggregateZero::get(remainType));
+        elementTypes.push_back(remainType);
     }
     llvm::StructType *retType = llvm::StructType::create(elementTypes);
     return llvm::ConstantStruct::get(retType, ret);

@@ -16,7 +16,6 @@ public:
 
     void addElement(TreeNode* element) { _elements.push_back(element); }
 
-    // not used now, for many files in future
     static std::vector<CompUnit*> AllCompUnits;
 
     ACCEPT

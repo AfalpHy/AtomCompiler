@@ -32,7 +32,7 @@ static void fixupArrayType(ArrayType *arrayType) {
 
 antlrcpp::Any AtomASTBuilder::visitCompUnit(ATCParser::CompUnitContext *ctx) {
     auto compUnit = new CompUnit();
-    // 取EOF前一个元素作为stop
+    // take the token before EOF as stop token
     compUnit->setPosition(ctx->getStart(), _token->get(ctx->getStop()->getTokenIndex() - 1));
 
     CompUnit::AllCompUnits.push_back(compUnit);
