@@ -1,5 +1,5 @@
-#ifndef MODULE_H
-#define MODULE_H
+#ifndef ATOM_MODULE_H
+#define ATOM_MODULE_H
 
 #include <unordered_map>
 #include <vector>
