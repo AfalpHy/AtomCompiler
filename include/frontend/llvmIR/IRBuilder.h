@@ -1,5 +1,5 @@
-#ifndef IR_BUILDER_H
-#define IR_BUILDER_H
+#ifndef LLVMIR_BUILDER_H
+#define LLVMIR_BUILDER_H
 
 #include <map>
 

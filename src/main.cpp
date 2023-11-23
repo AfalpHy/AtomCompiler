@@ -5,14 +5,17 @@
 #include <string>
 
 #include "AST/AtomASTBuilder.h"
+#include "AST/AtomASTDumper.h"
 #include "AST/CompUnit.h"
 #include "AST/Scope.h"
-#include "AST/AtomASTDumper.h"
 #include "AST/SemanticChecker.h"
 #include "ATCLexer.h"
 #include "ATCParser.h"
 #include "antlr4-runtime.h"
+#include "atomIR/IRBuilder.h"
+#include "atomIR/IRDumper.h"
 #include "llvmIR/IRBuilder.h"
+
 using namespace std;
 using namespace antlr4;
 
@@ -72,9 +75,9 @@ int main(int argc, const char *argv[]) {
         cerr << "There are syntax errors in " << filesystem::absolute(sourceFile) << endl;
         return -1;
     }
-    ATC::AtomASTBuilder AtomASTBuilder;
-    AtomASTBuilder.setTokenStream(&token);
-    context->accept(&AtomASTBuilder);
+    ATC::AtomASTBuilder astBuilder;
+    astBuilder.setTokenStream(&token);
+    context->accept(&astBuilder);
 
     // ATC::SemanticChecker checker;
     // for (auto compUnit : ATC::CompUnit::AllCompUnits) {
@@ -120,6 +123,11 @@ int main(int argc, const char *argv[]) {
                 cmd.append(" \"").append(filePath).append("\"").append(" >> ").append(compareResult);
                 system(cmd.c_str());
             }
+        }
+    } else {
+        ATC::AtomIR::IRBuilder irBuilder;
+        for (auto compUnit : ATC::CompUnit::AllCompUnits) {
+            compUnit->accept(&irBuilder);
         }
     }
 

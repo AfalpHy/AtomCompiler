@@ -1,10 +1,14 @@
-#ifndef IR_DUMPER_H
-#define IR_DUMPER_H
+#ifndef ATOM_IR_DUMPER_H
+#define ATOM_IR_DUMPER_H
 
+#include "Module.h"
 namespace ATC {
 
 namespace AtomIR {
-class IRDumper {};
+class IRDumper {
+public:
+    void dump(Module *module);
+};
 
 }  // namespace AtomIR
 }  // namespace ATC
