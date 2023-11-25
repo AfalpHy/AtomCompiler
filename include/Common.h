@@ -4,7 +4,7 @@
 namespace ATC {
 enum NodeType {
     ID_COMP_UNIT,
-    
+
     ID_BASIC_TYPE,
     ID_ARRAY_TYPE,
     ID_POINTER_TYPE,

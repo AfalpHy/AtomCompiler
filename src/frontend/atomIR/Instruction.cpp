@@ -1,14 +1,31 @@
 #include "atomIR/Instruction.h"
 
 #include "assert.h"
+#include "atomIR/Function.h"
 
 namespace ATC {
 
 namespace AtomIR {
 
 AllocInst::AllocInst(Type* allocType, const std::string& resultName) : Instruction(INST_ALLOC) {
-    PointerType* ptr = new PointerType(allocType);
+    PointerType* ptr = PointerType::get(allocType);
     _result = new Value(ptr, resultName);
+}
+
+FunctionCallInst::FunctionCallInst(FunctionType functionType, const std::string& funcName,
+                                   const std::vector<Value*>& params, const std::string& resultName)
+    : Instruction(INST_FUNCALL) {
+    assert(functionType._params.size() == params.size());
+    for (int i = 0; i < params.size(); i++) {
+        assert(functionType._params[i] == params[i]->getType());
+    }
+    if (functionType._ret->getTypeEnum() == VOID_TY) {
+        _result = nullptr;
+    } else {
+        _result = new Value(functionType._ret, resultName);
+    }
+    _funcName = funcName;
+    _params = params;
 }
 
 UnaryInst::UnaryInst(InstType type, Value* operand, const std::string& resultName)
@@ -65,13 +82,35 @@ CondJumpInst::CondJumpInst(InstType type, BasicBlock* trueBB, BasicBlock* falseB
 
 std::string AllocInst::toString() {
     std::string str;
-    str.append(_result->getName()).append(" = ").append("alloc").append(" ").append("int32");
+    str.append(_result->getName())
+        .append(" = ")
+        .append("alloc")
+        .append(" ")
+        .append(static_cast<PointerType*>(_result->getType())->getBaseType()->toString());
     return str;
 }
 
 std::string StoreInst::toString() {
     std::string str = "store";
     str.append(" ").append(_value->getName()).append(" to ").append(_dest->getName());
+    return str;
+}
+
+std::string FunctionCallInst::toString() {
+    std::string str;
+    if (_result == nullptr) {
+        str.append("call void");
+    } else {
+        str.append(_result->getName()).append(" = ").append("call").append(" ").append(_result->getType()->toString());
+    }
+    str.append(" ").append(_funcName).append("(");
+    for (auto param : _params) {
+        str.append(param->getType()->toString()).append(" ").append(param->getName()).append(",");
+    }
+    if (str.back() == ',') {
+        str.pop_back();
+    }
+    str.append(")");
     return str;
 }
 
@@ -86,9 +125,18 @@ std::string UnaryInst::toString() {
     str.append(_result->getName()).append(" = ");
 
     switch (_type) {
-        case INST_LOAD:
-            str.append("load").append(" ").append(_operand->getName());
+        case INST_LOAD: {
+            assert(_operand->getType()->isPointerType() && "should load from a pointer");
+            PointerType* operandType = (PointerType*)_operand->getType();
+            str.append("load")
+                .append(" ")
+                .append(operandType->getBaseType()->toString())
+                .append(", ")
+                .append(_operand->getType()->toString())
+                .append(" ")
+                .append(_operand->getName());
             break;
+        }
         case INST_ITOF:
             break;
         case INST_FTOI:
@@ -126,7 +174,11 @@ std::string BinaryInst::toString() {
             assert(false && " should not reach here");
             break;
     }
-    str.append(_operand1->getName()).append(" ").append(_operand2->getName());
+    str.append(_operand1->getType()->toString())
+        .append(" ")
+        .append(_operand1->getName())
+        .append(", ")
+        .append(_operand2->getName());
     return str;
 }
 

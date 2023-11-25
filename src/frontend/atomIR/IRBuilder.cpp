@@ -26,7 +26,11 @@ void IRBuilder::visit(CompUnit *node) {
 }
 
 void IRBuilder::visit(FunctionDef *node) {
-    _currentFunction = new Function(_currentModule, node->getName());
+    FunctionType funcType;
+    funcType._ret = Type::getInt32Ty();
+    // for (auto param : node->getParams()) {
+    // }
+    _currentFunction = new Function(_currentModule, funcType, node->getName());
     _currentModule->addFunction(_currentFunction);
     _currentBasicBlock = new BasicBlock(_currentFunction, "entry");
     _currentFunction->insertBB(_currentBasicBlock);
@@ -54,7 +58,7 @@ void IRBuilder::visit(BinaryExpression *node) {
     Value *right = _value;
     switch (node->getOperator()) {
         case PLUS: {
-            Instruction *addInst = new BinaryInst(INST_ADD, left, right, "res");
+            Instruction *addInst = new BinaryInst(INST_ADD, left, right);
             _value = addInst->getResult();
             _currentBasicBlock->addInstruction(addInst);
             break;
@@ -117,6 +121,29 @@ void IRBuilder::createCondJump(InstType type, BasicBlock *trueBB, BasicBlock *fa
                                Value *operand2) {
     Instruction *inst = new CondJumpInst(type, trueBB, falseBB, operand1, operand2);
     _currentBasicBlock->addInstruction(inst);
+}
+
+Type *IRBuilder::convertToAtomType(int basicType) {
+    switch (basicType) {
+        case BasicType::BOOL:
+            return Type::getInt1Ty();
+        case BasicType::INT:
+            return Type::getInt32Ty();
+        case BasicType::FLOAT:
+            return Type::getFloatTy();
+        case BasicType::VOID:
+            return Type::getVoidTy();
+        default:
+            assert(false && "should not reach here");
+    }
+}
+
+Type *IRBuilder::convertToAtomType(DataType *dataType) {
+    if (dataType->getClassId() == ID_POINTER_TYPE) {
+        return PointerType::get(convertToAtomType(dataType->getBaseDataType()));
+    } else {
+        return convertToAtomType(dataType->getBasicType());
+    }
 }
 
 }  // namespace AtomIR

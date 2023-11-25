@@ -7,9 +7,12 @@
 #include "Instruction.h"
 namespace ATC {
 
+class DataType;
+
 namespace AtomIR {
 
 class Module;
+struct FunctionType;
 class Function;
 class BasicBlock;
 class Value;
@@ -58,6 +61,9 @@ private:
 
     void createStore(Value *value, Value *dest);
 
+    void createFunctionCall(FunctionType functionType, const std::string &funcName, const std::vector<Value *> &params,
+                            const std::string &resultName = "");
+
     void createRet(Value *retValue);
 
     Value *createUnaryInst(InstType type, Value *operand, const std::string &resultName = "");
@@ -67,6 +73,10 @@ private:
     void createJump(BasicBlock *targetBB);
 
     void createCondJump(InstType type, BasicBlock *trueBB, BasicBlock *falseBB, Value *operand1, Value *operand2);
+
+    Type *convertToAtomType(int type);
+
+    Type *convertToAtomType(DataType *dataType);
 
 private:
     Module *_currentModule;

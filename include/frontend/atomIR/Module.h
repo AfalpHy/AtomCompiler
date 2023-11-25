@@ -2,10 +2,8 @@
 #define ATOM_MODULE_H
 
 #include <unordered_map>
-#include <vector>
 
 #include "Function.h"
-#include "Value.h"
 
 namespace ATC {
 namespace AtomIR {

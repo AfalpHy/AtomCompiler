@@ -1,8 +1,6 @@
 #ifndef ATOM_VALUE_H
 #define ATOM_VALUE_H
 
-#include <string>
-
 #include "Type.h"
 
 namespace ATC {
