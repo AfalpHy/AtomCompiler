@@ -82,7 +82,7 @@ CondJumpInst::CondJumpInst(InstType type, BasicBlock* trueBB, BasicBlock* falseB
 
 std::string AllocInst::toString() {
     std::string str;
-    str.append(_result->getName())
+    str.append(_result->getCurrentName())
         .append(" = ")
         .append("alloc")
         .append(" ")
@@ -92,7 +92,7 @@ std::string AllocInst::toString() {
 
 std::string StoreInst::toString() {
     std::string str = "store";
-    str.append(" ").append(_value->getName()).append(" to ").append(_dest->getName());
+    str.append(" ").append(_value->getCurrentName()).append(" to ").append(_dest->getCurrentName());
     return str;
 }
 
@@ -101,11 +101,11 @@ std::string FunctionCallInst::toString() {
     if (_result == nullptr) {
         str.append("call void");
     } else {
-        str.append(_result->getName()).append(" = ").append("call").append(" ").append(_result->getType()->toString());
+        str.append(_result->getCurrentName()).append(" = ").append("call").append(" ").append(_result->getType()->toString());
     }
     str.append(" ").append(_funcName).append("(");
     for (auto param : _params) {
-        str.append(param->getType()->toString()).append(" ").append(param->getName()).append(",");
+        str.append(param->getType()->toString()).append(" ").append(param->getCurrentName()).append(",");
     }
     if (str.back() == ',') {
         str.pop_back();
@@ -116,13 +116,13 @@ std::string FunctionCallInst::toString() {
 
 std::string ReturnInst::toString() {
     std::string str = "ret";
-    str.append(" ").append(_retValue->getName());
+    str.append(" ").append(_retValue->getCurrentName());
     return str;
 }
 
 std::string UnaryInst::toString() {
     std::string str;
-    str.append(_result->getName()).append(" = ");
+    str.append(_result->getCurrentName()).append(" = ");
 
     switch (_type) {
         case INST_LOAD: {
@@ -134,7 +134,7 @@ std::string UnaryInst::toString() {
                 .append(", ")
                 .append(_operand->getType()->toString())
                 .append(" ")
-                .append(_operand->getName());
+                .append(_operand->getCurrentName());
             break;
         }
         case INST_ITOF:
@@ -151,7 +151,7 @@ std::string UnaryInst::toString() {
 
 std::string BinaryInst::toString() {
     std::string str;
-    str.append(_result->getName()).append(" = ");
+    str.append(_result->getCurrentName()).append(" = ");
     switch (_type) {
         case INST_ADD:
             str.append("add ");
@@ -176,21 +176,21 @@ std::string BinaryInst::toString() {
     }
     str.append(_operand1->getType()->toString())
         .append(" ")
-        .append(_operand1->getName())
+        .append(_operand1->getCurrentName())
         .append(", ")
-        .append(_operand2->getName());
+        .append(_operand2->getCurrentName());
     return str;
 }
 
 std::string JumpInst::toString() {
     std::string str = "jump";
-    str.append(" ").append(_targetBB->getName());
+    str.append(" ").append(_targetBB->getCurrentName());
     return str;
 }
 
 std::string CondJumpInst::toString() {
     std::string str;
-    str.append("if").append(" ").append(_operand1->getName());
+    str.append("if").append(" ").append(_operand1->getCurrentName());
     switch (_type) {
         case INST_JLT:
             str.append(" LT ");
@@ -215,17 +215,17 @@ std::string CondJumpInst::toString() {
             break;
     }
 
-    str.append(_operand2->getName())
+    str.append(_operand2->getCurrentName())
         .append(" ")
         .append("jump")
         .append(" ")
-        .append(_trueBB->getName())
+        .append(_trueBB->getCurrentName())
         .append(" ")
         .append("else")
         .append(" ")
         .append("jump")
         .append(" ")
-        .append(_falseBB->getName());
+        .append(_falseBB->getCurrentName());
 
     return str;
 }

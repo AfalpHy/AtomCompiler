@@ -13,7 +13,7 @@ public:
     Module(const std::string& name) { _name = name; }
 
     void addFunction(Function* function) { _functions.insert({function->getName(), function}); }
-    void addGlobalVariable(Value* var) { _globalVariables.insert({var->getName(), var}); }
+    void addGlobalVariable(Value* var);
 
     const std::string& getName() { return _name; }
     const std::unordered_map<std::string, Function*>& getFunctions() { return _functions; }
@@ -32,6 +32,8 @@ public:
         }
         return nullptr;
     }
+
+    void dump();
 
 private:
     std::string _name;

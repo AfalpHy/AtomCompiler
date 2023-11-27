@@ -23,6 +23,7 @@ public:
 
     void addParam(Value* param) { _params.push_back(param); }
     void insertBB(BasicBlock* bb) { _basicBlocks.push_back(bb); }
+    void setNeedUpdateName(bool b) { _needUpdateName = b; }
 
     Module* getParent() { return _parent; }
 
@@ -40,7 +41,11 @@ public:
     const std::vector<Value*>& getParams() { return _params; }
     const std::vector<BasicBlock*>& getBasicBlocks() { return _basicBlocks; }
 
-    std::string getUniqueValueName(const std::string& name);
+    std::string getUniqueNameInFunction(const std::string& name);
+
+    void updateNameIfNeed();
+
+    void dump();
 
 private:
     Module* _parent;
@@ -48,8 +53,9 @@ private:
     FunctionType _functionType;
     std::vector<Value*> _params;
     std::vector<BasicBlock*> _basicBlocks;
-    std::set<std::string> _valueNameSet;
+    std::set<std::string> _nameSet;  // value and block name set
     int _valueIndex = 0;
+    bool _needUpdateName = true;  // Ture if the name set need update
 };
 }  // namespace AtomIR
 }  // namespace ATC

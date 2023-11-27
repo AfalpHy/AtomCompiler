@@ -13,7 +13,6 @@
 #include "ATCParser.h"
 #include "antlr4-runtime.h"
 #include "atomIR/IRBuilder.h"
-#include "atomIR/IRDumper.h"
 #include "llvmIR/IRBuilder.h"
 
 using namespace std;

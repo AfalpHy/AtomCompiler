@@ -6,19 +6,27 @@
 namespace ATC {
 namespace AtomIR {
 
+class Function;
+
 class Value {
 public:
-    Value(const std::string& name) : _name(name) {}
-    Value(Type* type, const std::string& name) : _type(type), _name(name) {}
+    Value(const std::string& name) : _originName(name) {}
+    Value(Type* type, const std::string& name) : _type(type), _originName(name) {}
 
-    void setName(const std::string& name) { _name = name; }
+    void setCurrentName(const std::string& name) { _currentName = name; }
     void setType(Type* type) { _type = type; }
+    void setBelongFunction(Function* function) { _belongFunction = function; }
 
-    const std::string& getName() { return _name; }
+    const std::string& getOriginName() { return _originName; }
+    const std::string& getCurrentName() { return _currentName; }
     Type* getType() { return _type; }
 
+    void dump();
+
 private:
-    std::string _name;
+    std::string _originName;
+    std::string _currentName;
+    Function* _belongFunction = nullptr;
     Type* _type = nullptr;
 };
 }  // namespace AtomIR

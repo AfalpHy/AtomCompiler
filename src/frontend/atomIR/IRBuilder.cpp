@@ -7,7 +7,6 @@
 #include "AST/Scope.h"
 #include "AST/Statement.h"
 #include "AST/Variable.h"
-#include "atomIR/IRDumper.h"
 #include "atomIR/Module.h"
 #include "atomIR/Value.h"
 namespace ATC {
@@ -15,10 +14,7 @@ namespace ATC {
 namespace AtomIR {
 IRBuilder::IRBuilder() {}
 
-IRBuilder::~IRBuilder() {
-    IRDumper irDumper;
-    irDumper.dump(_currentModule);
-}
+IRBuilder::~IRBuilder() { _currentModule->dump(); }
 
 void IRBuilder::visit(CompUnit *node) {
     _currentModule = new Module(node->getName());
@@ -87,7 +83,9 @@ void IRBuilder::visit(AssignStatement *node) {}
 Value *IRBuilder::createAlloc(Type *allocType, const std::string &resultName) {
     Instruction *inst = new AllocInst(allocType, resultName);
     _currentBasicBlock->addInstruction(inst);
-    return inst->getResult();
+    Value *result = inst->getResult();
+    result->setBelongFunction(_currentFunction);
+    return result;
 }
 
 void IRBuilder::createStore(Value *value, Value *dest) {
@@ -103,13 +101,17 @@ void IRBuilder::createRet(Value *retValue) {
 Value *IRBuilder::createUnaryInst(InstType type, Value *operand, const std::string &resultName) {
     Instruction *inst = new UnaryInst(type, operand, resultName);
     _currentBasicBlock->addInstruction(inst);
-    return inst->getResult();
+    Value *result = inst->getResult();
+    result->setBelongFunction(_currentFunction);
+    return result;
 }
 
 Value *IRBuilder::createBinaryInst(InstType type, Value *operand1, Value *operand2, const std::string &resultName) {
     Instruction *inst = new BinaryInst(type, operand1, operand2, resultName);
     _currentBasicBlock->addInstruction(inst);
-    return inst->getResult();
+    Value *result = inst->getResult();
+    result->setBelongFunction(_currentFunction);
+    return result;
 }
 
 void IRBuilder::createJump(BasicBlock *targetBB) {
