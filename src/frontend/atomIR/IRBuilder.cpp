@@ -35,7 +35,14 @@ void IRBuilder::visit(FunctionDef *node) {
 
 void IRBuilder::visit(Variable *node) { node->setAtomAddr(createAlloc(Type::getInt32Ty(), node->getName())); }
 
-void IRBuilder::visit(ConstVal *node) {}
+void IRBuilder::visit(ConstVal *node) {
+    if (node->getBasicType() == BasicType::INT) {
+        _value = new Value(Type::getInt32Ty(), node->getIntValue());
+    } else {
+        _value = new Value(Type::getFloatTy(), node->getFloatValue());
+    }
+    _value->setBelongFunction(_currentFunction);
+}
 
 void IRBuilder::visit(VarRef *node) {
     _value = createUnaryInst(INST_LOAD, node->getVariable()->getAtomAddr(), node->getName());
@@ -52,23 +59,63 @@ void IRBuilder::visit(BinaryExpression *node) {
     Value *left = _value;
     node->getRight()->accept(this);
     Value *right = _value;
+    Instruction *binaryInst = nullptr;
     switch (node->getOperator()) {
-        case PLUS: {
-            Instruction *addInst = new BinaryInst(INST_ADD, left, right);
-            _value = addInst->getResult();
-            _currentBasicBlock->addInstruction(addInst);
+        case PLUS:
+            binaryInst = new BinaryInst(INST_ADD, left, right);
             break;
-        }
+        case MINUS:
+            binaryInst = new BinaryInst(INST_SUB, left, right);
+            break;
+        case MUL:
+            binaryInst = new BinaryInst(INST_MUL, left, right);
+            break;
+        case DIV:
+            binaryInst = new BinaryInst(INST_DIV, left, right);
+            break;
+        case MOD:
+            binaryInst = new BinaryInst(INST_MOD, left, right);
+            break;
+        case LT:
+            binaryInst = new BinaryInst(INST_LT, left, right);
+            break;
+        case GT:
+            binaryInst = new BinaryInst(INST_GT, left, right);
+            break;
+        case LE:
+            binaryInst = new BinaryInst(INST_LE, left, right);
+            break;
+        case GE:
+            binaryInst = new BinaryInst(INST_GE, left, right);
+            break;
+        case EQ:
+            binaryInst = new BinaryInst(INST_EQ, left, right);
+            break;
+        case NE:
+            binaryInst = new BinaryInst(INST_NE, left, right);
+            break;
         default:
+            assert(false && "should not reach here");
             break;
     }
+    _value = binaryInst->getResult();
+    _currentBasicBlock->addInstruction(binaryInst);
 }
 
 // void IRBuilder::visit(FunctionCall *node) {}
 
 // void IRBuilder::visit(Block *node) {}
 
-void IRBuilder::visit(AssignStatement *node) {}
+void IRBuilder::visit(AssignStatement *node) {
+    Value *addr = nullptr;
+    if (node->getLval()->getClassId() == ID_VAR_REF) {
+        addr = static_cast<VarRef *>(node->getLval())->getVariable()->getAtomAddr();
+    } else {
+        // addr = getIndexedRefAddress((IndexedRef *)node->getLval());
+    }
+    node->getRval()->accept(this);
+    _currentBasicBlock->addInstruction(new StoreInst(_value, addr));
+}
 
 // void IRBuilder::visit(IfStatement *node) {}
 
@@ -78,7 +125,14 @@ void IRBuilder::visit(AssignStatement *node) {}
 
 // void IRBuilder::visit(ContinueStatement *node) {}
 
-// void IRBuilder::visit(ReturnStatement *node) {}
+void IRBuilder::visit(ReturnStatement *node) {
+    if (node->getExpr()) {
+        node->getExpr()->accept(this);
+        _currentBasicBlock->addInstruction(new ReturnInst(_value));
+    } else {
+        _currentBasicBlock->addInstruction(new ReturnInst());
+    }
+}
 
 Value *IRBuilder::createAlloc(Type *allocType, const std::string &resultName) {
     Instruction *inst = new AllocInst(allocType, resultName);

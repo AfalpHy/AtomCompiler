@@ -55,7 +55,8 @@ public:
 
     // virtual void visit(ContinueStatement *) override;
 
-    // virtual void visit(ReturnStatement *) override;
+    virtual void visit(ReturnStatement *) override;
+
 private:
     Value *createAlloc(Type *allocType, const std::string &resultName = "");
 

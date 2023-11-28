@@ -24,14 +24,14 @@ enum InstType {
     INST_MUL,
     INST_DIV,
     INST_MOD,
+    INST_BIT_AND,
+    INST_BIT_OR,
     INST_LT,
     INST_LE,
     INST_GT,
     INST_GE,
     INST_EQ,
     INST_NE,
-    INST_AND,
-    INST_OR,
 
     // jump inst
     INST_JUMP,

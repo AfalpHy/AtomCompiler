@@ -56,6 +56,8 @@ BinaryInst::BinaryInst(InstType type, Value* operand1, Value* operand2, const st
         case INST_MUL:
         case INST_DIV:
         case INST_MOD:
+        case INST_BIT_AND:
+        case INST_BIT_OR:
             _result->setType(_operand1->getType());
             break;
         case INST_LT:
@@ -64,8 +66,6 @@ BinaryInst::BinaryInst(InstType type, Value* operand1, Value* operand2, const st
         case INST_GE:
         case INST_EQ:
         case INST_NE:
-        case INST_AND:
-        case INST_OR:
             _result->setType(Type::getInt1Ty());
             break;
         default:
@@ -92,7 +92,14 @@ std::string AllocInst::toString() {
 
 std::string StoreInst::toString() {
     std::string str = "store";
-    str.append(" ").append(_value->getCurrentName()).append(" to ").append(_dest->getCurrentName());
+    str.append(" ")
+        .append(_value->getType()->toString())
+        .append(" ")
+        .append(_value->getCurrentName())
+        .append(", ")
+        .append(_dest->getType()->toString())
+        .append(" ")
+        .append(_dest->getCurrentName());
     return str;
 }
 
@@ -101,7 +108,11 @@ std::string FunctionCallInst::toString() {
     if (_result == nullptr) {
         str.append("call void");
     } else {
-        str.append(_result->getCurrentName()).append(" = ").append("call").append(" ").append(_result->getType()->toString());
+        str.append(_result->getCurrentName())
+            .append(" = ")
+            .append("call")
+            .append(" ")
+            .append(_result->getType()->toString());
     }
     str.append(" ").append(_funcName).append("(");
     for (auto param : _params) {
@@ -160,6 +171,8 @@ std::string BinaryInst::toString() {
         case INST_MUL:
         case INST_DIV:
         case INST_MOD:
+        case INST_BIT_AND:
+        case INST_BIT_OR:
             break;
         case INST_LT:
         case INST_LE:
@@ -167,8 +180,6 @@ std::string BinaryInst::toString() {
         case INST_GE:
         case INST_EQ:
         case INST_NE:
-        case INST_AND:
-        case INST_OR:
             break;
         default:
             assert(false && " should not reach here");

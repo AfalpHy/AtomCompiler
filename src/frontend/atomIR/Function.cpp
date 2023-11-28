@@ -28,12 +28,18 @@ void Function::updateNameIfNeed() {
         return;
     }
     for (auto param : _params) {
+        if (param->isConst()) {
+            continue;
+        }
         param->setCurrentName(getUniqueNameInFunction(param->getOriginName()));
     }
     for (auto bb : _basicBlocks) {
         bb->setCurrentName(getUniqueNameInFunction(bb->getOriginName()));
         for (auto inst : bb->getInstructionList()) {
             if (Value* result = inst->getResult()) {
+                if (result->isConst()) {
+                    continue;
+                }
                 result->setCurrentName(getUniqueNameInFunction(result->getOriginName()));
             }
         }
