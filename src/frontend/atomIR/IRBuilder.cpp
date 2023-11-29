@@ -37,11 +37,11 @@ void IRBuilder::visit(Variable *node) { node->setAtomAddr(createAlloc(Type::getI
 
 void IRBuilder::visit(ConstVal *node) {
     if (node->getBasicType() == BasicType::INT) {
-        _value = new Value(Type::getInt32Ty(), node->getIntValue());
+        _value = new ConstantInt(Type::getInt32Ty(), node->getIntValue());
     } else {
-        _value = new Value(Type::getFloatTy(), node->getFloatValue());
+        _value = new ConstantFloat(Type::getFloatTy(), node->getFloatValue());
     }
-    _value->setBelongFunction(_currentFunction);
+    _value->setBelong(_currentFunction);
 }
 
 void IRBuilder::visit(VarRef *node) {
@@ -138,7 +138,7 @@ Value *IRBuilder::createAlloc(Type *allocType, const std::string &resultName) {
     Instruction *inst = new AllocInst(allocType, resultName);
     _currentBasicBlock->addInstruction(inst);
     Value *result = inst->getResult();
-    result->setBelongFunction(_currentFunction);
+    result->setBelong(_currentFunction);
     return result;
 }
 
@@ -156,7 +156,7 @@ Value *IRBuilder::createUnaryInst(InstType type, Value *operand, const std::stri
     Instruction *inst = new UnaryInst(type, operand, resultName);
     _currentBasicBlock->addInstruction(inst);
     Value *result = inst->getResult();
-    result->setBelongFunction(_currentFunction);
+    result->setBelong(_currentFunction);
     return result;
 }
 
@@ -164,7 +164,7 @@ Value *IRBuilder::createBinaryInst(InstType type, Value *operand1, Value *operan
     Instruction *inst = new BinaryInst(type, operand1, operand2, resultName);
     _currentBasicBlock->addInstruction(inst);
     Value *result = inst->getResult();
-    result->setBelongFunction(_currentFunction);
+    result->setBelong(_currentFunction);
     return result;
 }
 

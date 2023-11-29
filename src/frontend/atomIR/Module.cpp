@@ -8,22 +8,22 @@ namespace ATC {
 namespace AtomIR {
 void Module::addGlobalVariable(Value* var) {
     static int _valueIndex = 0;
-    std::string name = var->getOriginName();
+    std::string name = var->getName();
+    std::string uniqueName;
     if (name.empty()) {
-        name = std::string("@") + std::to_string(_valueIndex++);
+        uniqueName = std::string("@") + std::to_string(_valueIndex++);
     } else {
-        name = std::string("@") + name;
+        uniqueName = std::string("@") + name;
     }
 
     while (_globalVariables.find(name) != _globalVariables.end()) {
         if (name.empty()) {
-            name = std::string("@") + std::to_string(_valueIndex++);
+            uniqueName = std::string("@") + std::to_string(_valueIndex++);
         } else {
-            name = std::string("@") + name + std::to_string(_valueIndex++);
+            uniqueName = std::string("@") + name + std::to_string(_valueIndex++);
         }
     }
-    var->setCurrentName(name);
-    _globalVariables.insert({name, var});
+    _globalVariables.insert({uniqueName, var});
 }
 
 void Module::dump() {

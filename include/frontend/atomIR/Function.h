@@ -2,6 +2,7 @@
 #define ATOM_FUNCTION_H
 
 #include <set>
+#include <unordered_map>
 
 #include "BasicBlock.h"
 #include "Value.h"
@@ -41,11 +42,15 @@ public:
     const std::vector<Value*>& getParams() { return _params; }
     const std::vector<BasicBlock*>& getBasicBlocks() { return _basicBlocks; }
 
-    std::string getUniqueNameInFunction(const std::string& name);
+    std::string getUniqueNameInFunction(void* ptr);
 
     void updateNameIfNeed();
 
     void dump();
+
+private:
+    void insertName(Value* value);
+    void insertName(BasicBlock* bb);
 
 private:
     Module* _parent;
@@ -53,7 +58,8 @@ private:
     FunctionType _functionType;
     std::vector<Value*> _params;
     std::vector<BasicBlock*> _basicBlocks;
-    std::set<std::string> _nameSet;  // value and block name set
+    std::set<std::string> _nameSet;                   // value and block name set
+    std::unordered_map<void*, std::string> _nameMap;  // value and block pointer to unique name
     int _valueIndex = 0;
     bool _needUpdateName = true;  // Ture if the name set need update
 };
