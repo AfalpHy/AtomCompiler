@@ -52,7 +52,7 @@ void IRBuilder::visit(Variable *node) {
         } else {
             if (node->getDataType()->getClassId() == ID_ARRAY_TYPE) {
                 auto arrayValue = new ArrayValue(basicType);
-                arrayValue->addElement({static_cast<ArrayType *>(node->getDataType())->getTotalSize(), {}});
+                arrayValue->addElement({static_cast<ATC::ArrayType *>(node->getDataType())->getTotalSize(), {}});
                 _value = arrayValue;
             } else {
                 if (basicType == Type::getInt32Ty()) {
@@ -108,7 +108,7 @@ void IRBuilder::visit(NestedExpression *node) {
         auto var = (Variable *)node->getParent();
         assert(var->getDataType()->getClassId() == ID_ARRAY_TYPE);
         arrayValue = new ArrayValue(convertToAtomType(var->getBasicType()));
-        dimensions = ((ArrayType *)var->getDataType())->getDimensions();
+        dimensions = ((ATC::ArrayType *)var->getDataType())->getDimensions();
     }
 
     // The maximum number of elements in a nested expression
@@ -311,6 +311,9 @@ Type *IRBuilder::convertToAtomType(int basicType) {
 Type *IRBuilder::convertToAtomType(DataType *dataType) {
     if (dataType->getClassId() == ID_POINTER_TYPE) {
         return PointerType::get(convertToAtomType(dataType->getBaseDataType()));
+    } else if (dataType->getClassId() == ID_ARRAY_TYPE) {
+        return ArrayType::get(convertToAtomType(dataType->getBasicType()),
+                              static_cast<ATC::ArrayType *>(dataType)->getTotalSize());
     } else {
         return convertToAtomType(dataType->getBasicType());
     }

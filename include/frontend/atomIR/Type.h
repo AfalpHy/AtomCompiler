@@ -6,7 +6,7 @@
 namespace ATC {
 
 namespace AtomIR {
-enum TypeEnum { INT1_TY, INT32_TY, FLOAT_TY, VOID_TY, POINTER_TY };
+enum TypeEnum { INT1_TY, INT32_TY, FLOAT_TY, VOID_TY, ARRAY_TY, POINTER_TY };
 
 class PointerType;
 
@@ -24,10 +24,27 @@ public:
     virtual std::string toString();
 
     virtual bool isPointerType() { return 0; }
+    virtual bool isArrayType() { return 0; }
 
 protected:
     Type(TypeEnum type) : _type(type) {}
     TypeEnum _type;
+};
+
+class ArrayType : public Type {
+public:
+    static ArrayType* get(Type* baseType, int size);
+
+    Type* getBaseType() { return _baseType; }
+
+    virtual std::string toString() override;
+
+    virtual bool isArrayType() override { return 1; }
+
+private:
+    ArrayType(Type* baseType, int size) : Type(ARRAY_TY), _baseType(baseType), _size(size) {}
+    Type* _baseType;
+    int _size;
 };
 
 class PointerType : public Type {

@@ -45,22 +45,34 @@ std::string Type::toString() {
 
 PointerType* Type::getPointerTy() { return PointerType::get(this); }
 
-std::string PointerType::toString() { return _baseType->toString() + "*"; }
+ArrayType* ArrayType::get(Type* baseType, int size) {
+    static std::unordered_map<Type*, std::unordered_map<int, ArrayType*>> ty2ArrayTy;
+    if (ty2ArrayTy.find(baseType) != ty2ArrayTy.end() &&
+        ty2ArrayTy[baseType].find(size) != ty2ArrayTy[baseType].end()) {
+        return ty2ArrayTy[baseType][size];
+    }
+    ArrayType* ret = new ArrayType(baseType, size);
+    ty2ArrayTy[baseType].insert({size, ret});
+    return ret;
+}
+
+std::string ArrayType::toString() {
+    std::string str;
+    str.append("[").append(std::to_string(_size)).append(" x ").append(_baseType->toString()).append("]");
+    return str;
+}
 
 PointerType* PointerType::get(Type* baseType) {
     static std::unordered_map<Type*, PointerType*> ty2PointerTy;
     if (ty2PointerTy.find(baseType) != ty2PointerTy.end()) {
         return ty2PointerTy[baseType];
     }
-    PointerType* ret = nullptr;
-    if (baseType->isPointerType()) {
-        ret = get(static_cast<PointerType*>(baseType)->getBaseType());
-    } else {
-        ret = new PointerType(baseType);
-    }
+    PointerType* ret = new PointerType(baseType);
     ty2PointerTy.insert({baseType, ret});
     return ret;
 }
+
+std::string PointerType::toString() { return _baseType->toString() + "*"; }
 
 }  // namespace AtomIR
 }  // namespace ATC

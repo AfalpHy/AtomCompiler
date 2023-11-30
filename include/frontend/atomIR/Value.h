@@ -92,8 +92,6 @@ public:
 
     virtual std::string getValueStr() override;
 
-    virtual std::string toString() override;
-
     virtual void dump() override;
 
 private:

@@ -28,14 +28,6 @@ std::string ArrayValue::toString() {
     return str;
 }
 
-std::string GloabalVariable::toString() {
-    std::string str = static_cast<PointerType*>(_type)->getBaseType()->toString() + " " + getValueStr();
-    if (_init) {
-        str.append(" = ").append(_init->toString());
-    }
-    return str;
-}
-
 std::string Value::getValueStr() { return _belong->getUniqueNameInFunction(this); }
 
 std::string ConstantInt::getValueStr() { return std::to_string((int)_constValue); }
@@ -52,7 +44,13 @@ void ConstantFloat::dump() { std::cout << toString() << std::endl; }
 
 void ArrayValue::dump() { std::cout << toString() << std::endl; }
 
-void GloabalVariable::dump() { std::cout << toString() << std::endl; }
+void GloabalVariable::dump() {
+    std::string str = static_cast<PointerType*>(_type)->getBaseType()->toString() + " " + getValueStr();
+    if (_init) {
+        str.append(" = ").append(_init->toString());
+    }
+    std::cout << str << std::endl;
+}
 
 }  // namespace AtomIR
 }  // namespace ATC

@@ -76,12 +76,13 @@ void Function::updateNameIfNeed() {
 
 void Function::dump() {
     updateNameIfNeed();
-    std::cout << _functionType._ret->toString() << " " << _name << "(";
+    std::cout << "define " << _functionType._ret->toString() << " " << _name << "(";
     std::string paramsStr;
     for (auto param : _params) {
-        paramsStr = param->toString() + ",";
+        paramsStr.append(param->toString() + ", ");
     }
     if (!paramsStr.empty()) {
+        paramsStr.pop_back();
         paramsStr.pop_back();
     }
     std::cout << paramsStr << ") {" << std::endl;
