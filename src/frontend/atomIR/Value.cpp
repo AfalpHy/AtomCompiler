@@ -6,7 +6,35 @@
 namespace ATC {
 namespace AtomIR {
 
-std::string Value::toString() { std::string str = _type->toString() + " " + getValueStr(); }
+std::string Value::toString() { return _type->toString() + " " + getValueStr(); }
+
+std::string ArrayValue::toString() {
+    std::string str;
+
+    str.append("{");
+    for (auto& item : _elements) {
+        if (item.second.empty()) {
+            str.append(std::to_string(item.first).append(" x ")).append(_type->toString()).append(", ");
+        } else {
+            for (auto& element : item.second) {
+                str.append(element->toString()).append(", ");
+            }
+        }
+    }
+    str.pop_back();
+    str.pop_back();
+    str.append("}");
+
+    return str;
+}
+
+std::string GloabalVariable::toString() {
+    std::string str = static_cast<PointerType*>(_type)->getBaseType()->toString() + " " + getValueStr();
+    if (_init) {
+        str.append(" = ").append(_init->toString());
+    }
+    return str;
+}
 
 std::string Value::getValueStr() { return _belong->getUniqueNameInFunction(this); }
 
@@ -22,7 +50,8 @@ void ConstantInt::dump() { std::cout << toString() << std::endl; }
 
 void ConstantFloat::dump() { std::cout << toString() << std::endl; }
 
-/// FIXME: add initialize expression
+void ArrayValue::dump() { std::cout << toString() << std::endl; }
+
 void GloabalVariable::dump() { std::cout << toString() << std::endl; }
 
 }  // namespace AtomIR

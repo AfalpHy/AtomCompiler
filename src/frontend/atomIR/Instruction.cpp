@@ -96,14 +96,7 @@ std::string AllocInst::toString() {
 
 std::string StoreInst::toString() {
     std::string str = "store";
-    str.append(" ")
-        .append(_value->getType()->toString())
-        .append(" ")
-        .append(_value->getValueStr())
-        .append(", ")
-        .append(_dest->getType()->toString())
-        .append(" ")
-        .append(_dest->getValueStr());
+    str.append(" ").append(_value->toString()).append(", ").append(_dest->toString());
     return str;
 }
 
@@ -120,7 +113,7 @@ std::string FunctionCallInst::toString() {
     }
     str.append(" ").append(_funcName).append("(");
     for (auto param : _params) {
-        str.append(param->getType()->toString()).append(" ").append(param->getValueStr()).append(",");
+        str.append(param->toString()).append(",");
     }
     if (str.back() == ',') {
         str.pop_back();
@@ -131,7 +124,7 @@ std::string FunctionCallInst::toString() {
 
 std::string ReturnInst::toString() {
     std::string str = "ret";
-    str.append(" ").append(_retValue->getValueStr());
+    str.append(" ").append(_retValue->toString());
     return str;
 }
 
@@ -147,9 +140,7 @@ std::string UnaryInst::toString() {
                 .append(" ")
                 .append(operandType->getBaseType()->toString())
                 .append(", ")
-                .append(_operand->getType()->toString())
-                .append(" ")
-                .append(_operand->getValueStr());
+                .append(_operand->toString());
             break;
         }
         case INST_ITOF:
@@ -189,11 +180,7 @@ std::string BinaryInst::toString() {
             assert(false && " should not reach here");
             break;
     }
-    str.append(_operand1->getType()->toString())
-        .append(" ")
-        .append(_operand1->getValueStr())
-        .append(", ")
-        .append(_operand2->getValueStr());
+    str.append(_operand1->toString()).append(", ").append(_operand2->getValueStr());
     return str;
 }
 

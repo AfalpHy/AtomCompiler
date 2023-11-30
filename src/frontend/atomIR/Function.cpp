@@ -3,9 +3,19 @@
 #include <iostream>
 
 #include "atomIR/Instruction.h"
+#
 namespace ATC {
 
 namespace AtomIR {
+
+Function::Function(Module* parent, const FunctionType& functionType, const std::string& name)
+    : _parent(parent), _functionType(functionType), _name(name) {
+    for (auto paramType : functionType._params) {
+        Value* param = new Value(paramType, "");
+        param->setBelong(this);
+        _params.push_back(param);
+    }
+}
 
 std::string Function::getUniqueNameInFunction(void* ptr) {
     updateNameIfNeed();
@@ -14,8 +24,11 @@ std::string Function::getUniqueNameInFunction(void* ptr) {
     return find->second;
 }
 
-void Function::insertName(Value* value) {
-    std::string name = value->getName();
+void Function::insertName(Value* value) { insertName(value, value->getName()); }
+
+void Function::insertName(BasicBlock* bb) { insertName(bb, bb->getName()); }
+
+void Function::insertName(void* ptr, const std::string& name) {
     std::string uniqueName;
     if (name.empty()) {
         uniqueName = std::string("%") + std::to_string(_valueIndex++);
@@ -31,27 +44,7 @@ void Function::insertName(Value* value) {
         }
     }
     _nameSet.insert(uniqueName);
-    _nameMap.insert({value, uniqueName});
-}
-
-void Function::insertName(BasicBlock* bb) {
-    std::string name = bb->getName();
-    std::string uniqueName;
-    if (name.empty()) {
-        uniqueName = std::string("%") + std::to_string(_valueIndex++);
-    } else {
-        uniqueName = std::string("%") + name;
-    }
-
-    while (_nameSet.find(uniqueName) != _nameSet.end()) {
-        if (name.empty()) {
-            uniqueName = std::string("%") + std::to_string(_valueIndex++);
-        } else {
-            uniqueName = std::string("%") + name + std::to_string(_valueIndex++);
-        }
-    }
-    _nameSet.insert(uniqueName);
-    _nameMap.insert({bb, uniqueName});
+    _nameMap.insert({ptr, uniqueName});
 }
 
 void Function::updateNameIfNeed() {
@@ -86,19 +79,20 @@ void Function::dump() {
     std::cout << _functionType._ret->toString() << " " << _name << "(";
     std::string paramsStr;
     for (auto param : _params) {
-        paramsStr = param->getType()->toString() + " " + param->getName() + ",";
+        paramsStr = param->toString() + ",";
     }
     if (!paramsStr.empty()) {
         paramsStr.pop_back();
     }
     std::cout << paramsStr << ") {" << std::endl;
     for (auto bb : _basicBlocks) {
-        std::cout << getUniqueNameInFunction(bb) << ":" << std::endl;
+        std::cout << bb->getBBStr() << ":" << std::endl;
         for (auto inst : bb->getInstructionList()) {
             std::cout << "  " << inst->toString() << std::endl;
         }
     }
-    std::cout << paramsStr << "}" << std::endl;
+    std::cout << "}" << std::endl;
 }
+
 }  // namespace AtomIR
 }  // namespace ATC

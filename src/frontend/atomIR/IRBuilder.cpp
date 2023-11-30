@@ -24,22 +24,62 @@ void IRBuilder::visit(CompUnit *node) {
 void IRBuilder::visit(FunctionDef *node) {
     FunctionType funcType;
     funcType._ret = Type::getInt32Ty();
-    // for (auto param : node->getParams()) {
-    // }
+    for (auto param : node->getParams()) {
+        DataType *dataType = param->getVariables()[0]->getDataType();
+        funcType._params.push_back(convertToAtomType(dataType));
+    }
     _currentFunction = new Function(_currentModule, funcType, node->getName());
     _currentModule->addFunction(_currentFunction);
     _currentBasicBlock = new BasicBlock(_currentFunction, "entry");
     _currentFunction->insertBB(_currentBasicBlock);
+    allocForScopeVars(node->getScope());
+    int i = 0;
+    for (auto param : node->getParams()) {
+        // the decl of formal param is the only one
+        Variable *var = param->getVariables()[0];
+        auto arg = _currentFunction->getParams()[i++];
+        createStore(arg, var->getAtomAddr());
+    }
     AtomASTVisitor::visit(node);
 }
 
-void IRBuilder::visit(Variable *node) { node->setAtomAddr(createAlloc(Type::getInt32Ty(), node->getName())); }
+void IRBuilder::visit(Variable *node) {
+    Type *basicType = convertToAtomType(node->getBasicType());
+    if (node->isGlobal()) {
+        // create global variable
+        if (auto initValue = node->getInitValue()) {
+            initValue->accept(this);
+        } else {
+            if (node->getDataType()->getClassId() == ID_ARRAY_TYPE) {
+                auto arrayValue = new ArrayValue(basicType);
+                arrayValue->addElement({static_cast<ArrayType *>(node->getDataType())->getTotalSize(), {}});
+                _value = arrayValue;
+            } else {
+                if (basicType == Type::getInt32Ty()) {
+                    _value = new ConstantInt(0);
+                } else {
+                    _value = new ConstantFloat(0);
+                }
+            }
+        }
+
+        GloabalVariable *globalVar = new GloabalVariable(basicType, node->getName());
+        globalVar->setInitialValue(_value);
+        _currentModule->addGlobalVariable(globalVar);
+
+        node->setAtomAddr(globalVar);
+    } else {
+        if (auto initValue = node->getInitValue()) {
+            initValue->accept(this);
+        }
+    }
+}
 
 void IRBuilder::visit(ConstVal *node) {
     if (node->getBasicType() == BasicType::INT) {
-        _value = new ConstantInt(Type::getInt32Ty(), node->getIntValue());
+        _value = new ConstantInt(node->getIntValue());
     } else {
-        _value = new ConstantFloat(Type::getFloatTy(), node->getFloatValue());
+        _value = new ConstantFloat(node->getFloatValue());
     }
     _value->setBelong(_currentFunction);
 }
@@ -50,7 +90,83 @@ void IRBuilder::visit(VarRef *node) {
 
 // void IRBuilder::visit(IndexedRef *node) {}
 
-// void IRBuilder::visit(NestedExpression *node) {}
+void IRBuilder::visit(NestedExpression *node) {
+    static int deep = 0;
+    static int index;
+    // dimensions of definded variable
+    static std::vector<int> dimensions;
+
+    static ArrayValue *arrayValue = nullptr;
+    static std::vector<Value *> element;
+    static int zeroNum;
+    if (deep == 0) {
+        index = 0;
+        dimensions.clear();
+        element.clear();
+        zeroNum = 0;
+        assert(node->getParent()->getClassId() == ID_VARIABLE);
+        auto var = (Variable *)node->getParent();
+        assert(var->getDataType()->getClassId() == ID_ARRAY_TYPE);
+        arrayValue = new ArrayValue(convertToAtomType(var->getBasicType()));
+        dimensions = ((ArrayType *)var->getDataType())->getDimensions();
+    }
+
+    // The maximum number of elements in a nested expression
+    int maxSize = 1;
+    for (int i = deep; i < dimensions.size(); i++) {
+        maxSize *= dimensions[i];
+    }
+
+    deep++;
+    const auto &elements = node->getElements();
+    // get one value when there are excess elements in a scalar initializer or
+    // when there are too many braces around a scalar initializer.
+    if (index % maxSize || deep > dimensions.size()) {
+        if (!elements.empty()) {
+            if (elements[0]->getClassId() == ID_NESTED_EXPRESSION) {
+                elements[0]->accept(this);
+            } else {
+                elements[0]->accept(this);
+                element.push_back(_value);
+                index++;
+            }
+        }
+    } else {
+        int targetIndex = index + maxSize;
+        for (size_t i = 0; i < elements.size(); i++) {
+            if (elements[i]->getClassId() == ID_NESTED_EXPRESSION) {
+                elements[i]->accept(this);
+            } else {
+                elements[i]->accept(this);
+                element.push_back(_value);
+                index++;
+            }
+            // ignore the remaining elements
+            if (index == targetIndex) {
+                break;
+            }
+        }
+        if (index != targetIndex) {
+            if (!element.empty()) {
+                if (zeroNum) {
+                    arrayValue->addElement({zeroNum, {}});
+                    zeroNum = 0;
+                }
+                arrayValue->addElement({element.size(), element});
+                element.clear();
+            }
+            zeroNum += targetIndex - index;
+        }
+        index = targetIndex;
+    }
+    deep--;
+    if (deep == 0) {
+        if (zeroNum) {
+            arrayValue->addElement({zeroNum, {}});
+        }
+        _value = arrayValue;
+    }
+}
 
 // void IRBuilder::visit(UnaryExpression *node) {}
 
@@ -59,47 +175,45 @@ void IRBuilder::visit(BinaryExpression *node) {
     Value *left = _value;
     node->getRight()->accept(this);
     Value *right = _value;
-    Instruction *binaryInst = nullptr;
+
     switch (node->getOperator()) {
         case PLUS:
-            binaryInst = new BinaryInst(INST_ADD, left, right);
+            _value = createBinaryInst(INST_ADD, left, right);
             break;
         case MINUS:
-            binaryInst = new BinaryInst(INST_SUB, left, right);
+            _value = createBinaryInst(INST_SUB, left, right);
             break;
         case MUL:
-            binaryInst = new BinaryInst(INST_MUL, left, right);
+            _value = createBinaryInst(INST_MUL, left, right);
             break;
         case DIV:
-            binaryInst = new BinaryInst(INST_DIV, left, right);
+            _value = createBinaryInst(INST_DIV, left, right);
             break;
         case MOD:
-            binaryInst = new BinaryInst(INST_MOD, left, right);
+            _value = createBinaryInst(INST_MOD, left, right);
             break;
         case LT:
-            binaryInst = new BinaryInst(INST_LT, left, right);
+            _value = createBinaryInst(INST_LT, left, right);
             break;
         case GT:
-            binaryInst = new BinaryInst(INST_GT, left, right);
+            _value = createBinaryInst(INST_GT, left, right);
             break;
         case LE:
-            binaryInst = new BinaryInst(INST_LE, left, right);
+            _value = createBinaryInst(INST_LE, left, right);
             break;
         case GE:
-            binaryInst = new BinaryInst(INST_GE, left, right);
+            _value = createBinaryInst(INST_GE, left, right);
             break;
         case EQ:
-            binaryInst = new BinaryInst(INST_EQ, left, right);
+            _value = createBinaryInst(INST_EQ, left, right);
             break;
         case NE:
-            binaryInst = new BinaryInst(INST_NE, left, right);
+            _value = createBinaryInst(INST_NE, left, right);
             break;
         default:
             assert(false && "should not reach here");
             break;
     }
-    _value = binaryInst->getResult();
-    _currentBasicBlock->addInstruction(binaryInst);
 }
 
 // void IRBuilder::visit(FunctionCall *node) {}
@@ -199,6 +313,16 @@ Type *IRBuilder::convertToAtomType(DataType *dataType) {
         return PointerType::get(convertToAtomType(dataType->getBaseDataType()));
     } else {
         return convertToAtomType(dataType->getBasicType());
+    }
+}
+
+void IRBuilder::allocForScopeVars(Scope *currentScope) {
+    for (const auto &[name, var] : currentScope->getVarMap()) {
+        Value *addr = createAlloc(convertToAtomType(var->getDataType()), name);
+        var->setAtomAddr(addr);
+    }
+    for (auto child : currentScope->getChildren()) {
+        allocForScopeVars(child);
     }
 }
 

@@ -8,7 +8,7 @@
 namespace ATC {
 
 class DataType;
-
+class Scope;
 namespace AtomIR {
 
 class Module;
@@ -35,7 +35,7 @@ public:
 
     // virtual void visit(IndexedRef *) override;
 
-    // virtual void visit(NestedExpression *) override;
+    virtual void visit(NestedExpression *) override;
 
     // virtual void visit(UnaryExpression *) override;
 
@@ -78,6 +78,8 @@ private:
     Type *convertToAtomType(int type);
 
     Type *convertToAtomType(DataType *dataType);
+
+    void allocForScopeVars(Scope *currentScope);
 
 private:
     Module *_currentModule;

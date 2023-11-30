@@ -23,11 +23,16 @@ void Module::addGlobalVariable(Value* var) {
             uniqueName = std::string("@") + name + std::to_string(_valueIndex++);
         }
     }
+    var->setName(uniqueName);
     _globalVariables.insert({uniqueName, var});
 }
 
 void Module::dump() {
-    /// TODO:global variable
+    for (auto item : _globalVariables) {
+        item.second->dump();
+    }
+
+    std::cout << std::endl;
 
     for (auto item : _functions) {
         item.second->dump();

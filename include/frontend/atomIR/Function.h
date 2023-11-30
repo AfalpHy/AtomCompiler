@@ -19,8 +19,7 @@ struct FunctionType {
 
 class Function {
 public:
-    Function(Module* parent, const FunctionType& functionType, const std::string& name)
-        : _parent(parent), _functionType(functionType), _name(name) {}
+    Function(Module* parent, const FunctionType& functionType, const std::string& name);
 
     void addParam(Value* param) { _params.push_back(param); }
     void insertBB(BasicBlock* bb) { _basicBlocks.push_back(bb); }
@@ -51,6 +50,7 @@ public:
 private:
     void insertName(Value* value);
     void insertName(BasicBlock* bb);
+    void insertName(void* ptr, const std::string& name);
 
 private:
     Module* _parent;

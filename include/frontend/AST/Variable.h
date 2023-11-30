@@ -4,10 +4,13 @@
 #include <llvm/IR/Value.h>
 
 #include "DataType.h"
-#include "atomIR/Value.h"
 namespace ATC {
 
 class Expression;
+namespace AtomIR {
+class Value;
+}
+
 class Variable : public TreeNode {
 public:
     Variable() = default;
