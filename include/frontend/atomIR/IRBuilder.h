@@ -74,6 +74,8 @@ private:
 
     void allocForScopeVars(Scope *currentScope);
 
+    Value *castToDestTyIfNeed(Value *value, Type *destTy);
+
 private:
     Module *_currentModule;
     Function *_currentFunction;

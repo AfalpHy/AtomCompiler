@@ -40,7 +40,7 @@ protected:
 
 class ConstantInt : public Value {
 public:
-    ConstantInt(int value) : Value(Type::getInt32Ty(), ""), _constValue(value) {}
+    static ConstantInt* get(int value);
 
     virtual std::string getValueStr() override;
 
@@ -49,12 +49,13 @@ public:
     int getConstValue() { return _constValue; }
 
 private:
+    ConstantInt(int value) : Value(Type::getInt32Ty(), ""), _constValue(value) {}
     int _constValue;
 };
 
 class ConstantFloat : public Value {
 public:
-    ConstantFloat(float value) : Value(Type::getFloatTy(), ""), _constValue(value) {}
+    static ConstantFloat* get(float value);
 
     virtual std::string getValueStr() override;
 
@@ -63,6 +64,7 @@ public:
     float getConstValue() { return _constValue; }
 
 private:
+    ConstantFloat(float value) : Value(Type::getFloatTy(), ""), _constValue(value) {}
     float _constValue;
 };
 

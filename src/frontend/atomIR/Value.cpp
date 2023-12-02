@@ -12,6 +12,26 @@ void Value::setBelong(Function* function) {
     _belong->insertName(this);
 }
 
+ConstantInt* ConstantInt::get(int value) {
+    static std::unordered_map<int, ConstantInt*> num2Value;
+    if (num2Value.find(value) != num2Value.end()) {
+        return num2Value[value];
+    }
+    ConstantInt* ret = new ConstantInt(value);
+    num2Value.insert({value, ret});
+    return ret;
+}
+
+ConstantFloat* ConstantFloat::get(float value) {
+    static std::unordered_map<int, ConstantFloat*> num2Value;
+    if (num2Value.find(value) != num2Value.end()) {
+        return num2Value[value];
+    }
+    ConstantFloat* ret = new ConstantFloat(value);
+    num2Value.insert({value, ret});
+    return ret;
+}
+
 std::string Value::toString() { return _type->toString() + " " + getValueStr(); }
 
 std::string ArrayValue::toString() {

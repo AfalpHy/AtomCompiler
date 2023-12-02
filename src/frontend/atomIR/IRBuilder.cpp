@@ -19,10 +19,10 @@ IRBuilder::IRBuilder() {
     _floatTy = Type::getFloatTy();
     _int32PtrTy = _int32Ty->getPointerTy();
     _floatPtrTy = _floatTy->getPointerTy();
-    _int32Zero = new ConstantInt(0);
-    _floatZero = new ConstantFloat(0);
-    _int32One = new ConstantInt(1);
-    _floatOne = new ConstantFloat(1);
+    _int32Zero = ConstantInt::get(0);
+    _floatZero = ConstantFloat::get(0);
+    _int32One = ConstantInt::get(1);
+    _floatOne = ConstantFloat::get(1);
 }
 
 IRBuilder::~IRBuilder() { _currentModule->dump(); }
@@ -68,9 +68,9 @@ void IRBuilder::visit(Variable *node) {
                 _value = arrayValue;
             } else {
                 if (basicType == Type::getInt32Ty()) {
-                    _value = new ConstantInt(0);
+                    _value = ConstantInt::get(0);
                 } else {
-                    _value = new ConstantFloat(0);
+                    _value = ConstantFloat::get(0);
                 }
             }
         }
@@ -89,9 +89,9 @@ void IRBuilder::visit(Variable *node) {
 
 void IRBuilder::visit(ConstVal *node) {
     if (node->getBasicType() == BasicType::INT) {
-        _value = new ConstantInt(node->getIntValue());
+        _value = ConstantInt::get(node->getIntValue());
     } else {
-        _value = new ConstantFloat(node->getFloatValue());
+        _value = ConstantFloat::get(node->getFloatValue());
     }
 }
 
@@ -110,6 +110,7 @@ void IRBuilder::visit(NestedExpression *node) {
     static ArrayValue *arrayValue = nullptr;
     static std::vector<Value *> element;
     static int zeroNum;
+    static Type *basicType;
     if (deep == 0) {
         index = 0;
         dimensions.clear();
@@ -119,7 +120,8 @@ void IRBuilder::visit(NestedExpression *node) {
         auto var = (Variable *)node->getParent();
         assert(var->getDataType()->getClassId() == ID_ARRAY_TYPE);
         ATC::ArrayType *varType = (ATC::ArrayType *)var->getDataType();
-        arrayValue = new ArrayValue(ArrayType::get(convertToAtomType(var->getBasicType()), varType->getTotalSize()));
+        basicType = convertToAtomType(var->getBasicType());
+        arrayValue = new ArrayValue(ArrayType::get(basicType, varType->getTotalSize()));
         dimensions = varType->getDimensions();
     }
 
@@ -139,7 +141,7 @@ void IRBuilder::visit(NestedExpression *node) {
                 elements[0]->accept(this);
             } else {
                 elements[0]->accept(this);
-                element.push_back(_value);
+                element.push_back(castToDestTyIfNeed(_value, basicType));
                 index++;
             }
         }
@@ -150,7 +152,7 @@ void IRBuilder::visit(NestedExpression *node) {
                 elements[i]->accept(this);
             } else {
                 elements[i]->accept(this);
-                element.push_back(_value);
+                element.push_back(castToDestTyIfNeed(_value, basicType));
                 index++;
             }
             // ignore the remaining elements
@@ -183,6 +185,14 @@ void IRBuilder::visit(NestedExpression *node) {
 // void IRBuilder::visit(UnaryExpression *node) {}
 
 void IRBuilder::visit(BinaryExpression *node) {
+    if (node->isConst()) {
+        if (ExpressionHandle::isIntExpr(node)) {
+            _value = ConstantInt::get(ExpressionHandle::evaluateConstExpr(node));
+        } else {
+            _value = ConstantFloat::get(ExpressionHandle::evaluateConstExpr(node));
+        }
+        return;
+    }
     node->getLeft()->accept(this);
     Value *left = _value;
     node->getRight()->accept(this);
@@ -339,6 +349,39 @@ void IRBuilder::allocForScopeVars(Scope *currentScope) {
     for (auto child : currentScope->getChildren()) {
         allocForScopeVars(child);
     }
+}
+
+Value *IRBuilder::castToDestTyIfNeed(Value *value, Type *destTy) {
+    // if (destTy->isPointerType()) {
+    //     assert(value->getType()->isPointerTy());
+    //     return _theIRBuilder->CreateBitCast(value, destTy);
+    // }
+    if (destTy == _floatTy) {
+        if (value->isConst()) {
+            return ConstantFloat::get(std::stof(value->getValueStr()));
+        }
+        if (value->getType() == _int32Ty) {
+            return createUnaryInst(INST_ITOF, value);
+        } else if (value->getType() == _int1Ty) {
+            return createUnaryInst(INST_ITOF, value);
+        }
+    } else if (destTy == _int32Ty) {
+        if (value->isConst()) {
+            return ConstantInt::get(std::stoi(value->getValueStr()));
+        }
+        if (value->getType() == _floatTy) {
+            return createUnaryInst(INST_FTOI, value);
+        } else if (value->getType() == _int1Ty) {
+            return createUnaryInst(INST_FTOI, value);
+        }
+    } else {
+        if (value->getType() == _floatTy) {
+            return createBinaryInst(INST_NE, value, _floatZero);
+        } else if (value->getType() == _int32Ty) {
+            return createBinaryInst(INST_NE, value, _int32One);
+        }
+    }
+    return value;
 }
 
 }  // namespace AtomIR

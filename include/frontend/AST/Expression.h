@@ -172,6 +172,7 @@ private:
 class ExpressionHandle {
 public:
     static float evaluateConstExpr(Expression* expr);
+    static bool isIntExpr(Expression* expr);
 };
 }  // namespace ATC
 #endif
