@@ -6,6 +6,9 @@
 #include "TreeNode.h"
 #include "Variable.h"
 namespace ATC {
+
+enum Operator { PLUS, MINUS, NOT, MUL, DIV, MOD, LT, GT, LE, GE, EQ, NE, AND, OR };
+
 class Expression : public TreeNode {
 public:
     Expression() = default;

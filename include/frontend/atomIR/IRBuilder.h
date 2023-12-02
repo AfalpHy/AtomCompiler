@@ -11,13 +11,6 @@ class DataType;
 class Scope;
 namespace AtomIR {
 
-class Module;
-struct FunctionType;
-class Function;
-class BasicBlock;
-class Value;
-class Type;
-
 class IRBuilder : public ASTVisitor {
 public:
     IRBuilder();
@@ -86,6 +79,18 @@ private:
     Function *_currentFunction;
     BasicBlock *_currentBasicBlock;
     Value *_value;
+
+    Type *_voidTy;
+    Type *_int1Ty;
+    Type *_int32Ty;
+    Type *_int32PtrTy;
+    Type *_floatTy;
+    Type *_floatPtrTy;
+
+    ConstantInt *_int32Zero;
+    ConstantFloat *_floatZero;
+    ConstantInt *_int32One;
+    ConstantFloat *_floatOne;
 };
 }  // namespace AtomIR
 }  // namespace ATC

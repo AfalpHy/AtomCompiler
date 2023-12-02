@@ -12,7 +12,18 @@
 namespace ATC {
 
 namespace AtomIR {
-IRBuilder::IRBuilder() {}
+IRBuilder::IRBuilder() {
+    _voidTy = Type::getVoidTy();
+    _int1Ty = Type::getInt1Ty();
+    _int32Ty = Type::getInt32Ty();
+    _floatTy = Type::getFloatTy();
+    _int32PtrTy = _int32Ty->getPointerTy();
+    _floatPtrTy = _floatTy->getPointerTy();
+    _int32Zero = new ConstantInt(0);
+    _floatZero = new ConstantFloat(0);
+    _int32One = new ConstantInt(1);
+    _floatOne = new ConstantFloat(1);
+}
 
 IRBuilder::~IRBuilder() { _currentModule->dump(); }
 

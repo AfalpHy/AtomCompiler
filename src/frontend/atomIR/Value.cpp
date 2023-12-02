@@ -30,19 +30,19 @@ std::string ArrayValue::toString() {
 
 std::string Value::getValueStr() { return _belong->getUniqueNameInFunction(this); }
 
-std::string ConstantInt::getValueStr() { return std::to_string((int)_constValue); }
+std::string ConstantInt::getValueStr() { return std::to_string(_constValue); }
 
 std::string ConstantFloat::getValueStr() { return std::to_string(_constValue); }
 
 std::string GloabalVariable::getValueStr() { return _name; }
 
-void Value::dump() { std::cout << _defined->toString() << std::endl; }
-
-void ConstantInt::dump() { std::cout << toString() << std::endl; }
-
-void ConstantFloat::dump() { std::cout << toString() << std::endl; }
-
-void ArrayValue::dump() { std::cout << toString() << std::endl; }
+void Value::dump() {
+    if (!_defined) {
+        std::cout << toString() << std::endl;
+    } else {
+        std::cout << _defined->toString() << std::endl;
+    }
+}
 
 void GloabalVariable::dump() {
     std::string str = static_cast<PointerType*>(_type)->getBaseType()->toString() + " " + getValueStr();

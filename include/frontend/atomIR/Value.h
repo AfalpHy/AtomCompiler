@@ -48,8 +48,6 @@ public:
 
     int getConstValue() { return _constValue; }
 
-    virtual void dump() override;
-
 private:
     int _constValue;
 };
@@ -64,8 +62,6 @@ public:
 
     float getConstValue() { return _constValue; }
 
-    virtual void dump() override;
-
 private:
     float _constValue;
 };
@@ -77,8 +73,6 @@ public:
     void addElement(const std::pair<int, std::vector<Value*>>& element) { _elements.push_back(element); }
 
     virtual std::string toString() override;
-
-    virtual void dump() override;
 
 private:
     std::vector<std::pair<int, std::vector<Value*>>> _elements;

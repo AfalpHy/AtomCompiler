@@ -75,7 +75,6 @@ void Function::updateNameIfNeed() {
 }
 
 void Function::dump() {
-    updateNameIfNeed();
     std::cout << "define " << _functionType._ret->toString() << " " << _name << "(";
     std::string paramsStr;
     for (auto param : _params) {

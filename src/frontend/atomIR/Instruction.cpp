@@ -34,6 +34,7 @@ UnaryInst::UnaryInst(InstType type, Value* operand, const std::string& resultNam
     : Instruction(type), _operand(operand), _result(new Value(resultName)) {
     switch (type) {
         case INST_LOAD:
+            assert(_operand->getType()->isPointerType() && "should load from a pointer");
             _result->setType(static_cast<PointerType*>(_operand->getType())->getBaseType());
             break;
         case INST_ITOF:
@@ -134,7 +135,6 @@ std::string UnaryInst::toString() {
 
     switch (_type) {
         case INST_LOAD: {
-            assert(_operand->getType()->isPointerType() && "should load from a pointer");
             PointerType* operandType = (PointerType*)_operand->getType();
             str.append("load")
                 .append(" ")
