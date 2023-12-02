@@ -22,7 +22,12 @@ public:
     Function(Module* parent, const FunctionType& functionType, const std::string& name);
 
     void addParam(Value* param) { _params.push_back(param); }
-    void insertBB(BasicBlock* bb) { _basicBlocks.push_back(bb); }
+
+    void insertBB(BasicBlock* bb) {
+        insertName(bb);
+        _basicBlocks.push_back(bb);
+    }
+
     void setNeedUpdateName(bool b) { _needUpdateName = b; }
 
     Module* getParent() { return _parent; }
@@ -47,9 +52,10 @@ public:
 
     void dump();
 
-private:
     void insertName(Value* value);
+
     void insertName(BasicBlock* bb);
+
     void insertName(void* ptr, const std::string& name);
 
 private:
@@ -61,7 +67,7 @@ private:
     std::set<std::string> _nameSet;                   // value and block name set
     std::unordered_map<void*, std::string> _nameMap;  // value and block pointer to unique name
     int _valueIndex = 0;
-    bool _needUpdateName = true;  // Ture if the name set need update
+    bool _needUpdateName = false;  // Ture if the name set need update
 };
 }  // namespace AtomIR
 }  // namespace ATC

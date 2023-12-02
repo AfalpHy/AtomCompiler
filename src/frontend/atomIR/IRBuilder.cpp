@@ -62,8 +62,9 @@ void IRBuilder::visit(Variable *node) {
             initValue->accept(this);
         } else {
             if (node->getDataType()->getClassId() == ID_ARRAY_TYPE) {
-                auto arrayValue = new ArrayValue(basicType);
-                arrayValue->addElement({static_cast<ATC::ArrayType *>(node->getDataType())->getTotalSize(), {}});
+                int totalSize = static_cast<ATC::ArrayType *>(node->getDataType())->getTotalSize();
+                auto arrayValue = new ArrayValue(ArrayType::get(basicType, totalSize));
+                arrayValue->addElement({totalSize, {}});
                 _value = arrayValue;
             } else {
                 if (basicType == Type::getInt32Ty()) {
@@ -92,7 +93,6 @@ void IRBuilder::visit(ConstVal *node) {
     } else {
         _value = new ConstantFloat(node->getFloatValue());
     }
-    _value->setBelong(_currentFunction);
 }
 
 void IRBuilder::visit(VarRef *node) {
@@ -118,8 +118,9 @@ void IRBuilder::visit(NestedExpression *node) {
         assert(node->getParent()->getClassId() == ID_VARIABLE);
         auto var = (Variable *)node->getParent();
         assert(var->getDataType()->getClassId() == ID_ARRAY_TYPE);
-        arrayValue = new ArrayValue(convertToAtomType(var->getBasicType()));
-        dimensions = ((ATC::ArrayType *)var->getDataType())->getDimensions();
+        ATC::ArrayType *varType = (ATC::ArrayType *)var->getDataType();
+        arrayValue = new ArrayValue(ArrayType::get(convertToAtomType(var->getBasicType()), varType->getTotalSize()));
+        dimensions = varType->getDimensions();
     }
 
     // The maximum number of elements in a nested expression

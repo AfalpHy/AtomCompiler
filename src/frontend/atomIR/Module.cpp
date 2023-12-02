@@ -6,6 +6,7 @@
 #include "atomIR/Instruction.h"
 namespace ATC {
 namespace AtomIR {
+
 void Module::addGlobalVariable(Value* var) {
     static int _valueIndex = 0;
     std::string name = var->getName();

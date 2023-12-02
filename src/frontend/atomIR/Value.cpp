@@ -1,20 +1,28 @@
 #include <iostream>
 
+#include "assert.h"
 #include "atomIR/Function.h"
 #include "atomIR/Instruction.h"
 
 namespace ATC {
 namespace AtomIR {
 
+void Value::setBelong(Function* function) {
+    _belong = function;
+    _belong->insertName(this);
+}
+
 std::string Value::toString() { return _type->toString() + " " + getValueStr(); }
 
 std::string ArrayValue::toString() {
-    std::string str;
+    assert(_type->isArrayType() && "should be array type");
+    ArrayType* type = (ArrayType*)_type;
+    std::string str = _type->toString();
 
-    str.append("{");
+    str.append(" {");
     for (auto& item : _elements) {
         if (item.second.empty()) {
-            str.append(std::to_string(item.first).append(" x ")).append(_type->toString()).append(", ");
+            str.append(std::to_string(item.first).append(" x ")).append(type->getBaseType()->toString()).append(" 0, ");
         } else {
             for (auto& element : item.second) {
                 str.append(element->toString()).append(", ");
@@ -45,7 +53,7 @@ void Value::dump() {
 }
 
 void GloabalVariable::dump() {
-    std::string str = static_cast<PointerType*>(_type)->getBaseType()->toString() + " " + getValueStr();
+    std::string str = getValueStr();
     if (_init) {
         str.append(" = ").append(_init->toString());
     }

@@ -11,12 +11,12 @@ class Instruction;
 
 class Value {
 public:
-    Value(const std::string& name) : _name(name) {}
     Value(Type* type, const std::string& name) : _type(type), _name(name) {}
 
-    void setType(Type* type) { _type = type; }
     void setName(const std::string& name) { _name = name; }
-    void setBelong(Function* function) { _belong = function; }
+
+    void setBelong(Function* function);
+
     void setDefined(Instruction* inst) { _defined = inst; }
 
     Type* getType() { return _type; }

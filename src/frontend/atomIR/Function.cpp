@@ -56,18 +56,12 @@ void Function::updateNameIfNeed() {
     _nameSet.clear();
     _nameMap.clear();
     for (auto param : _params) {
-        if (param->isConst()) {
-            continue;
-        }
         insertName(param);
     }
     for (auto bb : _basicBlocks) {
         insertName(bb);
         for (auto inst : bb->getInstructionList()) {
             if (Value* result = inst->getResult()) {
-                if (result->isConst()) {
-                    continue;
-                }
                 insertName(result);
             }
         }

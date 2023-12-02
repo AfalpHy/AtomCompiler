@@ -31,17 +31,17 @@ FunctionCallInst::FunctionCallInst(FunctionType functionType, const std::string&
 }
 
 UnaryInst::UnaryInst(InstType type, Value* operand, const std::string& resultName)
-    : Instruction(type), _operand(operand), _result(new Value(resultName)) {
+    : Instruction(type), _operand(operand) {
     switch (type) {
         case INST_LOAD:
             assert(_operand->getType()->isPointerType() && "should load from a pointer");
-            _result->setType(static_cast<PointerType*>(_operand->getType())->getBaseType());
+            _result = new Value(static_cast<PointerType*>(_operand->getType())->getBaseType(), resultName);
             break;
         case INST_ITOF:
-            _result->setType(Type::getFloatTy());
+            _result = new Value(Type::getFloatTy(), resultName);
             break;
         case INST_FTOI:
-            _result->setType(Type::getInt32Ty());
+            _result = new Value(Type::getInt32Ty(), resultName);
             break;
         default:
             assert(false && " should not reach here");
@@ -51,7 +51,7 @@ UnaryInst::UnaryInst(InstType type, Value* operand, const std::string& resultNam
 }
 
 BinaryInst::BinaryInst(InstType type, Value* operand1, Value* operand2, const std::string& resultName)
-    : Instruction(type), _operand1(operand1), _operand2(operand2), _result(new Value(resultName)) {
+    : Instruction(type), _operand1(operand1), _operand2(operand2) {
     assert(_operand1->getType() == _operand2->getType());
     _intInst = operand1->getType()->getTypeEnum() == INT32_TY;
     switch (type) {
@@ -62,7 +62,7 @@ BinaryInst::BinaryInst(InstType type, Value* operand1, Value* operand2, const st
         case INST_MOD:
         case INST_BIT_AND:
         case INST_BIT_OR:
-            _result->setType(_operand1->getType());
+            _result = new Value(_operand1->getType(), resultName);
             break;
         case INST_LT:
         case INST_LE:
@@ -70,7 +70,7 @@ BinaryInst::BinaryInst(InstType type, Value* operand1, Value* operand2, const st
         case INST_GE:
         case INST_EQ:
         case INST_NE:
-            _result->setType(Type::getInt1Ty());
+            _result = new Value(Type::getInt1Ty(), resultName);
             break;
         default:
             assert(false && " should not reach here");
