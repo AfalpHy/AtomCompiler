@@ -1,5 +1,5 @@
-#ifndef SCOPE_H
-#define SCOPE_H
+#ifndef ATC_SCOPE_H
+#define ATC_SCOPE_H
 
 #include <string>
 #include <unordered_map>

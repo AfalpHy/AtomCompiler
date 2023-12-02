@@ -4,8 +4,8 @@
 #include <iostream>
 #include <string>
 
-#include "AST/AtomASTBuilder.h"
-#include "AST/AtomASTDumper.h"
+#include "AST/ASTBuilder.h"
+#include "AST/ASTDumper.h"
 #include "AST/CompUnit.h"
 #include "AST/Scope.h"
 #include "AST/SemanticChecker.h"
@@ -74,7 +74,7 @@ int main(int argc, const char *argv[]) {
         cerr << "There are syntax errors in " << filesystem::absolute(sourceFile) << endl;
         return -1;
     }
-    ATC::AtomASTBuilder astBuilder;
+    ATC::ASTBuilder astBuilder;
     astBuilder.setTokenStream(&token);
     context->accept(&astBuilder);
 
@@ -84,7 +84,7 @@ int main(int argc, const char *argv[]) {
     // }
 
     if (dumpAst) {
-        ATC::AtomASTDumper dump;
+        ATC::ASTDumper dump;
         for (auto compUnit : ATC::CompUnit::AllCompUnits) {
             compUnit->accept(&dump);
         }

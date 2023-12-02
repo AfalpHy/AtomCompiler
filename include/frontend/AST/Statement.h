@@ -1,10 +1,9 @@
-#ifndef STATEMENT_H
-#define STATEMENT_H
+#ifndef ATC_STATEMENT_H
+#define ATC_STATEMENT_H
 
 #include <vector>
 
 #include "Expression.h"
-#include "TreeNode.h"
 #include "Variable.h"
 
 namespace ATC {

@@ -1,5 +1,5 @@
-#ifndef ATOM_VALUE_H
-#define ATOM_VALUE_H
+#ifndef ATC_VALUE_H
+#define ATC_VALUE_H
 
 #include "Type.h"
 

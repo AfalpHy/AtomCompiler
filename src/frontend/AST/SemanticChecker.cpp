@@ -17,15 +17,15 @@ namespace ATC {
 
 // void SemanticChecker::visit(TreeNode* node) {}
 
-// void SemanticChecker::visit(CompUnit* node) { AtomASTVisitor::visit(node); }
+// void SemanticChecker::visit(CompUnit* node) { ASTVisitor::visit(node); }
 
-// void SemanticChecker::visit(Decl* node) { AtomASTVisitor::visit(node); }
+// void SemanticChecker::visit(Decl* node) { ASTVisitor::visit(node); }
 
-// void SemanticChecker::visit(FunctionDef* node) { AtomASTVisitor::visit(node); }
+// void SemanticChecker::visit(FunctionDef* node) { ASTVisitor::visit(node); }
 
 // void SemanticChecker::visit(DataType* node) {}
 
-// void SemanticChecker::visit(Variable* node) { AtomASTVisitor::visit(node); }
+// void SemanticChecker::visit(Variable* node) { ASTVisitor::visit(node); }
 
 // void SemanticChecker::visit(ConstVal* node) {}
 
@@ -36,7 +36,7 @@ void SemanticChecker::visit(VarRef* node) {
                position._leftColumn, position._rightLine, position._rightColumn);
         exit(0);
     }
-    AtomASTVisitor::visit(node);
+    ASTVisitor::visit(node);
 }
 
 void SemanticChecker::visit(IndexedRef* node) {
@@ -46,14 +46,14 @@ void SemanticChecker::visit(IndexedRef* node) {
                position._leftColumn, position._rightLine, position._rightColumn);
         exit(0);
     }
-    AtomASTVisitor::visit(node);
+    ASTVisitor::visit(node);
 }
 
-// void SemanticChecker::visit(NestedExpression* node) { AtomASTVisitor::visit(node); }
+// void SemanticChecker::visit(NestedExpression* node) { ASTVisitor::visit(node); }
 
-// void SemanticChecker::visit(UnaryExpression* node) { AtomASTVisitor::visit(node); }
+// void SemanticChecker::visit(UnaryExpression* node) { ASTVisitor::visit(node); }
 
-// void SemanticChecker::visit(BinaryExpression* node) { AtomASTVisitor::visit(node); }
+// void SemanticChecker::visit(BinaryExpression* node) { ASTVisitor::visit(node); }
 
 void SemanticChecker::visit(FunctionCall* node) {
     if (node->getFunctionDef() == nullptr) {
@@ -62,20 +62,20 @@ void SemanticChecker::visit(FunctionCall* node) {
                position._leftColumn, position._rightLine, position._rightColumn);
         exit(0);
     }
-    AtomASTVisitor::visit(node);
+    ASTVisitor::visit(node);
 }
 
-// void SemanticChecker::visit(Block* node) { AtomASTVisitor::visit(node); }
+// void SemanticChecker::visit(Block* node) { ASTVisitor::visit(node); }
 
-// void SemanticChecker::visit(AssignStatement* node) { AtomASTVisitor::visit(node); }
+// void SemanticChecker::visit(AssignStatement* node) { ASTVisitor::visit(node); }
 
-// void SemanticChecker::visit(IfStatement* node) { AtomASTVisitor::visit(node); }
+// void SemanticChecker::visit(IfStatement* node) { ASTVisitor::visit(node); }
 
-// void SemanticChecker::visit(ElseStatement* node) { AtomASTVisitor::visit(node); }
+// void SemanticChecker::visit(ElseStatement* node) { ASTVisitor::visit(node); }
 
-// void SemanticChecker::visit(WhileStatement* node) { AtomASTVisitor::visit(node); }
+// void SemanticChecker::visit(WhileStatement* node) { ASTVisitor::visit(node); }
 
-// void SemanticChecker::visit(ReturnStatement* node) { AtomASTVisitor::visit(node); }
+// void SemanticChecker::visit(ReturnStatement* node) { ASTVisitor::visit(node); }
 
-// void SemanticChecker::visit(OtherStatement* node) { AtomASTVisitor::visit(node); }
+// void SemanticChecker::visit(OtherStatement* node) { ASTVisitor::visit(node); }
 }  // namespace ATC

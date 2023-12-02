@@ -18,7 +18,7 @@ IRBuilder::~IRBuilder() { _currentModule->dump(); }
 
 void IRBuilder::visit(CompUnit *node) {
     _currentModule = new Module(node->getName());
-    AtomASTVisitor::visit(node);
+    ASTVisitor::visit(node);
 }
 
 void IRBuilder::visit(FunctionDef *node) {
@@ -40,7 +40,7 @@ void IRBuilder::visit(FunctionDef *node) {
         auto arg = _currentFunction->getParams()[i++];
         createStore(arg, var->getAtomAddr());
     }
-    AtomASTVisitor::visit(node);
+    ASTVisitor::visit(node);
 }
 
 void IRBuilder::visit(Variable *node) {

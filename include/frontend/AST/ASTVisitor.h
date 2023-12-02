@@ -1,5 +1,5 @@
-#ifndef ATOM_AST_VISITOR_H
-#define ATOM_AST_VISITOR_H
+#ifndef ATC_AST_VISITOR_H
+#define ATC_AST_VISITOR_H
 
 namespace ATC {
 
@@ -27,7 +27,8 @@ class BreakStatement;
 class ContinueStatement;
 class ReturnStatement;
 class OtherStatement;
-class AtomASTVisitor {
+
+class ASTVisitor {
 public:
     virtual void visit(TreeNode*);
 

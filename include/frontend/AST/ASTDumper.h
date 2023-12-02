@@ -1,12 +1,12 @@
-#ifndef ATOM_AST_DUMPER_H
-#define ATOM_AST_DUMPER_H
+#ifndef ATC_AST_DUMPER_H
+#define ATC_AST_DUMPER_H
 
 #include <iostream>
 
-#include "AtomASTVisitor.h"
+#include "ASTVisitor.h"
 
 namespace ATC {
-class AtomASTDumper : public AtomASTVisitor {
+class ASTDumper : public ASTVisitor {
 public:
     virtual void visit(TreeNode*) override;
 

@@ -1,5 +1,5 @@
-#ifndef ATOM_BASIC_BLOCK_H
-#define ATOM_BASIC_BLOCK_H
+#ifndef ATC_BASIC_BLOCK_H
+#define ATC_BASIC_BLOCK_H
 #include <list>
 #include <string>
 #include <vector>

@@ -1,5 +1,5 @@
-#ifndef VARIABLE_H
-#define VARIABLE_H
+#ifndef ATC_VARIABLE_H
+#define ATC_VARIABLE_H
 
 #include <llvm/IR/Value.h>
 

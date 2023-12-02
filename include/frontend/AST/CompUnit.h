@@ -1,5 +1,5 @@
-#ifndef COMP_UNIT_H
-#define COMP_UNIT_H
+#ifndef ATC_COMP_UNIT_H
+#define ATC_COMP_UNIT_H
 
 #include <vector>
 

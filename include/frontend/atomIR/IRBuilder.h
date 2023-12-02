@@ -1,9 +1,9 @@
-#ifndef ATOMIR_BUILDER_H
-#define ATOMIR_BUILDER_H
+#ifndef ATC_IR_BUILDER_H
+#define ATC_IR_BUILDER_H
 
 #include <string>
 
-#include "AST/AtomASTVisitor.h"
+#include "AST/ASTVisitor.h"
 #include "Instruction.h"
 namespace ATC {
 
@@ -18,7 +18,7 @@ class BasicBlock;
 class Value;
 class Type;
 
-class IRBuilder : public AtomASTVisitor {
+class IRBuilder : public ASTVisitor {
 public:
     IRBuilder();
     ~IRBuilder();

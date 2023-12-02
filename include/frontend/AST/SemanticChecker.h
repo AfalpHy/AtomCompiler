@@ -1,12 +1,12 @@
-#ifndef SEMANTIC_CHECKER_H
-#define SEMANTIC_CHECKER_H
+#ifndef ATC_SEMANTIC_CHECKER_H
+#define ATC_SEMANTIC_CHECKER_H
 
 #include <iostream>
 
-#include "AtomASTVisitor.h"
+#include "ASTVisitor.h"
 
 namespace ATC {
-class SemanticChecker : public AtomASTVisitor {
+class SemanticChecker : public ASTVisitor {
 public:
     // virtual void visit(TreeNode*) override;
 

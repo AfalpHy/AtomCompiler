@@ -1,5 +1,5 @@
-#ifndef DATA_TYPE_H
-#define DATA_TYPE_H
+#ifndef ATC_DATA_TYPE_H
+#define ATC_DATA_TYPE_H
 
 #include "TreeNode.h"
 

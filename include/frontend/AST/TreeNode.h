@@ -1,17 +1,17 @@
-#ifndef TREE_NODE_H
-#define TREE_NODE_H
+#ifndef ATC_TREE_NODE_H
+#define ATC_TREE_NODE_H
 
 #include <string>
 
 #include "../../Common.h"
+#include "ASTVisitor.h"
 #include "antlr4-runtime.h"
-#include "AtomASTVisitor.h"
 
 #define ACCEPT \
-    virtual void accept(AtomASTVisitor* visitor) { visitor->visit(this); }
+    virtual void accept(ASTVisitor* visitor) { visitor->visit(this); }
 namespace ATC {
 
-class AtomASTVisitor;
+class ASTVisitor;
 class Scope;
 
 typedef struct {
@@ -26,7 +26,7 @@ class TreeNode {
 public:
     TreeNode() = default;
     TreeNode(TreeNode* parent) : _parent(parent) {}
-    
+
     virtual int getClassId() = 0;
 
     TreeNode* getParent() { return _parent; }

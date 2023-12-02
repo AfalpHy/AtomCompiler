@@ -1,9 +1,9 @@
-#ifndef LLVMIR_BUILDER_H
-#define LLVMIR_BUILDER_H
+#ifndef ATC_LLVM_IR_BUILDER_H
+#define ATC_LLVM_IR_BUILDER_H
 
 #include <map>
 
-#include "AST/AtomASTVisitor.h"
+#include "AST/ASTVisitor.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 
@@ -13,7 +13,7 @@ class Scope;
 class DataType;
 
 namespace LLVMIR {
-class IRBuilder : public AtomASTVisitor {
+class IRBuilder : public ASTVisitor {
 public:
     IRBuilder();
     ~IRBuilder();

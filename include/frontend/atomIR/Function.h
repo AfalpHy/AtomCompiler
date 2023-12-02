@@ -1,5 +1,5 @@
-#ifndef ATOM_FUNCTION_H
-#define ATOM_FUNCTION_H
+#ifndef ATC_FUNCTION_H
+#define ATC_FUNCTION_H
 
 #include <set>
 #include <unordered_map>

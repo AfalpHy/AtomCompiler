@@ -1,5 +1,5 @@
-#ifndef ATOM_INSTRUCTION_H
-#define ATOM_INSTRUCTION_H
+#ifndef ATC_INSTRUCTION_H
+#define ATC_INSTRUCTION_H
 
 #include "Function.h"
 

@@ -1,5 +1,5 @@
-#ifndef ATOM_MODULE_H
-#define ATOM_MODULE_H
+#ifndef ATC_MODULE_H
+#define ATC_MODULE_H
 
 #include <unordered_map>
 

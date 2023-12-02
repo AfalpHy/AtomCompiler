@@ -1,4 +1,4 @@
-#include "AST/AtomASTBuilder.h"
+#include "AST/ASTBuilder.h"
 
 #include "AST/CompUnit.h"
 #include "AST/Decl.h"
@@ -30,7 +30,7 @@ static void fixupArrayType(ArrayType *arrayType) {
     arrayType->setTotalSize(size);
 }
 
-antlrcpp::Any AtomASTBuilder::visitCompUnit(ATCParser::CompUnitContext *ctx) {
+antlrcpp::Any ASTBuilder::visitCompUnit(ATCParser::CompUnitContext *ctx) {
     auto compUnit = new CompUnit();
     // take the token before EOF as stop token
     compUnit->setPosition(ctx->getStart(), _token->get(ctx->getStop()->getTokenIndex() - 1));
@@ -53,7 +53,7 @@ antlrcpp::Any AtomASTBuilder::visitCompUnit(ATCParser::CompUnitContext *ctx) {
     return nullptr;
 }
 
-antlrcpp::Any AtomASTBuilder::visitCType(ATCParser::CTypeContext *ctx) {
+antlrcpp::Any ASTBuilder::visitCType(ATCParser::CTypeContext *ctx) {
     DataType *cType = nullptr;
     if (!ctx->Star().empty()) {
         cType = new PointerType(_lastNode);
@@ -92,7 +92,7 @@ antlrcpp::Any AtomASTBuilder::visitCType(ATCParser::CTypeContext *ctx) {
     return cType;
 }
 
-antlrcpp::Any AtomASTBuilder::visitVarDecl(ATCParser::VarDeclContext *ctx) {
+antlrcpp::Any ASTBuilder::visitVarDecl(ATCParser::VarDeclContext *ctx) {
     auto varDecl = new VarDecl(_lastNode);
     varDecl->setPosition(ctx->getStart(), ctx->getStop());
 
@@ -113,7 +113,7 @@ antlrcpp::Any AtomASTBuilder::visitVarDecl(ATCParser::VarDeclContext *ctx) {
     return varDecl;
 }
 
-antlrcpp::Any AtomASTBuilder::visitVarDef(ATCParser::VarDefContext *ctx) {
+antlrcpp::Any ASTBuilder::visitVarDef(ATCParser::VarDefContext *ctx) {
     auto var = new Variable(_lastNode);
     var->setName(ctx->Ident()->getText());
     var->setPosition(ctx->Ident()->getSymbol(), ctx->Ident()->getSymbol());
@@ -148,7 +148,7 @@ antlrcpp::Any AtomASTBuilder::visitVarDef(ATCParser::VarDefContext *ctx) {
     return var;
 }
 
-antlrcpp::Any AtomASTBuilder::visitInitVal(ATCParser::InitValContext *ctx) {
+antlrcpp::Any ASTBuilder::visitInitVal(ATCParser::InitValContext *ctx) {
     if (ctx->expr()) {
         return ctx->expr()->accept(this);
     }
@@ -163,7 +163,7 @@ antlrcpp::Any AtomASTBuilder::visitInitVal(ATCParser::InitValContext *ctx) {
     return (Expression *)nestedExpr;
 }
 
-antlrcpp::Any AtomASTBuilder::visitFunctionDef(ATCParser::FunctionDefContext *ctx) {
+antlrcpp::Any ASTBuilder::visitFunctionDef(ATCParser::FunctionDefContext *ctx) {
     auto functionDef = new FunctionDef(_lastNode);
     functionDef->setName(ctx->Ident()->getText());
     functionDef->setPosition(ctx->getStart(), ctx->getStop());
@@ -192,7 +192,7 @@ antlrcpp::Any AtomASTBuilder::visitFunctionDef(ATCParser::FunctionDefContext *ct
     return functionDef;
 }
 
-antlrcpp::Any AtomASTBuilder::visitFuncFParams(ATCParser::FuncFParamsContext *ctx) {
+antlrcpp::Any ASTBuilder::visitFuncFParams(ATCParser::FuncFParamsContext *ctx) {
     std::vector<VarDecl *> fParams;
     for (auto fParam : ctx->funcFParam()) {
         fParams.push_back(fParam->accept(this).as<VarDecl *>());
@@ -200,7 +200,7 @@ antlrcpp::Any AtomASTBuilder::visitFuncFParams(ATCParser::FuncFParamsContext *ct
     return fParams;
 }
 
-antlrcpp::Any AtomASTBuilder::visitFuncFParam(ATCParser::FuncFParamContext *ctx) {
+antlrcpp::Any ASTBuilder::visitFuncFParam(ATCParser::FuncFParamContext *ctx) {
     auto varDecl = new VarDecl(_lastNode);
     varDecl->setPosition(ctx->getStart(), ctx->getStop());
     _lastNode = varDecl;
@@ -236,7 +236,7 @@ antlrcpp::Any AtomASTBuilder::visitFuncFParam(ATCParser::FuncFParamContext *ctx)
     return varDecl;
 }
 
-antlrcpp::Any AtomASTBuilder::visitBlock(ATCParser::BlockContext *ctx) {
+antlrcpp::Any ASTBuilder::visitBlock(ATCParser::BlockContext *ctx) {
     auto block = new Block(_lastNode);
     block->setPosition(ctx->getStart(), ctx->getStop());
 
@@ -262,7 +262,7 @@ antlrcpp::Any AtomASTBuilder::visitBlock(ATCParser::BlockContext *ctx) {
     return (Statement *)block;
 }
 
-antlrcpp::Any AtomASTBuilder::visitStmt(ATCParser::StmtContext *ctx) {
+antlrcpp::Any ASTBuilder::visitStmt(ATCParser::StmtContext *ctx) {
     if (ctx->lval()) {
         auto stmt = new AssignStatement(_lastNode);
         stmt->setPosition(ctx->getStart(), ctx->getStop());
@@ -336,7 +336,7 @@ antlrcpp::Any AtomASTBuilder::visitStmt(ATCParser::StmtContext *ctx) {
     }
 }
 
-antlrcpp::Any AtomASTBuilder::visitVarRef(ATCParser::VarRefContext *ctx) {
+antlrcpp::Any ASTBuilder::visitVarRef(ATCParser::VarRefContext *ctx) {
     auto varRef = new VarRef(_lastNode);
     varRef->setPosition(ctx->getStart(), ctx->getStop());
     varRef->setName(ctx->getStart()->getText());
@@ -344,7 +344,7 @@ antlrcpp::Any AtomASTBuilder::visitVarRef(ATCParser::VarRefContext *ctx) {
     return (Expression *)varRef;
 }
 
-antlrcpp::Any AtomASTBuilder::visitIndexedRef(ATCParser::IndexedRefContext *ctx) {
+antlrcpp::Any ASTBuilder::visitIndexedRef(ATCParser::IndexedRefContext *ctx) {
     auto indexedRef = new IndexedRef(_lastNode);
     indexedRef->setPosition(ctx->getStart(), ctx->getStop());
     indexedRef->setName(ctx->Ident()->getText());
@@ -359,7 +359,7 @@ antlrcpp::Any AtomASTBuilder::visitIndexedRef(ATCParser::IndexedRefContext *ctx)
     return (Expression *)indexedRef;
 }
 
-antlrcpp::Any AtomASTBuilder::visitPrimaryExpr(ATCParser::PrimaryExprContext *ctx) {
+antlrcpp::Any ASTBuilder::visitPrimaryExpr(ATCParser::PrimaryExprContext *ctx) {
     if (ctx->LeftParenthesis()) {
         auto expr = ctx->expr()->accept(this).as<Expression *>();
         expr->setPosition(ctx->getStart(), ctx->getStop());
@@ -369,7 +369,7 @@ antlrcpp::Any AtomASTBuilder::visitPrimaryExpr(ATCParser::PrimaryExprContext *ct
     }
 }
 
-antlrcpp::Any AtomASTBuilder::visitNumber(ATCParser::NumberContext *ctx) {
+antlrcpp::Any ASTBuilder::visitNumber(ATCParser::NumberContext *ctx) {
     auto constVal = new ConstVal(_lastNode);
     constVal->setPosition(ctx->getStart(), ctx->getStop());
     if (ctx->intConst()) {
@@ -383,7 +383,7 @@ antlrcpp::Any AtomASTBuilder::visitNumber(ATCParser::NumberContext *ctx) {
     return (Expression *)constVal;
 }
 
-antlrcpp::Any AtomASTBuilder::visitUnaryExpr(ATCParser::UnaryExprContext *ctx) {
+antlrcpp::Any ASTBuilder::visitUnaryExpr(ATCParser::UnaryExprContext *ctx) {
     if (ctx->primaryExpr()) {
         return ctx->primaryExpr()->accept(this);
     } else if (ctx->Ident()) {
@@ -420,7 +420,7 @@ antlrcpp::Any AtomASTBuilder::visitUnaryExpr(ATCParser::UnaryExprContext *ctx) {
     }
 }
 
-antlrcpp::Any AtomASTBuilder::visitFuncRParams(ATCParser::FuncRParamsContext *ctx) {
+antlrcpp::Any ASTBuilder::visitFuncRParams(ATCParser::FuncRParamsContext *ctx) {
     std::vector<Expression *> rParams;
     for (auto rParam : ctx->expr()) {
         rParams.push_back(rParam->accept(this).as<Expression *>());
@@ -428,7 +428,7 @@ antlrcpp::Any AtomASTBuilder::visitFuncRParams(ATCParser::FuncRParamsContext *ct
     return rParams;
 }
 
-antlrcpp::Any AtomASTBuilder::visitMulExpr(ATCParser::MulExprContext *ctx) {
+antlrcpp::Any ASTBuilder::visitMulExpr(ATCParser::MulExprContext *ctx) {
     auto unaryExprs = ctx->unaryExpr();
     auto operators = ctx->mulDiv();
 
@@ -460,7 +460,7 @@ antlrcpp::Any AtomASTBuilder::visitMulExpr(ATCParser::MulExprContext *ctx) {
     return (Expression *)left;
 }
 
-antlrcpp::Any AtomASTBuilder::visitAddExpr(ATCParser::AddExprContext *ctx) {
+antlrcpp::Any ASTBuilder::visitAddExpr(ATCParser::AddExprContext *ctx) {
     auto mulExprs = ctx->mulExpr();
     auto operators = ctx->PlusMinus();
 
@@ -489,7 +489,7 @@ antlrcpp::Any AtomASTBuilder::visitAddExpr(ATCParser::AddExprContext *ctx) {
     return (Expression *)left;
 }
 
-antlrcpp::Any AtomASTBuilder::visitRelExpr(ATCParser::RelExprContext *ctx) {
+antlrcpp::Any ASTBuilder::visitRelExpr(ATCParser::RelExprContext *ctx) {
     auto addExprs = ctx->addExpr();
     auto operators = ctx->Cmp();
 
@@ -522,7 +522,7 @@ antlrcpp::Any AtomASTBuilder::visitRelExpr(ATCParser::RelExprContext *ctx) {
     return (Expression *)left;
 }
 
-antlrcpp::Any AtomASTBuilder::visitEqExpr(ATCParser::EqExprContext *ctx) {
+antlrcpp::Any ASTBuilder::visitEqExpr(ATCParser::EqExprContext *ctx) {
     auto relExprs = ctx->relExpr();
     auto operators = ctx->EqNe();
 
@@ -551,7 +551,7 @@ antlrcpp::Any AtomASTBuilder::visitEqExpr(ATCParser::EqExprContext *ctx) {
     return (Expression *)left;
 }
 
-antlrcpp::Any AtomASTBuilder::visitLAndExpr(ATCParser::LAndExprContext *ctx) {
+antlrcpp::Any ASTBuilder::visitLAndExpr(ATCParser::LAndExprContext *ctx) {
     auto eqExprs = ctx->eqExpr();
 
     auto left = eqExprs[0]->accept(this).as<Expression *>();
@@ -571,7 +571,7 @@ antlrcpp::Any AtomASTBuilder::visitLAndExpr(ATCParser::LAndExprContext *ctx) {
     return (Expression *)left;
 }
 
-antlrcpp::Any AtomASTBuilder::visitLOrExpr(ATCParser::LOrExprContext *ctx) {
+antlrcpp::Any ASTBuilder::visitLOrExpr(ATCParser::LOrExprContext *ctx) {
     auto lAndExprs = ctx->lAndExpr();
 
     auto left = lAndExprs[0]->accept(this).as<Expression *>();
@@ -591,7 +591,7 @@ antlrcpp::Any AtomASTBuilder::visitLOrExpr(ATCParser::LOrExprContext *ctx) {
     return (Expression *)left;
 }
 
-antlrcpp::Any AtomASTBuilder::visitIntConst(ATCParser::IntConstContext *ctx) {
+antlrcpp::Any ASTBuilder::visitIntConst(ATCParser::IntConstContext *ctx) {
     if (ctx->DecIntConst()) {
         return std::stoi(ctx->getText());
     } else if (ctx->OctIntConst()) {
@@ -601,7 +601,7 @@ antlrcpp::Any AtomASTBuilder::visitIntConst(ATCParser::IntConstContext *ctx) {
     }
 }
 
-antlrcpp::Any AtomASTBuilder::visitFloatConst(ATCParser::FloatConstContext *ctx) {
+antlrcpp::Any ASTBuilder::visitFloatConst(ATCParser::FloatConstContext *ctx) {
     if (ctx->DecFloatConst()) {
         return std::stof(ctx->getText());
     } else {

@@ -1,5 +1,5 @@
-#ifndef ATOM_AST_BUILDER_H
-#define ATOM_AST_BUILDER_H
+#ifndef ATC_AST_BUILDER_H
+#define ATC_AST_BUILDER_H
 
 #include <iostream>
 
@@ -7,7 +7,7 @@
 #include "ATCBaseVisitor.h"
 
 namespace ATC {
-class AtomASTBuilder : public ATCBaseVisitor {
+class ASTBuilder : public ATCBaseVisitor {
 public:
     virtual antlrcpp::Any visitCompUnit(ATCParser::CompUnitContext *ctx) override;
 

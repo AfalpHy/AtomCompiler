@@ -1,11 +1,13 @@
-#ifndef DECL_H
-#define DECL_H
+#ifndef ATC_DECL_H
+#define ATC_DECL_H
 
 #include <vector>
 
 #include "TreeNode.h"
 #include "Variable.h"
+
 namespace ATC {
+
 class Decl : public TreeNode {
 public:
     Decl() = default;

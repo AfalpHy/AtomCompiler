@@ -1,5 +1,5 @@
-#ifndef EXPRESSION_H
-#define EXPRESSION_H
+#ifndef ATC_EXPRESSION_H
+#define ATC_EXPRESSION_H
 
 #include <vector>
 

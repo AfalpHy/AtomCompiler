@@ -1,5 +1,5 @@
-#ifndef FUNCTION_DEF_H
-#define FUNCTION_DEF_H
+#ifndef ATC_FUNCTION_DEF_H
+#define ATC_FUNCTION_DEF_H
 
 #include <llvm/IR/Function.h>
 
