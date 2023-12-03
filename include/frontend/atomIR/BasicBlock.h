@@ -16,7 +16,7 @@ public:
 
     void addPredecessor(BasicBlock* bb) { _predecessors.push_back(bb); }
     void addSuccessor(BasicBlock* bb) { _successors.push_back(bb); }
-    void addInstruction(Instruction* inst) { _instructions.push_back(inst); }
+    void addInstruction(Instruction* inst);
 
     Function* getParent() { return _parent; }
     const std::string& getName() { return _name; }

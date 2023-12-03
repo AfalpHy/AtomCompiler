@@ -25,6 +25,7 @@ public:
 
     void insertBB(BasicBlock* bb) {
         insertName(bb);
+        _bbIndexMap.insert({bb, _basicBlocks.size()});
         _basicBlocks.push_back(bb);
     }
 
@@ -42,6 +43,8 @@ public:
         }
         return nullptr;
     }
+
+    int getBBIndex(BasicBlock* bb) { return _bbIndexMap[bb]; }
 
     const std::vector<Value*>& getParams() { return _params; }
     const std::vector<BasicBlock*>& getBasicBlocks() { return _basicBlocks; }
@@ -64,8 +67,9 @@ private:
     FunctionType _functionType;
     std::vector<Value*> _params;
     std::vector<BasicBlock*> _basicBlocks;
-    std::set<std::string> _nameSet;                   // value and block name set
-    std::unordered_map<void*, std::string> _nameMap;  // value and block pointer to unique name
+    std::unordered_map<BasicBlock*, int> _bbIndexMap;  // value and block pointer to unique name
+    std::set<std::string> _nameSet;                    // value and block name set
+    std::unordered_map<void*, std::string> _nameMap;   // value and block pointer to unique name
     int _valueIndex = 0;
     bool _needUpdateName = false;  // Ture if the name set need update
 };
