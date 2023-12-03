@@ -75,6 +75,8 @@ public:
 
     virtual std::string toString() override;
 
+    const std::vector<std::pair<int, std::vector<Value*>>>& getElements() { return _elements; }
+
 private:
     std::vector<std::pair<int, std::vector<Value*>>> _elements;
 };

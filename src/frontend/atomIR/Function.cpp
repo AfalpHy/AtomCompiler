@@ -84,6 +84,9 @@ void Function::dump() {
         for (auto inst : bb->getInstructionList()) {
             std::cout << "  " << inst->toString() << std::endl;
         }
+        if (bb != _basicBlocks.back()) {
+            std::cout << std::endl;
+        }
     }
     std::cout << "}" << std::endl;
 }

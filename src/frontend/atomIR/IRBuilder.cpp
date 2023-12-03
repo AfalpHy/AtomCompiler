@@ -34,14 +34,14 @@ void IRBuilder::visit(CompUnit *node) {
 
 void IRBuilder::visit(FunctionDef *node) {
     FunctionType funcType;
-    funcType._ret = Type::getInt32Ty();
+    funcType._ret = convertToAtomType(node->getRetType());
     for (auto param : node->getParams()) {
         DataType *dataType = param->getVariables()[0]->getDataType();
         funcType._params.push_back(convertToAtomType(dataType));
     }
     _currentFunction = new Function(_currentModule, funcType, node->getName());
     _currentModule->addFunction(_currentFunction);
-    _currentBasicBlock = new BasicBlock(_currentFunction, "entry");
+    _currentBasicBlock = new BasicBlock(_currentFunction, "init");
     _currentFunction->insertBB(_currentBasicBlock);
     allocForScopeVars(node->getScope());
     int i = 0;
@@ -52,6 +52,11 @@ void IRBuilder::visit(FunctionDef *node) {
         createStore(arg, var->getAtomAddr());
     }
     node->setAtomFunction(_currentFunction);
+    auto entry = new BasicBlock(_currentFunction, "entry");
+    _currentFunction->insertBB(entry);
+    createJump(_currentBasicBlock);
+    _currentBasicBlock = entry;
+
     ASTVisitor::visit(node);
 }
 
@@ -84,6 +89,35 @@ void IRBuilder::visit(Variable *node) {
     } else {
         if (auto initValue = node->getInitValue()) {
             initValue->accept(this);
+            if (initValue->getClassId() == ID_NESTED_EXPRESSION) {
+                auto addr = node->getAtomAddr();
+                ATC::ArrayType *arrayType = static_cast<ATC::ArrayType *>(node->getDataType());
+                FunctionType funcType;
+                funcType._ret = _voidTy;
+                funcType._params.push_back(_voidTy->getPointerTy());
+                funcType._params.push_back(_int32Ty);
+                createFunctionCall(
+                    funcType, "memset",
+                    {castToDestTyIfNeed(addr, _voidTy->getPointerTy()), ConstantInt::get(arrayType->getTotalSize())});
+
+                auto dimension = arrayType->getDimensions();
+                auto elementSize = arrayType->getElementSize();
+                ArrayValue *arrayValue = (ArrayValue *)_value;
+                auto elements = arrayValue->getElements();
+                int i = 0;
+                for (auto element : elements) {
+                    if (element.second.empty()) {
+                        i += element.first;
+                    } else {
+                        for (auto elementValue : element.second) {
+                            createStore(elementValue, createGEP(addr, {_int32Zero, ConstantInt::get(i++)}));
+                        }
+                    }
+                }
+            } else {
+                _value = castToDestTyIfNeed(_value, basicType);
+                createStore(_value, node->getAtomAddr());
+            }
         }
     }
 }
@@ -97,7 +131,22 @@ void IRBuilder::visit(ConstVal *node) {
 }
 
 void IRBuilder::visit(VarRef *node) {
-    _value = createUnaryInst(INST_LOAD, node->getVariable()->getAtomAddr(), node->getName());
+    if (node->isConst()) {
+        if (node->getVariable()->getBasicType() == BasicType::INT) {
+            _value = ConstantInt::get(ExpressionHandle::evaluateConstExpr(node));
+        } else {
+            _value = ConstantFloat::get(ExpressionHandle::evaluateConstExpr(node));
+        }
+        return;
+    }
+    auto addr = node->getVariable()->getAtomAddr();
+    if (node->getVariable()->getDataType()->getClassId() == ID_ARRAY_TYPE) {
+        // cast the array to pointer,
+        // int a[10]; 'a' is treated as a pointer when used as a function argument
+        _value = addr;
+    } else {
+        _value = createUnaryInst(INST_LOAD, addr, node->getName());
+    }
 }
 
 void IRBuilder::visit(IndexedRef *node) {
@@ -202,7 +251,34 @@ void IRBuilder::visit(NestedExpression *node) {
     }
 }
 
-// void IRBuilder::visit(UnaryExpression *node) {}
+void IRBuilder::visit(UnaryExpression *node) {
+    if (node->isConst()) {
+        if (ExpressionHandle::isIntExpr(node)) {
+            _value = ConstantInt::get(ExpressionHandle::evaluateConstExpr(node));
+        } else {
+            _value = ConstantFloat::get(ExpressionHandle::evaluateConstExpr(node));
+        }
+        return;
+    }
+    node->getOperand()->accept(this);
+    if (node->getOperator() == MINUS) {
+        if (_value->getType() == _floatTy) {
+            _value = createBinaryInst(INST_SUB, _floatZero, _value);
+        } else if (_value->getType() == _int32Ty) {
+            _value = createBinaryInst(INST_SUB, _int32Zero, _value);
+        } else {
+            _value = createBinaryInst(INST_SUB, _int32Zero, castToDestTyIfNeed(_value, _int32Ty));
+        }
+    } else if (node->getOperator() == NOT) {
+        if (_value->getType() == _floatTy) {
+            _value = createBinaryInst(INST_NE, _floatZero, _value);
+        } else if (_value->getType() == _int32Ty) {
+            _value = createBinaryInst(INST_NE, _int32Zero, _value);
+        } else {
+            _value = createBinaryInst(INST_NE, _int32One, castToDestTyIfNeed(_value, _int32Ty));
+        }
+    }
+}
 
 void IRBuilder::visit(BinaryExpression *node) {
     if (node->isConst()) {
@@ -217,6 +293,15 @@ void IRBuilder::visit(BinaryExpression *node) {
     Value *left = _value;
     node->getRight()->accept(this);
     Value *right = _value;
+
+    // make the left expr and right expr has the same type
+    if (left->getType() == _floatTy || right->getType() == _floatTy) {
+        left = castToDestTyIfNeed(left, _floatTy);
+        right = castToDestTyIfNeed(right, _floatTy);
+    } else {
+        left = castToDestTyIfNeed(left, _int32Ty);
+        right = castToDestTyIfNeed(right, _int32Ty);
+    }
 
     switch (node->getOperator()) {
         case PLUS:
@@ -282,9 +367,10 @@ void IRBuilder::visit(AssignStatement *node) {
     if (node->getLval()->getClassId() == ID_VAR_REF) {
         addr = static_cast<VarRef *>(node->getLval())->getVariable()->getAtomAddr();
     } else {
-        // addr = getIndexedRefAddress((IndexedRef *)node->getLval());
+        addr = getIndexedRefAddress((IndexedRef *)node->getLval());
     }
     node->getRval()->accept(this);
+    _value = castToDestTyIfNeed(_value, static_cast<PointerType *>(addr->getType())->getBaseType());
     _currentBasicBlock->addInstruction(new StoreInst(_value, addr));
 }
 
@@ -323,12 +409,25 @@ Value *IRBuilder::createFunctionCall(const FunctionType &functionType, const std
     Instruction *inst = new FunctionCallInst(functionType, funcName, params, resultName);
     _currentBasicBlock->addInstruction(inst);
     Value *result = inst->getResult();
-    result->setBelong(_currentFunction);
+    if (result) {
+        result->setBelong(_currentFunction);
+    }
     return result;
 }
 
 Value *IRBuilder::createGEP(Value *ptr, const std::vector<Value *> &indexes, const std::string &resultName) {
     Instruction *inst = new GetElementPtrInst(ptr, indexes, resultName);
+    _currentBasicBlock->addInstruction(inst);
+    Value *result = inst->getResult();
+    result->setBelong(_currentFunction);
+    return result;
+}
+
+Value *IRBuilder::createBitCast(Value *ptr, Type *destTy) {
+    if (ptr->getType() == destTy) {
+        return ptr;
+    }
+    Instruction *inst = new BitCastInst(ptr, destTy);
     _currentBasicBlock->addInstruction(inst);
     Value *result = inst->getResult();
     result->setBelong(_currentFunction);
@@ -404,10 +503,9 @@ void IRBuilder::allocForScopeVars(Scope *currentScope) {
 }
 
 Value *IRBuilder::castToDestTyIfNeed(Value *value, Type *destTy) {
-    // if (destTy->isPointerType()) {
-    //     assert(value->getType()->isPointerTy());
-    //     return _theIRBuilder->CreateBitCast(value, destTy);
-    // }
+    if (destTy->isPointerType()) {
+        return createBitCast(value, destTy);
+    }
     if (destTy == _floatTy) {
         if (value->isConst()) {
             return ConstantFloat::get(std::stof(value->getValueStr()));

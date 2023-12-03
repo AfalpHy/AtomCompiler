@@ -29,7 +29,7 @@ public:
 
     virtual void visit(NestedExpression *) override;
 
-    // virtual void visit(UnaryExpression *) override;
+    virtual void visit(UnaryExpression *) override;
 
     virtual void visit(BinaryExpression *) override;
 
@@ -54,10 +54,12 @@ private:
 
     void createStore(Value *value, Value *dest);
 
-    Value* createFunctionCall(const FunctionType &functionType, const std::string &funcName,
-                            const std::vector<Value *> &params, const std::string &resultName = "");
+    Value *createFunctionCall(const FunctionType &functionType, const std::string &funcName,
+                              const std::vector<Value *> &params, const std::string &resultName = "");
 
     Value *createGEP(Value *ptr, const std::vector<Value *> &indexes, const std::string &resultName = "");
+
+    Value *createBitCast(Value *ptr, Type *destTy);
 
     void createRet(Value *retValue);
 

@@ -11,6 +11,7 @@ enum InstType {
     INST_STORE,
     INST_FUNCALL,
     INST_GET_ELEMENT_PTR,
+    INST_BITCAST,
     INST_RET,
 
     // unary inst
@@ -48,6 +49,7 @@ enum InstId {
     ID_STORE_INST,
     ID_FUNCTION_CALL_INST,
     ID_GETELEMENTPTR_INST,
+    ID_BITCAST_INST,
     ID_RETURN_INST,
     ID_UNARY_INST,
     ID_BINARY_INST,
@@ -127,6 +129,21 @@ public:
 private:
     Value* _ptr;
     std::vector<Value*> _indexes;
+    Value* _result;
+};
+
+class BitCastInst : public Instruction {
+public:
+    BitCastInst(Value* ptr, Type* destTy);
+
+    virtual int getClassId() override { return ID_BITCAST_INST; }
+
+    virtual std::string toString() override;
+
+    virtual Value* getResult() override { return _result; }
+
+private:
+    Value* _ptr;
     Value* _result;
 };
 

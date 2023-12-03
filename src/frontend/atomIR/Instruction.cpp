@@ -43,6 +43,11 @@ GetElementPtrInst::GetElementPtrInst(Value* ptr, const std::vector<Value*>& inde
     _result->setDefined(this);
 }
 
+BitCastInst::BitCastInst(Value* ptr, Type* destTy) : Instruction(INST_BITCAST), _ptr(ptr) {
+    assert(ptr->getType()->isPointerType() && destTy->isPointerType() && "only pointer can cast to pointer");
+    _result = new Value(destTy, "");
+}
+
 UnaryInst::UnaryInst(InstType type, Value* operand, const std::string& resultName)
     : Instruction(type), _operand(operand) {
     switch (type) {
@@ -127,9 +132,10 @@ std::string FunctionCallInst::toString() {
     }
     str.append(" ").append(_funcName).append("(");
     for (auto param : _params) {
-        str.append(param->toString()).append(",");
+        str.append(param->toString()).append(", ");
     }
-    if (str.back() == ',') {
+    if (str.back() == ' ') {
+        str.pop_back();
         str.pop_back();
     }
     str.append(")");
@@ -145,9 +151,21 @@ std::string GetElementPtrInst::toString() {
     return str;
 }
 
+std::string BitCastInst::toString() {
+    std::string str;
+    str.append(_result->getValueStr())
+        .append(" = bitcast ")
+        .append(_ptr->toString())
+        .append(" to ")
+        .append(_result->getType()->toString());
+    return str;
+}
+
 std::string ReturnInst::toString() {
     std::string str = "ret";
-    str.append(" ").append(_retValue->toString());
+    if (_retValue) {
+        str.append(" ").append(_retValue->toString());
+    }
     return str;
 }
 
@@ -210,11 +228,22 @@ std::string BinaryInst::toString() {
         case INST_BIT_OR:
             break;
         case INST_LT:
+            str.append("lt ");
+            break;
         case INST_LE:
+            str.append("le ");
+            break;
         case INST_GT:
+            str.append("gt ");
+            break;
         case INST_GE:
+            str.append("ge ");
+            break;
         case INST_EQ:
+            str.append("eq ");
+            break;
         case INST_NE:
+            str.append("ne ");
             break;
         default:
             assert(false && " should not reach here");
