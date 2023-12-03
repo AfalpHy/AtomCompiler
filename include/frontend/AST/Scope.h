@@ -1,5 +1,4 @@
-#ifndef ATC_SCOPE_H
-#define ATC_SCOPE_H
+#pragma once
 
 #include <string>
 #include <unordered_map>
@@ -34,5 +33,3 @@ private:
 
 extern Scope* CurrentScope;
 }  // namespace ATC
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef ATC_INSTRUCTION_H
-#define ATC_INSTRUCTION_H
+#pragma once
 
 #include "Function.h"
 
@@ -210,5 +209,3 @@ private:
 
 }  // namespace AtomIR
 }  // namespace ATC
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef ATC_AST_DUMPER_H
-#define ATC_AST_DUMPER_H
+#pragma once
 
 #include <iostream>
 
@@ -59,5 +58,3 @@ private:
     int _indent = 0;
 };
 }  // namespace ATC
-
-#endif

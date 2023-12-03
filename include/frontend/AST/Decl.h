@@ -1,5 +1,4 @@
-#ifndef ATC_DECL_H
-#define ATC_DECL_H
+#pragma once
 
 #include <vector>
 
@@ -34,5 +33,3 @@ private:
     std::vector<Variable*> _vars;
 };
 }  // namespace ATC
-
-#endif

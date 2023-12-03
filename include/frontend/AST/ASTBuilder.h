@@ -1,10 +1,9 @@
-#ifndef ATC_AST_BUILDER_H
-#define ATC_AST_BUILDER_H
+#pragma once
 
 #include <iostream>
 
-#include "TreeNode.h"
 #include "ATCBaseVisitor.h"
+#include "TreeNode.h"
 
 namespace ATC {
 class ASTBuilder : public ATCBaseVisitor {
@@ -70,5 +69,3 @@ private:
     // std::vector<antlr4::ParserRuleContext *> _antlrNodeStack;
 };
 }  // namespace ATC
-
-#endif

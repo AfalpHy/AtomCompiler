@@ -1,6 +1,4 @@
-#ifndef ATC_TYPE_H
-#define ATC_TYPE_H
-
+#pragma once
 #include <string>
 
 namespace ATC {
@@ -63,5 +61,3 @@ private:
 };
 }  // namespace AtomIR
 }  // namespace ATC
-
-#endif

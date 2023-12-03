@@ -1,5 +1,4 @@
-#ifndef ATC_TREE_NODE_H
-#define ATC_TREE_NODE_H
+#pragma once
 
 #include <string>
 
@@ -81,5 +80,3 @@ protected:
 };
 
 }  // namespace ATC
-
-#endif

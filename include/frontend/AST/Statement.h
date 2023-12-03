@@ -1,5 +1,4 @@
-#ifndef ATC_STATEMENT_H
-#define ATC_STATEMENT_H
+#pragma once
 
 #include <vector>
 
@@ -172,5 +171,3 @@ private:
     Expression* _expr = nullptr;
 };
 }  // namespace ATC
-
-#endif

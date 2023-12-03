@@ -1,5 +1,4 @@
-#ifndef ATC_FUNCTION_H
-#define ATC_FUNCTION_H
+#pragma once
 
 #include <set>
 #include <unordered_map>
@@ -75,5 +74,3 @@ private:
 };
 }  // namespace AtomIR
 }  // namespace ATC
-
-#endif

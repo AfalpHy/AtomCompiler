@@ -1,5 +1,4 @@
-#ifndef ATC_EXPRESSION_H
-#define ATC_EXPRESSION_H
+#pragma once
 
 #include <vector>
 
@@ -175,4 +174,3 @@ public:
     static bool isIntExpr(Expression* expr);
 };
 }  // namespace ATC
-#endif

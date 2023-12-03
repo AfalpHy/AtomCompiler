@@ -1,5 +1,4 @@
-#ifndef ATC_COMP_UNIT_H
-#define ATC_COMP_UNIT_H
+#pragma once
 
 #include <vector>
 
@@ -25,4 +24,3 @@ private:
 };
 
 }  // namespace ATC
-#endif

@@ -1,5 +1,4 @@
-#ifndef ATC_MODULE_H
-#define ATC_MODULE_H
+#pragma once
 
 #include <unordered_map>
 
@@ -42,5 +41,3 @@ private:
 };
 }  // namespace AtomIR
 }  // namespace ATC
-
-#endif

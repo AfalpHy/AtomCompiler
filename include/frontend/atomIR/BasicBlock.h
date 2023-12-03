@@ -1,5 +1,5 @@
-#ifndef ATC_BASIC_BLOCK_H
-#define ATC_BASIC_BLOCK_H
+#pragma once
+
 #include <list>
 #include <string>
 #include <vector>
@@ -36,5 +36,3 @@ private:
 
 }  // namespace AtomIR
 }  // namespace ATC
-
-#endif

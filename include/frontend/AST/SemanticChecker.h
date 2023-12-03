@@ -1,5 +1,4 @@
-#ifndef ATC_SEMANTIC_CHECKER_H
-#define ATC_SEMANTIC_CHECKER_H
+#pragma once
 
 #include <iostream>
 
@@ -49,5 +48,3 @@ public:
     // virtual void visit(OtherStatement*) override;
 };
 }  // namespace ATC
-
-#endif

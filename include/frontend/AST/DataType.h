@@ -1,5 +1,4 @@
-#ifndef ATC_DATA_TYPE_H
-#define ATC_DATA_TYPE_H
+#pragma once
 
 #include "TreeNode.h"
 
@@ -46,7 +45,6 @@ public:
     int getTotalSize() { return _totalSize; }
     virtual DataType* getBaseDataType() override { return _baseDataType; }
 
-    
     void addDimensionExpr(Expression* dimension) { _dimensionExprs.push_back(dimension); }
     void addDimension(int dimension) { _dimensions.push_back(dimension); }
     void setElementSize(const std::vector<int>& elementSize) { _elementSize = elementSize; }
@@ -86,5 +84,3 @@ private:
 };
 
 }  // namespace ATC
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef ATC_VARIABLE_H
-#define ATC_VARIABLE_H
+#pragma once
 
 #include <llvm/IR/Value.h>
 
@@ -46,5 +45,3 @@ private:
 };
 
 }  // namespace ATC
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef ATC_LLVM_IR_BUILDER_H
-#define ATC_LLVM_IR_BUILDER_H
+#pragma once
 
 #include <map>
 
@@ -101,4 +100,3 @@ private:
 };
 }  // namespace LLVMIR
 }  // namespace ATC
-#endif

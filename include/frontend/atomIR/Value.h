@@ -1,5 +1,4 @@
-#ifndef ATC_VALUE_H
-#define ATC_VALUE_H
+#pragma once
 
 #include "Type.h"
 
@@ -95,5 +94,3 @@ private:
 };
 }  // namespace AtomIR
 }  // namespace ATC
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef ATC_AST_VISITOR_H
-#define ATC_AST_VISITOR_H
+#pragma once
 
 namespace ATC {
 
@@ -79,5 +78,3 @@ public:
     virtual void visit(OtherStatement*);
 };
 }  // namespace ATC
-
-#endif

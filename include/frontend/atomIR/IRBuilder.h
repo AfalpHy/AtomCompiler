@@ -1,5 +1,4 @@
-#ifndef ATC_IR_BUILDER_H
-#define ATC_IR_BUILDER_H
+#pragma once
 
 #include <string>
 
@@ -100,5 +99,3 @@ private:
 };
 }  // namespace AtomIR
 }  // namespace ATC
-
-#endif

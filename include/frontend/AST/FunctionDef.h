@@ -1,5 +1,4 @@
-#ifndef ATC_FUNCTION_DEF_H
-#define ATC_FUNCTION_DEF_H
+#pragma once
 
 #include <llvm/IR/Function.h>
 
@@ -43,5 +42,3 @@ private:
 };
 
 }  // namespace ATC
-
-#endif
