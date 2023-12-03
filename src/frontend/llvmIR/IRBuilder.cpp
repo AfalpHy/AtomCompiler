@@ -102,7 +102,7 @@ void IRBuilder::visit(FunctionDef *node) {
     }
     llvm::FunctionType *funcTy = llvm::FunctionType::get(convertToLLVMType(node->getRetType()), params, false);
     llvm::Function *func = llvm::Function::Create(funcTy, llvm::GlobalValue::ExternalLinkage, node->getName(), _module);
-    node->setFunction(func);
+    node->setLLVMFunction(func);
     _currentFunction = func;
 
     llvm::BasicBlock *allocBB = llvm::BasicBlock::Create(_module->getContext(), "init");
@@ -117,7 +117,7 @@ void IRBuilder::visit(FunctionDef *node) {
         // the decl of formal param is the only one
         Variable *var = param->getVariables()[0];
         auto arg = func->getArg(i++);
-        _theIRBuilder->CreateStore(arg, var->getAddr());
+        _theIRBuilder->CreateStore(arg, var->getLLVMAddr());
     }
     checkAndCreateBr(entryBB);
 
@@ -156,12 +156,12 @@ void IRBuilder::visit(Variable *node) {
         _module->getOrInsertGlobal(node->getName(), _value->getType());
         auto globalVar = _module->getNamedGlobal(node->getName());
         globalVar->setInitializer((llvm::Constant *)_value);
-        node->setAddr(globalVar);
+        node->setLLVMAddr(globalVar);
     } else {
         if (auto initValue = node->getInitValue()) {
             initValue->accept(this);
             if (initValue->getClassId() == ID_NESTED_EXPRESSION) {
-                auto addr = node->getAddr();
+                auto addr = node->getLLVMAddr();
 
                 auto memsetFunc = _module->getOrInsertFunction(
                     "llvm.memset.p0i8.i64", _voidTy, _theIRBuilder->getInt8PtrTy(), _theIRBuilder->getInt8Ty(),
@@ -190,7 +190,7 @@ void IRBuilder::visit(Variable *node) {
 
             } else {
                 _value = castToDestTyIfNeed(_value, basicLLVMType);
-                _theIRBuilder->CreateStore(_value, node->getAddr());
+                _theIRBuilder->CreateStore(_value, node->getLLVMAddr());
             }
         }
     }
@@ -213,7 +213,7 @@ void IRBuilder::visit(VarRef *node) {
         }
         return;
     }
-    auto addr = node->getVariable()->getAddr();
+    auto addr = node->getVariable()->getLLVMAddr();
     if (node->getVariable()->getDataType()->getClassId() == ID_ARRAY_TYPE) {
         // cast the array to pointer,
         // int a[10]; 'a' is treated as a pointer when used as a function argument
@@ -478,7 +478,7 @@ void IRBuilder::visit(FunctionCall *node) {
     std::vector<llvm::Value *> params;
     llvm::Function *function = nullptr;
     if (node->getFunctionDef()) {
-        function = node->getFunctionDef()->getFunction();
+        function = node->getFunctionDef()->getLLVMFunction();
     } else {
         function = _definedElseWhere[node->getName()];
     }
@@ -504,7 +504,7 @@ void IRBuilder::visit(Block *node) {
 void IRBuilder::visit(AssignStatement *node) {
     llvm::Value *addr = nullptr;
     if (node->getLval()->getClassId() == ID_VAR_REF) {
-        addr = static_cast<VarRef *>(node->getLval())->getVariable()->getAddr();
+        addr = static_cast<VarRef *>(node->getLval())->getVariable()->getLLVMAddr();
     } else {
         addr = getIndexedRefAddress((IndexedRef *)node->getLval());
     }
@@ -626,7 +626,7 @@ void IRBuilder::allocForScopeVars(Scope *currentScope) {
     for (const auto &[name, var] : currentScope->getVarMap()) {
         llvm::Value *addr = nullptr;
         addr = _theIRBuilder->CreateAlloca(convertToLLVMType(var->getDataType()), nullptr, name);
-        var->setAddr(addr);
+        var->setLLVMAddr(addr);
     }
     for (auto child : currentScope->getChildren()) {
         allocForScopeVars(child);
@@ -676,7 +676,7 @@ void IRBuilder::checkAndCreateCondBr(llvm::Value *value, llvm::BasicBlock *trueB
 
 llvm::Value *IRBuilder::getIndexedRefAddress(IndexedRef *indexedRef) {
     Variable *var = indexedRef->getVariable();
-    llvm::Value *addr = var->getAddr();
+    llvm::Value *addr = var->getLLVMAddr();
     if (var->isGlobal() && var->getDataType()->getClassId() == ID_ARRAY_TYPE) {
         addr = _theIRBuilder->CreateBitCast(addr, llvm::PointerType::get(convertToLLVMType(var->getDataType()), 0));
     }

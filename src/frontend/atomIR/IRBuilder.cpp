@@ -51,6 +51,7 @@ void IRBuilder::visit(FunctionDef *node) {
         auto arg = _currentFunction->getParams()[i++];
         createStore(arg, var->getAtomAddr());
     }
+    node->setAtomFunction(_currentFunction);
     ASTVisitor::visit(node);
 }
 
@@ -102,13 +103,22 @@ void IRBuilder::visit(VarRef *node) {
 void IRBuilder::visit(IndexedRef *node) {
     auto addr = getIndexedRefAddress(node);
     Variable *var = node->getVariable();
-    ATC::ArrayType *varType = (ATC::ArrayType *)var->getDataType();
-    if (varType->getDimensions().size() > node->getDimensions().size()) {
-        // cast the array to pointer
-        _value = addr;
+    ATC::ArrayType *arrayType;
+    if (var->getDataType()->getClassId() == ID_POINTER_TYPE) {
+        ATC::PointerType *varType = (ATC::PointerType *)var->getDataType();
+        arrayType = (ATC::ArrayType *)varType->getBaseDataType();
+        if (arrayType->getDimensions().size() + 1 > node->getDimensions().size()) {
+            _value = addr;
+            return;
+        }
     } else {
-        _value = createUnaryInst(INST_LOAD, addr);
+        arrayType = (ATC::ArrayType *)var->getDataType();
+        if (arrayType->getDimensions().size() > node->getDimensions().size()) {
+            _value = addr;
+            return;
+        }
     }
+    _value = createUnaryInst(INST_LOAD, addr);
 }
 
 void IRBuilder::visit(NestedExpression *node) {
@@ -248,7 +258,22 @@ void IRBuilder::visit(BinaryExpression *node) {
     }
 }
 
-// void IRBuilder::visit(FunctionCall *node) {}
+void IRBuilder::visit(FunctionCall *node) {
+    std::vector<Value *> params;
+    Function *function = nullptr;
+    if (node->getFunctionDef()) {
+        function = node->getFunctionDef()->getAtomFunction();
+    } else {
+        /// TODO:
+    }
+    int i = 0;
+    for (auto rParam : node->getParams()) {
+        rParam->accept(this);
+        _value = castToDestTyIfNeed(_value, function->getParams()[i++]->getType());
+        params.push_back(_value);
+    }
+    _value = createFunctionCall(function->getFunctionType(), function->getName(), params);
+}
 
 // void IRBuilder::visit(Block *node) {}
 
@@ -291,6 +316,15 @@ Value *IRBuilder::createAlloc(Type *allocType, const std::string &resultName) {
 void IRBuilder::createStore(Value *value, Value *dest) {
     Instruction *inst = new StoreInst(value, dest);
     _currentBasicBlock->addInstruction(inst);
+}
+
+Value *IRBuilder::createFunctionCall(const FunctionType &functionType, const std::string &funcName,
+                                     const std::vector<Value *> &params, const std::string &resultName) {
+    Instruction *inst = new FunctionCallInst(functionType, funcName, params, resultName);
+    _currentBasicBlock->addInstruction(inst);
+    Value *result = inst->getResult();
+    result->setBelong(_currentFunction);
+    return result;
 }
 
 Value *IRBuilder::createGEP(Value *ptr, const std::vector<Value *> &indexes, const std::string &resultName) {
@@ -409,16 +443,38 @@ Value *IRBuilder::getIndexedRefAddress(IndexedRef *indexedRef) {
     assert(addr->getType()->isPointerType());
     PointerType *addrType = (PointerType *)addr->getType();
     const auto &dimension = indexedRef->getDimensions();
-    const auto &elementSize = static_cast<ATC::ArrayType *>(var->getDataType())->getElementSize();
-    for (int i = 0; i != dimension.size(); i++) {
-        dimension[i]->accept(this);
-        _value = createBinaryInst(INST_MUL, _value, ConstantInt::get(elementSize[i]));
-    }
+    std::vector<int> elementSize;
+
     if (var->getDataType()->getClassId() == ID_POINTER_TYPE) {
         addr = createUnaryInst(INST_LOAD, addr);
+        int i = 0;
+        dimension[i++]->accept(this);
+        addr = createGEP(addr, {_value});
+
+        ATC::PointerType *varType = (ATC::PointerType *)var->getDataType();
+        if (varType->getBaseDataType()->getClassId() == ID_ARRAY_TYPE) {
+            elementSize = static_cast<ATC::ArrayType *>(varType->getBaseDataType())->getElementSize();
+            for (; i != dimension.size(); i++) {
+                dimension[i]->accept(this);
+                _value = createBinaryInst(INST_MUL, _value, ConstantInt::get(elementSize[i - 1]));
+            }
+            if (i > 1) {
+                return createGEP(addr, {_int32Zero, _value});
+            }
+        }
+        return addr;
     }
-    addr = createGEP(addr, {_int32Zero, _value});
-    return addr;
+    elementSize = static_cast<ATC::ArrayType *>(var->getDataType())->getElementSize();
+    int i = 0;
+    dimension[i]->accept(this);
+    _value = createBinaryInst(INST_MUL, _value, ConstantInt::get(elementSize[i]));
+
+    for (i = 1; i != dimension.size(); i++) {
+        dimension[i]->accept(this);
+        auto tmp = createBinaryInst(INST_MUL, _value, ConstantInt::get(elementSize[i]));
+        _value = createBinaryInst(INST_ADD, _value, tmp);
+    }
+    return createGEP(addr, {_int32Zero, _value});
 }
 
 }  // namespace AtomIR

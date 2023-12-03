@@ -100,7 +100,7 @@ private:
 
 class FunctionCallInst : public Instruction {
 public:
-    FunctionCallInst(FunctionType functionType, const std::string& funcName, const std::vector<Value*>& params,
+    FunctionCallInst(const FunctionType& functionType, const std::string& funcName, const std::vector<Value*>& params,
                      const std::string& resultName = "");
 
     virtual int getClassId() override { return ID_FUNCTION_CALL_INST; }

@@ -34,7 +34,7 @@ public:
 
     virtual void visit(BinaryExpression *) override;
 
-    // virtual void visit(FunctionCall *) override;
+    virtual void visit(FunctionCall *) override;
 
     // virtual void visit(Block *) override;
 
@@ -55,8 +55,8 @@ private:
 
     void createStore(Value *value, Value *dest);
 
-    void createFunctionCall(FunctionType functionType, const std::string &funcName, const std::vector<Value *> &params,
-                            const std::string &resultName = "");
+    Value* createFunctionCall(const FunctionType &functionType, const std::string &funcName,
+                            const std::vector<Value *> &params, const std::string &resultName = "");
 
     Value *createGEP(Value *ptr, const std::vector<Value *> &indexes, const std::string &resultName = "");
 

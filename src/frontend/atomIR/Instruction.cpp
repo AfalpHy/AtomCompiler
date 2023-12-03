@@ -13,7 +13,7 @@ AllocInst::AllocInst(Type* allocType, const std::string& resultName) : Instructi
     _result->setDefined(this);
 }
 
-FunctionCallInst::FunctionCallInst(FunctionType functionType, const std::string& funcName,
+FunctionCallInst::FunctionCallInst(const FunctionType& functionType, const std::string& funcName,
                                    const std::vector<Value*>& params, const std::string& resultName)
     : Instruction(INST_FUNCALL) {
     assert(functionType._params.size() == params.size());
@@ -166,8 +166,18 @@ std::string UnaryInst::toString() {
             break;
         }
         case INST_ITOF:
+            str.append("itof")
+                .append(" ")
+                .append(_operand->toString())
+                .append(" to ")
+                .append(_result->getType()->toString());
             break;
         case INST_FTOI:
+            str.append("ftoi")
+                .append(" ")
+                .append(_operand->toString())
+                .append(" to ")
+                .append(_result->getType()->toString());
             break;
         default:
             assert(false && " should not reach here");
