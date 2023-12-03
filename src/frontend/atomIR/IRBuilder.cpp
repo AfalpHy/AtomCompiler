@@ -99,7 +99,17 @@ void IRBuilder::visit(VarRef *node) {
     _value = createUnaryInst(INST_LOAD, node->getVariable()->getAtomAddr(), node->getName());
 }
 
-// void IRBuilder::visit(IndexedRef *node) {}
+void IRBuilder::visit(IndexedRef *node) {
+    auto addr = getIndexedRefAddress(node);
+    Variable *var = node->getVariable();
+    ATC::ArrayType *varType = (ATC::ArrayType *)var->getDataType();
+    if (varType->getDimensions().size() > node->getDimensions().size()) {
+        // cast the array to pointer
+        _value = addr;
+    } else {
+        _value = createUnaryInst(INST_LOAD, addr);
+    }
+}
 
 void IRBuilder::visit(NestedExpression *node) {
     static int deep = 0;
@@ -283,6 +293,14 @@ void IRBuilder::createStore(Value *value, Value *dest) {
     _currentBasicBlock->addInstruction(inst);
 }
 
+Value *IRBuilder::createGEP(Value *ptr, const std::vector<Value *> &indexes, const std::string &resultName) {
+    Instruction *inst = new GetElementPtrInst(ptr, indexes, resultName);
+    _currentBasicBlock->addInstruction(inst);
+    Value *result = inst->getResult();
+    result->setBelong(_currentFunction);
+    return result;
+}
+
 void IRBuilder::createRet(Value *retValue) {
     Instruction *inst = new ReturnInst(retValue);
     _currentBasicBlock->addInstruction(inst);
@@ -382,6 +400,25 @@ Value *IRBuilder::castToDestTyIfNeed(Value *value, Type *destTy) {
         }
     }
     return value;
+}
+
+Value *IRBuilder::getIndexedRefAddress(IndexedRef *indexedRef) {
+    Variable *var = indexedRef->getVariable();
+    Value *addr = var->getAtomAddr();
+
+    assert(addr->getType()->isPointerType());
+    PointerType *addrType = (PointerType *)addr->getType();
+    const auto &dimension = indexedRef->getDimensions();
+    const auto &elementSize = static_cast<ATC::ArrayType *>(var->getDataType())->getElementSize();
+    for (int i = 0; i != dimension.size(); i++) {
+        dimension[i]->accept(this);
+        _value = createBinaryInst(INST_MUL, _value, ConstantInt::get(elementSize[i]));
+    }
+    if (var->getDataType()->getClassId() == ID_POINTER_TYPE) {
+        addr = createUnaryInst(INST_LOAD, addr);
+    }
+    addr = createGEP(addr, {_int32Zero, _value});
+    return addr;
 }
 
 }  // namespace AtomIR

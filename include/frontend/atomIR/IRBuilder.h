@@ -26,7 +26,7 @@ public:
 
     virtual void visit(VarRef *) override;
 
-    // virtual void visit(IndexedRef *) override;
+    virtual void visit(IndexedRef *) override;
 
     virtual void visit(NestedExpression *) override;
 
@@ -58,6 +58,8 @@ private:
     void createFunctionCall(FunctionType functionType, const std::string &funcName, const std::vector<Value *> &params,
                             const std::string &resultName = "");
 
+    Value *createGEP(Value *ptr, const std::vector<Value *> &indexes, const std::string &resultName = "");
+
     void createRet(Value *retValue);
 
     Value *createUnaryInst(InstType type, Value *operand, const std::string &resultName = "");
@@ -75,6 +77,8 @@ private:
     void allocForScopeVars(Scope *currentScope);
 
     Value *castToDestTyIfNeed(Value *value, Type *destTy);
+
+    Value *getIndexedRefAddress(IndexedRef *indexedRef);
 
 private:
     Module *_currentModule;

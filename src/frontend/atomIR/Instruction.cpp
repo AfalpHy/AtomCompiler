@@ -30,6 +30,19 @@ FunctionCallInst::FunctionCallInst(FunctionType functionType, const std::string&
     _params = params;
 }
 
+GetElementPtrInst::GetElementPtrInst(Value* ptr, const std::vector<Value*>& indexes, const std::string& resultName)
+    : Instruction(INST_GET_ELEMENT_PTR), _ptr(ptr), _indexes(indexes) {
+    assert(ptr->getType()->isPointerType() && "should be pointer value");
+    if (indexes.size() == 1) {
+        _result = new Value(ptr->getType(), resultName);
+    } else {
+        PointerType* ptrType = (PointerType*)ptr->getType();
+        assert(ptrType->getBaseType()->isArrayType() && "shoule be array type");
+        _result = new Value(static_cast<ArrayType*>(ptrType->getBaseType())->getBaseType()->getPointerTy(), resultName);
+    }
+    _result->setDefined(this);
+}
+
 UnaryInst::UnaryInst(InstType type, Value* operand, const std::string& resultName)
     : Instruction(type), _operand(operand) {
     switch (type) {
@@ -123,6 +136,15 @@ std::string FunctionCallInst::toString() {
     return str;
 }
 
+std::string GetElementPtrInst::toString() {
+    std::string str;
+    str.append(_result->getValueStr()).append(" = getelementptr ").append(_ptr->toString());
+    for (auto index : _indexes) {
+        str.append(", ").append(index->toString());
+    }
+    return str;
+}
+
 std::string ReturnInst::toString() {
     std::string str = "ret";
     str.append(" ").append(_retValue->toString());
@@ -163,9 +185,17 @@ std::string BinaryInst::toString() {
             str.append("add ");
             break;
         case INST_SUB:
+            str.append("sub ");
+            break;
         case INST_MUL:
+            str.append("mul ");
+            break;
         case INST_DIV:
+            str.append("div ");
+            break;
         case INST_MOD:
+            str.append("mod ");
+            break;
         case INST_BIT_AND:
         case INST_BIT_OR:
             break;
