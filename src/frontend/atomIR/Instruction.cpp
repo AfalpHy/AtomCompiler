@@ -7,15 +7,14 @@ namespace ATC {
 
 namespace AtomIR {
 
-AllocInst::AllocInst(Type* allocType, const std::string& resultName) : Instruction(INST_ALLOC) {
+AllocInst::AllocInst(Type* allocType, const std::string& resultName) {
     PointerType* ptr = PointerType::get(allocType);
     _result = new Value(ptr, resultName);
     _result->setDefined(this);
 }
 
 FunctionCallInst::FunctionCallInst(const FunctionType& functionType, const std::string& funcName,
-                                   const std::vector<Value*>& params, const std::string& resultName)
-    : Instruction(INST_FUNCALL) {
+                                   const std::vector<Value*>& params, const std::string& resultName) {
     assert(functionType._params.size() == params.size());
     for (int i = 0; i < params.size(); i++) {
         assert(functionType._params[i] == params[i]->getType());
@@ -31,7 +30,7 @@ FunctionCallInst::FunctionCallInst(const FunctionType& functionType, const std::
 }
 
 GetElementPtrInst::GetElementPtrInst(Value* ptr, const std::vector<Value*>& indexes, const std::string& resultName)
-    : Instruction(INST_GET_ELEMENT_PTR), _ptr(ptr), _indexes(indexes) {
+    : _ptr(ptr), _indexes(indexes) {
     assert(ptr->getType()->isPointerType() && "should be pointer value");
     if (indexes.size() == 1) {
         _result = new Value(ptr->getType(), resultName);
@@ -43,13 +42,12 @@ GetElementPtrInst::GetElementPtrInst(Value* ptr, const std::vector<Value*>& inde
     _result->setDefined(this);
 }
 
-BitCastInst::BitCastInst(Value* ptr, Type* destTy) : Instruction(INST_BITCAST), _ptr(ptr) {
+BitCastInst::BitCastInst(Value* ptr, Type* destTy) : _ptr(ptr) {
     assert(ptr->getType()->isPointerType() && destTy->isPointerType() && "only pointer can cast to pointer");
     _result = new Value(destTy, "");
 }
 
-UnaryInst::UnaryInst(InstType type, Value* operand, const std::string& resultName)
-    : Instruction(type), _operand(operand) {
+UnaryInst::UnaryInst(int type, Value* operand, const std::string& resultName) : _type(type), _operand(operand) {
     switch (type) {
         case INST_LOAD:
             assert(_operand->getType()->isPointerType() && "should load from a pointer");
@@ -68,8 +66,8 @@ UnaryInst::UnaryInst(InstType type, Value* operand, const std::string& resultNam
     _result->setDefined(this);
 }
 
-BinaryInst::BinaryInst(InstType type, Value* operand1, Value* operand2, const std::string& resultName)
-    : Instruction(type), _operand1(operand1), _operand2(operand2) {
+BinaryInst::BinaryInst(int type, Value* operand1, Value* operand2, const std::string& resultName)
+    : _type(type), _operand1(operand1), _operand2(operand2) {
     assert(_operand1->getType() == _operand2->getType());
     _intInst = operand1->getType()->getTypeEnum() == INT32_TY;
     switch (type) {
@@ -97,8 +95,8 @@ BinaryInst::BinaryInst(InstType type, Value* operand1, Value* operand2, const st
     _result->setDefined(this);
 }
 
-CondJumpInst::CondJumpInst(InstType type, BasicBlock* trueBB, BasicBlock* falseBB, Value* operand1, Value* operand2)
-    : Instruction(type), _trueBB(trueBB), _falseBB(falseBB), _operand1(operand1), _operand2(operand2) {
+CondJumpInst::CondJumpInst(int type, BasicBlock* trueBB, BasicBlock* falseBB, Value* operand1, Value* operand2)
+    : _type(type), _trueBB(trueBB), _falseBB(falseBB), _operand1(operand1), _operand2(operand2) {
     assert(operand1->getType() == operand2->getType());
     _intInst = operand1->getType()->getTypeEnum() == INT32_TY;
 }

@@ -145,7 +145,7 @@ void IRBuilder::visit(VarRef *node) {
         // int a[10]; 'a' is treated as a pointer when used as a function argument
         _value = addr;
     } else {
-        _value = createUnaryInst(INST_LOAD, addr, node->getName());
+        _value = createUnaryInst(UnaryInst::INST_LOAD, addr, node->getName());
     }
 }
 
@@ -167,7 +167,7 @@ void IRBuilder::visit(IndexedRef *node) {
             return;
         }
     }
-    _value = createUnaryInst(INST_LOAD, addr);
+    _value = createUnaryInst(UnaryInst::INST_LOAD, addr);
 }
 
 void IRBuilder::visit(NestedExpression *node) {
@@ -263,19 +263,19 @@ void IRBuilder::visit(UnaryExpression *node) {
     node->getOperand()->accept(this);
     if (node->getOperator() == MINUS) {
         if (_value->getType() == _floatTy) {
-            _value = createBinaryInst(INST_SUB, _floatZero, _value);
+            _value = createBinaryInst(BinaryInst::INST_SUB, _floatZero, _value);
         } else if (_value->getType() == _int32Ty) {
-            _value = createBinaryInst(INST_SUB, _int32Zero, _value);
+            _value = createBinaryInst(BinaryInst::INST_SUB, _int32Zero, _value);
         } else {
-            _value = createBinaryInst(INST_SUB, _int32Zero, castToDestTyIfNeed(_value, _int32Ty));
+            _value = createBinaryInst(BinaryInst::INST_SUB, _int32Zero, castToDestTyIfNeed(_value, _int32Ty));
         }
     } else if (node->getOperator() == NOT) {
         if (_value->getType() == _floatTy) {
-            _value = createBinaryInst(INST_NE, _floatZero, _value);
+            _value = createBinaryInst(BinaryInst::INST_NE, _floatZero, _value);
         } else if (_value->getType() == _int32Ty) {
-            _value = createBinaryInst(INST_NE, _int32Zero, _value);
+            _value = createBinaryInst(BinaryInst::INST_NE, _int32Zero, _value);
         } else {
-            _value = createBinaryInst(INST_NE, _int32One, castToDestTyIfNeed(_value, _int32Ty));
+            _value = createBinaryInst(BinaryInst::INST_NE, _int32One, castToDestTyIfNeed(_value, _int32Ty));
         }
     }
 }
@@ -305,37 +305,37 @@ void IRBuilder::visit(BinaryExpression *node) {
 
     switch (node->getOperator()) {
         case PLUS:
-            _value = createBinaryInst(INST_ADD, left, right);
+            _value = createBinaryInst(BinaryInst::INST_ADD, left, right);
             break;
         case MINUS:
-            _value = createBinaryInst(INST_SUB, left, right);
+            _value = createBinaryInst(BinaryInst::INST_SUB, left, right);
             break;
         case MUL:
-            _value = createBinaryInst(INST_MUL, left, right);
+            _value = createBinaryInst(BinaryInst::INST_MUL, left, right);
             break;
         case DIV:
-            _value = createBinaryInst(INST_DIV, left, right);
+            _value = createBinaryInst(BinaryInst::INST_DIV, left, right);
             break;
         case MOD:
-            _value = createBinaryInst(INST_MOD, left, right);
+            _value = createBinaryInst(BinaryInst::INST_MOD, left, right);
             break;
         case LT:
-            _value = createBinaryInst(INST_LT, left, right);
+            _value = createBinaryInst(BinaryInst::INST_LT, left, right);
             break;
         case GT:
-            _value = createBinaryInst(INST_GT, left, right);
+            _value = createBinaryInst(BinaryInst::INST_GT, left, right);
             break;
         case LE:
-            _value = createBinaryInst(INST_LE, left, right);
+            _value = createBinaryInst(BinaryInst::INST_LE, left, right);
             break;
         case GE:
-            _value = createBinaryInst(INST_GE, left, right);
+            _value = createBinaryInst(BinaryInst::INST_GE, left, right);
             break;
         case EQ:
-            _value = createBinaryInst(INST_EQ, left, right);
+            _value = createBinaryInst(BinaryInst::INST_EQ, left, right);
             break;
         case NE:
-            _value = createBinaryInst(INST_NE, left, right);
+            _value = createBinaryInst(BinaryInst::INST_NE, left, right);
             break;
         default:
             assert(false && "should not reach here");
@@ -439,7 +439,7 @@ void IRBuilder::createRet(Value *retValue) {
     _currentBasicBlock->addInstruction(inst);
 }
 
-Value *IRBuilder::createUnaryInst(InstType type, Value *operand, const std::string &resultName) {
+Value *IRBuilder::createUnaryInst(int type, Value *operand, const std::string &resultName) {
     Instruction *inst = new UnaryInst(type, operand, resultName);
     _currentBasicBlock->addInstruction(inst);
     Value *result = inst->getResult();
@@ -447,7 +447,7 @@ Value *IRBuilder::createUnaryInst(InstType type, Value *operand, const std::stri
     return result;
 }
 
-Value *IRBuilder::createBinaryInst(InstType type, Value *operand1, Value *operand2, const std::string &resultName) {
+Value *IRBuilder::createBinaryInst(int type, Value *operand1, Value *operand2, const std::string &resultName) {
     Instruction *inst = new BinaryInst(type, operand1, operand2, resultName);
     _currentBasicBlock->addInstruction(inst);
     Value *result = inst->getResult();
@@ -460,8 +460,7 @@ void IRBuilder::createJump(BasicBlock *targetBB) {
     _currentBasicBlock->addInstruction(inst);
 }
 
-void IRBuilder::createCondJump(InstType type, BasicBlock *trueBB, BasicBlock *falseBB, Value *operand1,
-                               Value *operand2) {
+void IRBuilder::createCondJump(int type, BasicBlock *trueBB, BasicBlock *falseBB, Value *operand1, Value *operand2) {
     Instruction *inst = new CondJumpInst(type, trueBB, falseBB, operand1, operand2);
     _currentBasicBlock->addInstruction(inst);
 }
@@ -511,24 +510,24 @@ Value *IRBuilder::castToDestTyIfNeed(Value *value, Type *destTy) {
             return ConstantFloat::get(std::stof(value->getValueStr()));
         }
         if (value->getType() == _int32Ty) {
-            return createUnaryInst(INST_ITOF, value);
+            return createUnaryInst(UnaryInst::INST_ITOF, value);
         } else if (value->getType() == _int1Ty) {
-            return createUnaryInst(INST_ITOF, value);
+            return createUnaryInst(UnaryInst::INST_ITOF, value);
         }
     } else if (destTy == _int32Ty) {
         if (value->isConst()) {
             return ConstantInt::get(std::stoi(value->getValueStr()));
         }
         if (value->getType() == _floatTy) {
-            return createUnaryInst(INST_FTOI, value);
+            return createUnaryInst(UnaryInst::INST_FTOI, value);
         } else if (value->getType() == _int1Ty) {
-            return createUnaryInst(INST_FTOI, value);
+            return createUnaryInst(UnaryInst::INST_FTOI, value);
         }
     } else {
         if (value->getType() == _floatTy) {
-            return createBinaryInst(INST_NE, value, _floatZero);
+            return createBinaryInst(BinaryInst::INST_NE, value, _floatZero);
         } else if (value->getType() == _int32Ty) {
-            return createBinaryInst(INST_NE, value, _int32One);
+            return createBinaryInst(BinaryInst::INST_NE, value, _int32One);
         }
     }
     return value;
@@ -544,7 +543,7 @@ Value *IRBuilder::getIndexedRefAddress(IndexedRef *indexedRef) {
     std::vector<int> elementSize;
 
     if (var->getDataType()->getClassId() == ID_POINTER_TYPE) {
-        addr = createUnaryInst(INST_LOAD, addr);
+        addr = createUnaryInst(UnaryInst::INST_LOAD, addr);
         int i = 0;
         dimension[i++]->accept(this);
         addr = createGEP(addr, {_value});
@@ -554,7 +553,7 @@ Value *IRBuilder::getIndexedRefAddress(IndexedRef *indexedRef) {
             elementSize = static_cast<ATC::ArrayType *>(varType->getBaseDataType())->getElementSize();
             for (; i != dimension.size(); i++) {
                 dimension[i]->accept(this);
-                _value = createBinaryInst(INST_MUL, _value, ConstantInt::get(elementSize[i - 1]));
+                _value = createBinaryInst(BinaryInst::INST_MUL, _value, ConstantInt::get(elementSize[i - 1]));
             }
             if (i > 1) {
                 return createGEP(addr, {_int32Zero, _value});
@@ -565,12 +564,12 @@ Value *IRBuilder::getIndexedRefAddress(IndexedRef *indexedRef) {
     elementSize = static_cast<ATC::ArrayType *>(var->getDataType())->getElementSize();
     int i = 0;
     dimension[i]->accept(this);
-    _value = createBinaryInst(INST_MUL, _value, ConstantInt::get(elementSize[i]));
+    _value = createBinaryInst(BinaryInst::INST_MUL, _value, ConstantInt::get(elementSize[i]));
 
     for (i = 1; i != dimension.size(); i++) {
         dimension[i]->accept(this);
-        auto tmp = createBinaryInst(INST_MUL, _value, ConstantInt::get(elementSize[i]));
-        _value = createBinaryInst(INST_ADD, _value, tmp);
+        auto tmp = createBinaryInst(BinaryInst::INST_MUL, _value, ConstantInt::get(elementSize[i]));
+        _value = createBinaryInst(BinaryInst::INST_ADD, _value, tmp);
     }
     return createGEP(addr, {_int32Zero, _value});
 }

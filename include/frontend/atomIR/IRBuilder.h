@@ -63,13 +63,13 @@ private:
 
     void createRet(Value *retValue);
 
-    Value *createUnaryInst(InstType type, Value *operand, const std::string &resultName = "");
+    Value *createUnaryInst(int type, Value *operand, const std::string &resultName = "");
 
-    Value *createBinaryInst(InstType type, Value *operand1, Value *operand2, const std::string &resultName = "");
+    Value *createBinaryInst(int type, Value *operand1, Value *operand2, const std::string &resultName = "");
 
     void createJump(BasicBlock *targetBB);
 
-    void createCondJump(InstType type, BasicBlock *trueBB, BasicBlock *falseBB, Value *operand1, Value *operand2);
+    void createCondJump(int type, BasicBlock *trueBB, BasicBlock *falseBB, Value *operand1, Value *operand2);
 
     Type *convertToAtomType(int type);
 
