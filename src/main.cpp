@@ -12,8 +12,10 @@
 #include "ATCLexer.h"
 #include "ATCParser.h"
 #include "antlr4-runtime.h"
+#include "arm/CodeGenerator.h"
 #include "atomIR/IRBuilder.h"
 #include "llvmIR/IRBuilder.h"
+#include "riscv/CodeGenerator.h"
 
 using namespace std;
 using namespace antlr4;
@@ -128,6 +130,8 @@ int main(int argc, const char *argv[]) {
         for (auto compUnit : ATC::CompUnit::AllCompUnits) {
             compUnit->accept(&irBuilder);
         }
+        ATC::RISCV_ARCH::CodeGenerator codeGenerator;
+        codeGenerator.dump(std::cout);
     }
 
     return 0;

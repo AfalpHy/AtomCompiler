@@ -14,12 +14,14 @@ if(UPDATE_ANTLR STREQUAL "ON")
 endif()
 
 add_subdirectory(src/frontend)
+add_subdirectory(src/backend)
 
 add_executable(${PROJECT_NAME} src/main.cpp)
 
-target_link_libraries(${PROJECT_NAME} frontend)
+target_link_libraries(${PROJECT_NAME} frontend backend)
 
 set_target_properties(atc PROPERTIES RUNTIME_OUTPUT_DIRECTORY
                                      ${CMAKE_BINARY_DIR}/bin)
+
 enable_testing()
 add_subdirectory(tests)
