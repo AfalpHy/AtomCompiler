@@ -1,4 +1,5 @@
 #pragma once
+
 #include <string>
 
 #include "Register.h"
@@ -7,6 +8,8 @@ namespace ATC {
 namespace RISCV_ARCH {
 
 class BasicBlock;
+
+enum ByteLen { BYTE, HALF_WORD, WORD, DOUBLE_WORD };
 
 class Instruction {
 public:
@@ -19,20 +22,23 @@ public:
 
 class StoreInst : public Instruction {
 public:
-    StoreInst(Register* value, Register* dest) : _value(value), _dest(dest) {}
+    StoreInst(Register* value, Register* dest, int imm, ByteLen len)
+        : _value(value), _dest(dest), _imm(imm), _len(len) {}
 
     virtual std::string toString() override;
 
 private:
     Register* _value;
     Register* _dest;
+    int _imm;
+    ByteLen _len;
 };
 
 class FunctionCallInst : public Instruction {
 public:
     FunctionCallInst(const std::string& funcName);
 
-    virtual std::string toString() override;
+    virtual std::string toString() override { return "call\t" + _funcName; }
 
 private:
     std::string _funcName;
@@ -40,7 +46,7 @@ private:
 
 class ReturnInst : public Instruction {
 public:
-    virtual std::string toString() override;
+    virtual std::string toString() override { return "ret"; }
 };
 
 class UnaryInst : public Instruction {

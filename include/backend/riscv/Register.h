@@ -5,6 +5,12 @@ namespace RISCV_ARCH {
 
 class Register {
 public:
+    void setName(const std::string &name) { _name = name; }
+
+    const std::string &getName() { return _name; }
+
+private:
+    std::string _name;
 };
 
 }  // namespace RISCV_ARCH
