@@ -1,5 +1,7 @@
 #include "riscv/CodeGenerator.h"
 
+#include <assert.h>
+
 #include "atomIR/Instruction.h"
 #include "atomIR/Module.h"
 #include "riscv/BasicBlock.h"
@@ -47,8 +49,35 @@ void CodeGenerator::emitInstruction(AtomIR::Instruction* inst) {
         case AtomIR::ID_ALLOC_INST:
             /* code */
             break;
-
+        case AtomIR::ID_STORE_INST:
+            /* code */
+            break;
+        case AtomIR::ID_FUNCTION_CALL_INST:
+            /* code */
+            break;
+        case AtomIR::ID_GETELEMENTPTR_INST:
+            /* code */
+            break;
+        case AtomIR::ID_BITCAST_INST:
+            /* code */
+            break;
+        case AtomIR::ID_RETURN_INST:
+            /* code */
+            break;
+        case AtomIR::ID_UNARY_INST:
+            /* code */
+            break;
+        case AtomIR::ID_BINARY_INST:
+            /* code */
+            break;
+        case AtomIR::ID_JUMP_INST:
+            /* code */
+            break;
+        case AtomIR::ID_COND_JUMP_INST:
+            /* code */
+            break;
         default:
+            assert(false && "should not reach here");
             break;
     }
 }
