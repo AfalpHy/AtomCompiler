@@ -19,6 +19,7 @@
 
 using namespace std;
 using namespace antlr4;
+using namespace ATC;
 
 int main(int argc, const char *argv[]) {
     int current = 1;
@@ -76,25 +77,25 @@ int main(int argc, const char *argv[]) {
         cerr << "There are syntax errors in " << filesystem::absolute(sourceFile) << endl;
         return -1;
     }
-    ATC::ASTBuilder astBuilder;
+    ASTBuilder astBuilder;
     astBuilder.setTokenStream(&token);
     context->accept(&astBuilder);
 
-    // ATC::SemanticChecker checker;
-    // for (auto compUnit : ATC::CompUnit::AllCompUnits) {
+    // SemanticChecker checker;
+    // for (auto compUnit : CompUnit::AllCompUnits) {
     //     compUnit->accept(&checker);
     // }
 
     if (dumpAst) {
-        ATC::ASTDumper dump;
-        for (auto compUnit : ATC::CompUnit::AllCompUnits) {
+        ASTDumper dump;
+        for (auto compUnit : CompUnit::AllCompUnits) {
             compUnit->accept(&dump);
         }
     }
 
     if (useLLVM) {
-        ATC::LLVMIR::IRBuilder irBuilder;
-        for (auto compUnit : ATC::CompUnit::AllCompUnits) {
+        LLVMIR::IRBuilder irBuilder;
+        for (auto compUnit : CompUnit::AllCompUnits) {
             compUnit->accept(&irBuilder);
         }
         std::filesystem::path filePath = sourceFile;
@@ -126,12 +127,13 @@ int main(int argc, const char *argv[]) {
             }
         }
     } else {
-        ATC::AtomIR::IRBuilder irBuilder;
-        for (auto compUnit : ATC::CompUnit::AllCompUnits) {
+        AtomIR::IRBuilder irBuilder;
+        RISCV_ARCH::CodeGenerator codeGenerator;
+        for (auto compUnit : CompUnit::AllCompUnits) {
             compUnit->accept(&irBuilder);
+            codeGenerator.emitModule(irBuilder.getCurrentModule());
+            codeGenerator.dump(std::cout);
         }
-        ATC::RISCV_ARCH::CodeGenerator codeGenerator;
-        codeGenerator.dump(std::cout);
     }
 
     return 0;

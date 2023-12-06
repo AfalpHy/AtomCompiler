@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <vector>
 
 namespace ATC {
@@ -11,8 +12,11 @@ class Module;
 
 class Function {
 public:
+    const std::string& getContent() { return _content; }
+
 private:
-    std::vector<Function*> _functions;
+    std::vector<BasicBlock*> _basicBlocks;
+    std::string _content;
 };
 
 }  // namespace RISCV_ARCH

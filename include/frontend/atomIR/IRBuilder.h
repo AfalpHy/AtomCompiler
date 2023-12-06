@@ -49,6 +49,9 @@ public:
 
     virtual void visit(ReturnStatement *) override;
 
+public:
+    Module *getCurrentModule() { return _currentModule; }
+
 private:
     Value *createAlloc(Type *allocType, const std::string &resultName = "");
 

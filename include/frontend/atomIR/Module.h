@@ -12,11 +12,11 @@ public:
     Module(const std::string& name) { _name = name; }
 
     void addFunction(Function* function) { _functions.insert({function->getName(), function}); }
-    void addGlobalVariable(Value* var);
+    void addGlobalVariable(GloabalVariable* var);
 
     const std::string& getName() { return _name; }
     const std::unordered_map<std::string, Function*>& getFunctions() { return _functions; }
-    const std::unordered_map<std::string, Value*>& getGlobalVariables() { return _globalVariables; }
+    const std::unordered_map<std::string, GloabalVariable*>& getGlobalVariables() { return _globalVariables; }
 
     Function* getFunction(const std::string& name) {
         if (_functions.find(name) != _functions.end()) {
@@ -37,7 +37,7 @@ public:
 private:
     std::string _name;
     std::unordered_map<std::string, Function*> _functions;
-    std::unordered_map<std::string, Value*> _globalVariables;
+    std::unordered_map<std::string, GloabalVariable*> _globalVariables;
 };
 }  // namespace AtomIR
 }  // namespace ATC

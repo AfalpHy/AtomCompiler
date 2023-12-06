@@ -9,20 +9,33 @@ class Module;
 class Function;
 class BasicBlock;
 class Instruction;
+class GloabalVariable;
 }  // namespace AtomIR
 
 namespace RISCV_ARCH {
+
+class Module;
+class Function;
+class BasicBlock;
+
 class CodeGenerator {
 public:
-    void dump(std::ostream& os);
+    void dump(std::ostream &os);
 
-    void emitModule(AtomIR::Module*);
+    void emitModule(AtomIR::Module *);
 
-    void emitFunction(AtomIR::Function*);
+    void emitGlobalVariable(AtomIR::GloabalVariable *);
 
-    void emitBasicBlock(AtomIR::BasicBlock*);
+    void emitFunction(AtomIR::Function *);
+
+    void emitBasicBlock(AtomIR::BasicBlock *);
+
+    void emitInstruction(AtomIR::Instruction *);
 
 private:
+    Module *_currentModule;
+    Function *_currentFunction;
+    BasicBlock *_currentBasicBlock;
 };
 
 }  // namespace RISCV_ARCH
