@@ -54,7 +54,7 @@ void IRBuilder::visit(FunctionDef *node) {
     node->setAtomFunction(_currentFunction);
     auto entry = new BasicBlock(_currentFunction, "entry");
     _currentFunction->insertBB(entry);
-    createJump(_currentBasicBlock);
+    createJump(entry);
     _currentBasicBlock = entry;
 
     ASTVisitor::visit(node);
@@ -66,6 +66,9 @@ void IRBuilder::visit(Variable *node) {
         // create global variable
         if (auto initValue = node->getInitValue()) {
             initValue->accept(this);
+            if (node->getDataType()->getClassId() != ID_ARRAY_TYPE) {
+                _value = castToDestTyIfNeed(_value, basicType);
+            }
         } else {
             if (node->getDataType()->getClassId() == ID_ARRAY_TYPE) {
                 int totalSize = static_cast<ATC::ArrayType *>(node->getDataType())->getTotalSize();
@@ -81,7 +84,7 @@ void IRBuilder::visit(Variable *node) {
             }
         }
 
-        GloabalVariable *globalVar = new GloabalVariable(basicType, node->getName());
+        GloabalVariable *globalVar = new GloabalVariable(_value->getType(), node->getName());
         globalVar->setInitialValue(_value);
         _currentModule->addGlobalVariable(globalVar);
 

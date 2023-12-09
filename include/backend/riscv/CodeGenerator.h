@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iostream>
-
+#include <sstream>
 namespace ATC {
 
 namespace AtomIR {
@@ -14,13 +14,12 @@ class GloabalVariable;
 
 namespace RISCV_ARCH {
 
-class Module;
 class Function;
 class BasicBlock;
 
 class CodeGenerator {
 public:
-    void dump(std::ostream &os);
+    void dump(std::ostream &os = std::cout);
 
     void emitModule(AtomIR::Module *);
 
@@ -33,9 +32,9 @@ public:
     void emitInstruction(AtomIR::Instruction *);
 
 private:
-    Module *_currentModule;
     Function *_currentFunction;
     BasicBlock *_currentBasicBlock;
+    std::stringstream _contend;
 };
 
 }  // namespace RISCV_ARCH

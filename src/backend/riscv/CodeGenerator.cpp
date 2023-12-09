@@ -6,20 +6,15 @@
 #include "atomIR/Module.h"
 #include "riscv/BasicBlock.h"
 #include "riscv/Function.h"
-#include "riscv/Module.h"
 
 namespace ATC {
 namespace RISCV_ARCH {
 
-void CodeGenerator::dump(std::ostream& os) {
-    if (_currentModule) {
-        os << _currentModule->getContent() << std::endl;
-    }
-}
+using std::endl;
+
+void CodeGenerator::dump(std::ostream& os) { os << _contend.str() << endl; }
 
 void CodeGenerator::emitModule(AtomIR::Module* module) {
-    _currentModule = new Module();
-
     for (auto& item : module->getGlobalVariables()) {
         emitGlobalVariable(item.second);
     }
@@ -29,7 +24,31 @@ void CodeGenerator::emitModule(AtomIR::Module* module) {
     }
 }
 
-void CodeGenerator::emitGlobalVariable(AtomIR::GloabalVariable* var) {}
+void CodeGenerator::emitGlobalVariable(AtomIR::GloabalVariable* var) {
+    _contend << "\t.type\t" << var->getName() << ",@object" << endl;
+    _contend << "\t.data" << endl;
+    _contend << "\tglobal\t" << var->getName() << endl;
+    _contend << "\t.p2align\t2" << endl;
+    _contend << var->getName() << "." << endl;
+    int size = 0;
+    if (auto arrayValue = dynamic_cast<AtomIR::ArrayValue*>(var->getInitialValue())) {
+        for (auto& item : arrayValue->getElements()) {
+            if (item.second.empty()) {
+                size += item.first * 4;
+                _contend << "\t.zero\t" << std::to_string(item.first * 4) << endl;
+            } else {
+                for (auto& element : item.second) {
+                    size += 4;
+                    _contend << "\t.word\t" << static_cast<AtomIR::Constant*>(element)->getLiteralStr() << endl;
+                }
+            }
+        }
+    } else {
+        size = 4;
+        _contend << "\t.word\t" << static_cast<AtomIR::Constant*>(var->getInitialValue())->getLiteralStr() << endl;
+    }
+    _contend << "\t.size\t" << var->getName() << "," << std::to_string(size) << endl << endl;
+}
 
 void CodeGenerator::emitFunction(AtomIR::Function* function) {
     _currentFunction = new Function();

@@ -62,7 +62,7 @@ std::string ConstantInt::getValueStr() { return std::to_string(_constValue); }
 
 std::string ConstantFloat::getValueStr() { return std::to_string(_constValue); }
 
-std::string GloabalVariable::getValueStr() { return _name; }
+std::string GloabalVariable::getValueStr() { return "@" + _name; }
 
 void Value::dump() {
     if (!_defined) {

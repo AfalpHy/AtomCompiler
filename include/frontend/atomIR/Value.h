@@ -37,33 +37,45 @@ protected:
     Instruction* _defined = nullptr;
 };
 
-class ConstantInt : public Value {
+class Constant : public Value {
+public:
+    Constant(Type* type) : Value(type, "") {}
+
+    virtual bool isConst() override { return true; }
+
+    virtual std::string getLiteralStr() = 0;
+};
+
+class ConstantInt : public Constant {
 public:
     static ConstantInt* get(int value);
 
     virtual std::string getValueStr() override;
 
-    virtual bool isConst() override { return true; }
+    virtual std::string getLiteralStr() override { return std::to_string(_constValue); }
 
     int getConstValue() { return _constValue; }
 
 private:
-    ConstantInt(int value) : Value(Type::getInt32Ty(), ""), _constValue(value) {}
+    ConstantInt(int value) : Constant(Type::getInt32Ty()), _constValue(value) {}
     int _constValue;
 };
 
-class ConstantFloat : public Value {
+class ConstantFloat : public Constant {
 public:
     static ConstantFloat* get(float value);
 
     virtual std::string getValueStr() override;
 
-    virtual bool isConst() override { return true; }
+    virtual std::string getLiteralStr() override {
+        int* valuePtr = (int*)&_constValue;
+        return std::to_string(*valuePtr);
+    }
 
     float getConstValue() { return _constValue; }
 
 private:
-    ConstantFloat(float value) : Value(Type::getFloatTy(), ""), _constValue(value) {}
+    ConstantFloat(float value) : Constant(Type::getFloatTy()), _constValue(value) {}
     float _constValue;
 };
 
@@ -86,6 +98,8 @@ public:
     GloabalVariable(Type* type, const std::string& name) : Value(type->getPointerTy(), name) {}
 
     void setInitialValue(Value* init) { _init = init; }
+
+    Value* getInitialValue() { return _init; }
 
     virtual std::string getValueStr() override;
 

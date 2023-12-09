@@ -132,7 +132,7 @@ int main(int argc, const char *argv[]) {
         for (auto compUnit : CompUnit::AllCompUnits) {
             compUnit->accept(&irBuilder);
             codeGenerator.emitModule(irBuilder.getCurrentModule());
-            codeGenerator.dump(std::cout);
+            codeGenerator.dump();
         }
     }
 

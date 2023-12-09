@@ -18,12 +18,16 @@ public:
     virtual std::string toString() = 0;
 
     virtual Register* getResult() { return nullptr; }
+
+protected:
+    ByteLen _len;
 };
 
 class StoreInst : public Instruction {
 public:
-    StoreInst(Register* value, Register* dest, int imm, ByteLen len)
-        : _value(value), _dest(dest), _imm(imm), _len(len) {}
+    StoreInst(Register* value, Register* dest, int imm, ByteLen len) : _value(value), _dest(dest), _imm(imm) {
+        _len = len;
+    }
 
     virtual std::string toString() override;
 
@@ -31,7 +35,6 @@ private:
     Register* _value;
     Register* _dest;
     int _imm;
-    ByteLen _len;
 };
 
 class FunctionCallInst : public Instruction {
