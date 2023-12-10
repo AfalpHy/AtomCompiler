@@ -4,7 +4,6 @@
 #include <unordered_map>
 
 #include "BasicBlock.h"
-#include "Value.h"
 
 namespace ATC {
 namespace AtomIR {

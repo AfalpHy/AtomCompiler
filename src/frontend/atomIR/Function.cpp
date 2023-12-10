@@ -2,7 +2,6 @@
 
 #include <iostream>
 
-#include "atomIR/Instruction.h"
 #include "atomIR/Module.h"
 
 namespace ATC {

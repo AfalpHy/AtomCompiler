@@ -60,6 +60,7 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
 void CodeGenerator::emitBasicBlock(AtomIR::BasicBlock* basicBlock) {
     _currentBasicBlock = new BasicBlock();
     for (auto inst : basicBlock->getInstructionList()) {
+        emitInstruction(inst);
     }
 }
 

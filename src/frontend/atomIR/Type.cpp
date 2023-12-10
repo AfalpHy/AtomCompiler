@@ -3,6 +3,7 @@
 #include <assert.h>
 
 #include <unordered_map>
+
 namespace ATC {
 
 namespace AtomIR {

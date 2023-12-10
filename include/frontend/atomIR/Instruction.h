@@ -1,9 +1,15 @@
 #pragma once
 
-#include "Function.h"
+#include <vector>
+
+#include "Value.h"
 
 namespace ATC {
 namespace AtomIR {
+
+struct FunctionType;
+
+class BasicBlock;
 
 enum InstId {
     ID_ALLOC_INST,

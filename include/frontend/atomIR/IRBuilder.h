@@ -1,13 +1,13 @@
 #pragma once
 
-#include <string>
-
 #include "AST/ASTVisitor.h"
-#include "Instruction.h"
+#include "Module.h"
+
 namespace ATC {
 
 class DataType;
 class Scope;
+
 namespace AtomIR {
 
 class IRBuilder : public ASTVisitor {

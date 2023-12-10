@@ -1,8 +1,8 @@
+#include <assert.h>
+
 #include <iostream>
 
-#include "assert.h"
 #include "atomIR/Function.h"
-#include "atomIR/Instruction.h"
 
 namespace ATC {
 namespace AtomIR {

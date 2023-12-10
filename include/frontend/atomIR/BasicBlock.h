@@ -1,13 +1,12 @@
 #pragma once
 
 #include <list>
-#include <string>
-#include <vector>
+
+#include "Instruction.h"
 
 namespace ATC {
 namespace AtomIR {
 
-class Instruction;
 class Function;
 
 class BasicBlock {

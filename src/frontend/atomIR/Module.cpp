@@ -2,8 +2,6 @@
 
 #include <iostream>
 
-#include "atomIR/Function.h"
-#include "atomIR/Instruction.h"
 namespace ATC {
 namespace AtomIR {
 

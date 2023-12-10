@@ -7,8 +7,7 @@
 #include "AST/Scope.h"
 #include "AST/Statement.h"
 #include "AST/Variable.h"
-#include "atomIR/Module.h"
-#include "atomIR/Value.h"
+
 namespace ATC {
 
 namespace AtomIR {
@@ -620,6 +619,8 @@ void IRBuilder::createJump(BasicBlock *targetBB) {
     }
     Instruction *inst = new JumpInst(targetBB);
     _currentBasicBlock->addInstruction(inst);
+    _currentBasicBlock->addSuccessor(targetBB);
+    targetBB->addPredecessor(_currentBasicBlock);
     _currentBasicBlock->setHasBr();
 }
 
@@ -629,6 +630,10 @@ void IRBuilder::createCondJump(int type, BasicBlock *trueBB, BasicBlock *falseBB
     }
     Instruction *inst = new CondJumpInst(type, trueBB, falseBB, operand1, operand2);
     _currentBasicBlock->addInstruction(inst);
+    _currentBasicBlock->addSuccessor(trueBB);
+    _currentBasicBlock->addSuccessor(falseBB);
+    trueBB->addPredecessor(_currentBasicBlock);
+    falseBB->addPredecessor(_currentBasicBlock);
     _currentBasicBlock->setHasBr();
 }
 

@@ -1,6 +1,5 @@
-#include "atomIR/Instruction.h"
+#include <assert.h>
 
-#include "assert.h"
 #include "atomIR/Function.h"
 
 namespace ATC {
