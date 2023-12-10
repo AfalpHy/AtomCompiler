@@ -45,6 +45,7 @@ GetElementPtrInst::GetElementPtrInst(Value* ptr, const std::vector<Value*>& inde
 BitCastInst::BitCastInst(Value* ptr, Type* destTy) : _ptr(ptr) {
     assert(ptr->getType()->isPointerType() && destTy->isPointerType() && "only pointer can cast to pointer");
     _result = new Value(destTy, "");
+    _result->setDefined(this);
 }
 
 UnaryInst::UnaryInst(int type, Value* operand, const std::string& resultName) : _type(type), _operand(operand) {
@@ -262,22 +263,22 @@ std::string CondJumpInst::toString() {
     str.append("if").append(" ").append(_operand1->getValueStr());
     switch (_type) {
         case INST_JLT:
-            str.append(" LT ");
+            str.append(" < ");
             break;
         case INST_JLE:
-            str.append(" LE ");
+            str.append(" <= ");
             break;
         case INST_JGT:
-            str.append(" GT ");
+            str.append(" > ");
             break;
         case INST_JGE:
-            str.append(" GE ");
+            str.append(" >= ");
             break;
         case INST_JEQ:
-            str.append(" EQ ");
+            str.append(" == ");
             break;
         case INST_JNE:
-            str.append(" NE ");
+            str.append(" != ");
             break;
         default:
             assert(false && " should not reach here");

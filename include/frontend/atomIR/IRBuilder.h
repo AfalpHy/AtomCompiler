@@ -35,17 +35,17 @@ public:
 
     virtual void visit(FunctionCall *) override;
 
-    // virtual void visit(Block *) override;
+    virtual void visit(Block *) override;
 
     virtual void visit(AssignStatement *) override;
 
-    // virtual void visit(IfStatement *) override;
+    virtual void visit(IfStatement *) override;
 
-    // virtual void visit(WhileStatement *) override;
+    virtual void visit(WhileStatement *) override;
 
-    // virtual void visit(BreakStatement *) override;
+    virtual void visit(BreakStatement *) override;
 
-    // virtual void visit(ContinueStatement *) override;
+    virtual void visit(ContinueStatement *) override;
 
     virtual void visit(ReturnStatement *) override;
 
@@ -78,8 +78,6 @@ private:
 
     Type *convertToAtomType(DataType *dataType);
 
-    void allocForScopeVars(Scope *currentScope);
-
     Value *castToDestTyIfNeed(Value *value, Type *destTy);
 
     Value *getIndexedRefAddress(IndexedRef *indexedRef);
@@ -101,6 +99,13 @@ private:
     ConstantFloat *_floatZero;
     ConstantInt *_int32One;
     ConstantFloat *_floatOne;
+
+    BasicBlock *_trueBB = nullptr;
+    BasicBlock *_falseBB = nullptr;
+
+    // for break/continue statement
+    BasicBlock *_condBB = nullptr;
+    BasicBlock *_afterBB = nullptr;
 };
 }  // namespace AtomIR
 }  // namespace ATC

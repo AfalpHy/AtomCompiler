@@ -3,6 +3,10 @@
 namespace ATC {
 namespace AtomIR {
 
+BasicBlock::BasicBlock(Function* parent, const std::string& name) : _parent(parent), _name(name) {
+    parent->insertBB(this);
+}
+
 void BasicBlock::addInstruction(Instruction* inst) {
     if (!_instructions.empty()) {
         _parent->setNeedUpdateName(true);

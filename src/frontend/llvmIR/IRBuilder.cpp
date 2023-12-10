@@ -305,24 +305,7 @@ void IRBuilder::visit(UnaryExpression *node) {
 void IRBuilder::visit(BinaryExpression *node) {
     if (node->getOperator() == AND || node->getOperator() == OR) {
         // calculate the value of short circuit expr, not for condition
-        bool forValue = true;
-        auto parent = node->getParent();
-        assert(parent && "the expr must have a parent node");
-        switch (parent->getClassId()) {
-            case ID_IF_STATEMENT:
-            case ID_WHILE_STATEMENT:
-                forValue = false;
-                break;
-            case ID_BINARY_EXPRESSION: {
-                BinaryExpression *parentExpr = (BinaryExpression *)parent;
-                if (parentExpr->getOperator() == AND || parentExpr->getOperator() == OR) {
-                    forValue = false;
-                }
-                break;
-            }
-            default:
-                break;
-        }
+        bool forValue = ExpressionHandle::isForValue(node);
         llvm::Value *valueAddr = nullptr;
         llvm::BasicBlock *saveTrueBB = nullptr;
         llvm::BasicBlock *saveFalseBB = nullptr;

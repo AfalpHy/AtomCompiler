@@ -40,10 +40,8 @@ void IRBuilder::visit(FunctionDef *node) {
         funcType._params.push_back(convertToAtomType(dataType));
     }
     _currentFunction = new Function(_currentModule, funcType, node->getName());
-    _currentModule->addFunction(_currentFunction);
     _currentBasicBlock = new BasicBlock(_currentFunction, "init");
-    _currentFunction->insertBB(_currentBasicBlock);
-    allocForScopeVars(node->getScope());
+
     int i = 0;
     for (auto param : node->getParams()) {
         // the decl of formal param is the only one
@@ -53,7 +51,7 @@ void IRBuilder::visit(FunctionDef *node) {
     }
     node->setAtomFunction(_currentFunction);
     auto entry = new BasicBlock(_currentFunction, "entry");
-    _currentFunction->insertBB(entry);
+
     createJump(entry);
     _currentBasicBlock = entry;
 
@@ -90,10 +88,11 @@ void IRBuilder::visit(Variable *node) {
 
         node->setAtomAddr(globalVar);
     } else {
+        Value *addr = createAlloc(convertToAtomType(node->getDataType()), node->getName());
+        node->setAtomAddr(addr);
         if (auto initValue = node->getInitValue()) {
             initValue->accept(this);
             if (initValue->getClassId() == ID_NESTED_EXPRESSION) {
-                auto addr = node->getAtomAddr();
                 ATC::ArrayType *arrayType = static_cast<ATC::ArrayType *>(node->getDataType());
                 FunctionType funcType;
                 funcType._ret = _voidTy;
@@ -119,7 +118,7 @@ void IRBuilder::visit(Variable *node) {
                 }
             } else {
                 _value = castToDestTyIfNeed(_value, basicType);
-                createStore(_value, node->getAtomAddr());
+                createStore(_value, addr);
             }
         }
     }
@@ -135,7 +134,7 @@ void IRBuilder::visit(ConstVal *node) {
 
 void IRBuilder::visit(VarRef *node) {
     if (node->isConst()) {
-        if (node->getVariable()->getBasicType() == BasicType::INT) {
+        if (ExpressionHandle::isIntExpr(node)) {
             _value = ConstantInt::get(ExpressionHandle::evaluateConstExpr(node));
         } else {
             _value = ConstantFloat::get(ExpressionHandle::evaluateConstExpr(node));
@@ -292,6 +291,62 @@ void IRBuilder::visit(BinaryExpression *node) {
         }
         return;
     }
+    if (node->getOperator() == AND || node->getOperator() == OR) {
+        // calculate the value of short circuit expr, not for condition
+        bool forValue = ExpressionHandle::isForValue(node);
+        Value *valueAddr = nullptr;
+        BasicBlock *saveTrueBB = nullptr;
+        BasicBlock *saveFalseBB = nullptr;
+        if (forValue) {
+            saveTrueBB = _trueBB;
+            saveFalseBB = _falseBB;
+            _trueBB = new BasicBlock(_currentFunction, "valueOneBB");
+
+            _falseBB = new BasicBlock(_currentFunction, "valueZeroBB");
+
+            valueAddr = createAlloc(_int32Ty);
+        }
+
+        BasicBlock *rhsCondBB = new BasicBlock(_currentFunction, "rhsCondBB");
+
+        if (node->getOperator() == AND) {
+            auto tmpTrueBB = _trueBB;
+            _trueBB = rhsCondBB;
+            node->getLeft()->accept(this);
+            createCondJump(CondJumpInst::INST_JNE, rhsCondBB, _falseBB, _value, _int32Zero);
+            _trueBB = tmpTrueBB;
+        } else {
+            auto tmpFalseBB = _falseBB;
+            _falseBB = rhsCondBB;
+            node->getLeft()->accept(this);
+            createCondJump(CondJumpInst::INST_JNE, rhsCondBB, _falseBB, _value, _int32Zero);
+            _falseBB = tmpFalseBB;
+        }
+
+        _currentBasicBlock = rhsCondBB;
+        node->getRight()->accept(this);
+
+        if (forValue) {
+            createCondJump(CondJumpInst::INST_JNE, _trueBB, _falseBB, _value, _int32Zero);
+
+            BasicBlock *afterCalcShortCircuitBB = new BasicBlock(_currentFunction, "afterCalcShortCircuitBB");
+
+            _currentBasicBlock = _trueBB;
+            createStore(_int32One, valueAddr);
+            createJump(afterCalcShortCircuitBB);
+
+            _currentBasicBlock = _falseBB;
+            createStore(_int32Zero, valueAddr);
+            createJump(afterCalcShortCircuitBB);
+
+            _currentBasicBlock = afterCalcShortCircuitBB;
+            _value = createUnaryInst(UnaryInst::INST_LOAD, valueAddr);
+
+            _trueBB = saveTrueBB;
+            _falseBB = saveFalseBB;
+        }
+        return;
+    }
     node->getLeft()->accept(this);
     Value *left = _value;
     node->getRight()->accept(this);
@@ -322,24 +377,54 @@ void IRBuilder::visit(BinaryExpression *node) {
         case MOD:
             _value = createBinaryInst(BinaryInst::INST_MOD, left, right);
             break;
-        case LT:
-            _value = createBinaryInst(BinaryInst::INST_LT, left, right);
+        case LT: {
+            if (ExpressionHandle::isForValue(node)) {
+                _value = createBinaryInst(BinaryInst::INST_LT, left, right);
+            } else {
+                createCondJump(CondJumpInst::INST_JLT, _trueBB, _falseBB, left, right);
+            }
             break;
-        case GT:
-            _value = createBinaryInst(BinaryInst::INST_GT, left, right);
+        }
+        case GT: {
+            if (ExpressionHandle::isForValue(node)) {
+                _value = createBinaryInst(BinaryInst::INST_GT, left, right);
+            } else {
+                createCondJump(CondJumpInst::INST_JGT, _trueBB, _falseBB, left, right);
+            }
             break;
-        case LE:
-            _value = createBinaryInst(BinaryInst::INST_LE, left, right);
+        }
+        case LE: {
+            if (ExpressionHandle::isForValue(node)) {
+                _value = createBinaryInst(BinaryInst::INST_LE, left, right);
+            } else {
+                createCondJump(CondJumpInst::INST_JLE, _trueBB, _falseBB, left, right);
+            }
             break;
-        case GE:
-            _value = createBinaryInst(BinaryInst::INST_GE, left, right);
+        }
+        case GE: {
+            if (ExpressionHandle::isForValue(node)) {
+                _value = createBinaryInst(BinaryInst::INST_GE, left, right);
+            } else {
+                createCondJump(CondJumpInst::INST_JGE, _trueBB, _falseBB, left, right);
+            }
             break;
-        case EQ:
-            _value = createBinaryInst(BinaryInst::INST_EQ, left, right);
+        }
+        case EQ: {
+            if (ExpressionHandle::isForValue(node)) {
+                _value = createBinaryInst(BinaryInst::INST_EQ, left, right);
+            } else {
+                createCondJump(CondJumpInst::INST_JEQ, _trueBB, _falseBB, left, right);
+            }
             break;
-        case NE:
-            _value = createBinaryInst(BinaryInst::INST_NE, left, right);
+        }
+        case NE: {
+            if (ExpressionHandle::isForValue(node)) {
+                _value = createBinaryInst(BinaryInst::INST_NE, left, right);
+            } else {
+                createCondJump(CondJumpInst::INST_JNE, _trueBB, _falseBB, left, right);
+            }
             break;
+        }
         default:
             assert(false && "should not reach here");
             break;
@@ -363,7 +448,15 @@ void IRBuilder::visit(FunctionCall *node) {
     _value = createFunctionCall(function->getFunctionType(), function->getName(), params);
 }
 
-// void IRBuilder::visit(Block *node) {}
+void IRBuilder::visit(Block *node) {
+    for (auto element : node->getElements()) {
+        element->accept(this);
+        // skip the statements following the jump statement
+        if (_currentBasicBlock->isHasBr()) {
+            return;
+        }
+    }
+}
 
 void IRBuilder::visit(AssignStatement *node) {
     Value *addr = nullptr;
@@ -377,13 +470,71 @@ void IRBuilder::visit(AssignStatement *node) {
     _currentBasicBlock->addInstruction(new StoreInst(_value, addr));
 }
 
-// void IRBuilder::visit(IfStatement *node) {}
+void IRBuilder::visit(IfStatement *node) {
+    auto ifBB = new BasicBlock(_currentFunction, "ifBB");
 
-// void IRBuilder::visit(WhileStatement *node) {}
+    auto afterIfBB = new BasicBlock(_currentFunction, "afterIfBB");
 
-// void IRBuilder::visit(BreakStatement *node) {}
+    _trueBB = ifBB;
+    if (node->getElseStmt()) {
+        auto elseBB = new BasicBlock(_currentFunction, "elseBB");
 
-// void IRBuilder::visit(ContinueStatement *node) {}
+        _falseBB = elseBB;
+        node->getCond()->accept(this);
+        createCondJump(CondJumpInst::INST_JNE, _trueBB, _falseBB, _value, _int32Zero);
+
+        _currentBasicBlock = elseBB;
+        node->getElseStmt()->accept(this);
+        createJump(afterIfBB);
+    } else {
+        _falseBB = afterIfBB;
+        node->getCond()->accept(this);
+        createCondJump(CondJumpInst::INST_JNE, _trueBB, _falseBB, _value, _int32Zero);
+    }
+
+    _currentBasicBlock = ifBB;
+    node->getStmt()->accept(this);
+    createJump(afterIfBB);
+
+    _currentBasicBlock = afterIfBB;
+
+    _trueBB = nullptr;
+    _falseBB = nullptr;
+}
+
+void IRBuilder::visit(WhileStatement *node) {
+    auto condBB = new BasicBlock(_currentFunction, "condBB");
+
+    auto whileBB = new BasicBlock(_currentFunction, "whileBB");
+
+    auto afterWhileBB = new BasicBlock(_currentFunction, "afterWhileBB");
+
+    createJump(condBB);
+    _currentBasicBlock = condBB;
+    _trueBB = whileBB;
+    _falseBB = afterWhileBB;
+    node->getCond()->accept(this);
+    createCondJump(CondJumpInst::INST_JNE, _trueBB, _falseBB, _value, _int32Zero);
+
+    auto tmpCondBB = _condBB;
+    auto tmpAfterBB = _afterBB;
+    _condBB = condBB;
+    _afterBB = afterWhileBB;
+    _currentBasicBlock = whileBB;
+    node->getStmt()->accept(this);
+    createJump(condBB);
+    _condBB = tmpCondBB;
+    _afterBB = tmpAfterBB;
+
+    _currentBasicBlock = afterWhileBB;
+
+    _trueBB = nullptr;
+    _falseBB = nullptr;
+}
+
+void IRBuilder::visit(BreakStatement *node) { createJump(_afterBB); }
+
+void IRBuilder::visit(ContinueStatement *node) { createJump(_condBB); }
 
 void IRBuilder::visit(ReturnStatement *node) {
     if (node->getExpr()) {
@@ -395,8 +546,9 @@ void IRBuilder::visit(ReturnStatement *node) {
 }
 
 Value *IRBuilder::createAlloc(Type *allocType, const std::string &resultName) {
+    auto entryBB = _currentFunction->getBasicBlocks().front();
     Instruction *inst = new AllocInst(allocType, resultName);
-    _currentBasicBlock->addInstruction(inst);
+    entryBB->getInstructionList().push_front(inst);
     Value *result = inst->getResult();
     result->setBelong(_currentFunction);
     return result;
@@ -438,8 +590,12 @@ Value *IRBuilder::createBitCast(Value *ptr, Type *destTy) {
 }
 
 void IRBuilder::createRet(Value *retValue) {
+    if (_currentBasicBlock->isHasBr()) {
+        return;
+    }
     Instruction *inst = new ReturnInst(retValue);
     _currentBasicBlock->addInstruction(inst);
+    _currentBasicBlock->setHasBr();
 }
 
 Value *IRBuilder::createUnaryInst(int type, Value *operand, const std::string &resultName) {
@@ -459,13 +615,21 @@ Value *IRBuilder::createBinaryInst(int type, Value *operand1, Value *operand2, c
 }
 
 void IRBuilder::createJump(BasicBlock *targetBB) {
+    if (_currentBasicBlock->isHasBr()) {
+        return;
+    }
     Instruction *inst = new JumpInst(targetBB);
     _currentBasicBlock->addInstruction(inst);
+    _currentBasicBlock->setHasBr();
 }
 
 void IRBuilder::createCondJump(int type, BasicBlock *trueBB, BasicBlock *falseBB, Value *operand1, Value *operand2) {
+    if (_currentBasicBlock->isHasBr()) {
+        return;
+    }
     Instruction *inst = new CondJumpInst(type, trueBB, falseBB, operand1, operand2);
     _currentBasicBlock->addInstruction(inst);
+    _currentBasicBlock->setHasBr();
 }
 
 Type *IRBuilder::convertToAtomType(int basicType) {
@@ -491,16 +655,6 @@ Type *IRBuilder::convertToAtomType(DataType *dataType) {
                               static_cast<ATC::ArrayType *>(dataType)->getTotalSize());
     } else {
         return convertToAtomType(dataType->getBasicType());
-    }
-}
-
-void IRBuilder::allocForScopeVars(Scope *currentScope) {
-    for (const auto &[name, var] : currentScope->getVarMap()) {
-        Value *addr = createAlloc(convertToAtomType(var->getDataType()), name);
-        var->setAtomAddr(addr);
-    }
-    for (auto child : currentScope->getChildren()) {
-        allocForScopeVars(child);
     }
 }
 

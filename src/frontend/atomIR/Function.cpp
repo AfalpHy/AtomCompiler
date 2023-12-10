@@ -3,7 +3,8 @@
 #include <iostream>
 
 #include "atomIR/Instruction.h"
-#
+#include "atomIR/Module.h"
+
 namespace ATC {
 
 namespace AtomIR {
@@ -15,6 +16,7 @@ Function::Function(Module* parent, const FunctionType& functionType, const std::
         param->setBelong(this);
         _params.push_back(param);
     }
+    parent->addFunction(this);
 }
 
 std::string Function::getUniqueNameInFunction(void* ptr) {

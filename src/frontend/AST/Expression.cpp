@@ -125,6 +125,26 @@ bool ExpressionHandle::isIntExpr(Expression* expr) {
     }
 }
 
+bool ExpressionHandle::isForValue(BinaryExpression* expr) {
+    auto parent = expr->getParent();
+    assert(parent && "the expr must have a parent node");
+    switch (parent->getClassId()) {
+        case ID_IF_STATEMENT:
+        case ID_WHILE_STATEMENT:
+            return false;
+        case ID_BINARY_EXPRESSION: {
+            BinaryExpression* parentExpr = (BinaryExpression*)parent;
+            if (parentExpr->getOperator() == AND || parentExpr->getOperator() == OR) {
+                return false;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    return true;
+}
+
 bool NestedExpression::isConst() {
     for (auto expr : _elements) {
         if (!expr->isConst()) {

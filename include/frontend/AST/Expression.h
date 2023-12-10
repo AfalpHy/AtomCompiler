@@ -172,5 +172,6 @@ class ExpressionHandle {
 public:
     static float evaluateConstExpr(Expression* expr);
     static bool isIntExpr(Expression* expr);
+    static bool isForValue(BinaryExpression* expr);
 };
 }  // namespace ATC
