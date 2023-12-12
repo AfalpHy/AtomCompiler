@@ -11,6 +11,17 @@ class BasicBlock;
 
 enum ByteLen { BYTE, HALF_WORD, WORD, DOUBLE_WORD };
 
+enum InstId {
+    ID_ALLOC_INST,
+    ID_STORE_INST,
+    ID_FUNCTION_CALL_INST,
+    ID_RETURN_INST,
+    ID_UNARY_INST,
+    ID_BINARY_INST,
+    ID_JUMP_INST,
+    ID_COND_JUMP_INST
+};
+
 class Instruction {
 public:
     virtual int getClassId() = 0;
@@ -77,19 +88,24 @@ private:
 
 class JumpInst : public Instruction {
 public:
-    JumpInst(BasicBlock* targetBB) : _targetBB(targetBB) {}
+    JumpInst(const std::string& targetBB) : _targetBB(targetBB) {}
+
+    virtual int getClassId() override { return ID_JUMP_INST; }
 
     virtual std::string toString() override;
 
 private:
-    BasicBlock* _targetBB;
+    std::string _targetBB;
 };
 
 class CondJumpInst : public JumpInst {
 public:
-    CondJumpInst(int type, BasicBlock* targetBB);
+    CondJumpInst(int type, const std::string& targetBB);
 
     virtual std::string toString() override;
+
+private:
+    std::string _targetBB;
 };
 
 }  // namespace RISCV_ARCH

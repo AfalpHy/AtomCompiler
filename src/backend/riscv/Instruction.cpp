@@ -33,7 +33,7 @@ std::string StoreInst::toString() {
     return str;
 }
 
-std::string JumpInst::toString() { return "j\t" + _targetBB->getName(); }
+std::string JumpInst::toString() { return "j\t" + _targetBB; }
 
 }  // namespace RISCV_ARCH
 

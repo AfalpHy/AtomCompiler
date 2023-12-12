@@ -3,16 +3,10 @@
 #include <iostream>
 #include <sstream>
 #include <unordered_map>
-namespace ATC {
 
-namespace AtomIR {
-class Module;
-class Function;
-class BasicBlock;
-class Instruction;
-class Value;
-class GloabalVariable;
-}  // namespace AtomIR
+#include "atomIR/Module.h"
+
+namespace ATC {
 
 namespace RISCV_ARCH {
 
@@ -32,6 +26,22 @@ public:
     void emitBasicBlock(AtomIR::BasicBlock *);
 
     void emitInstruction(AtomIR::Instruction *);
+
+    void emitAllocInst(AtomIR::AllocInst *);
+
+    void emitStoreInst(AtomIR::StoreInst *);
+
+    void emitFunctionCallInst(AtomIR::FunctionCallInst *);
+
+    void emitGEPInst(AtomIR::GetElementPtrInst *);
+
+    void emitRetInst(AtomIR::ReturnInst *);
+
+    void emitUnaryInst(AtomIR::UnaryInst *);
+
+    void emitBinaryInst(AtomIR::BinaryInst *);
+
+    void emitCondJumpInst(AtomIR::CondJumpInst *);
 
 private:
     Function *_currentFunction;

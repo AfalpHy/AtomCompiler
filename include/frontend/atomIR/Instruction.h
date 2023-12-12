@@ -187,6 +187,8 @@ public:
 
     virtual std::string toString() override;
 
+    BasicBlock* getTargetBB() { return _targetBB; }
+
 private:
     BasicBlock* _targetBB;
 };
