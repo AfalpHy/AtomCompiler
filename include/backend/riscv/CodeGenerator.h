@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <unordered_map>
 namespace ATC {
 
 namespace AtomIR {
@@ -9,6 +10,7 @@ class Module;
 class Function;
 class BasicBlock;
 class Instruction;
+class Value;
 class GloabalVariable;
 }  // namespace AtomIR
 
@@ -34,6 +36,9 @@ public:
 private:
     Function *_currentFunction;
     BasicBlock *_currentBasicBlock;
+
+    std::unordered_map<AtomIR::Value *, int> _value2offset;  // offset of sp
+
     std::stringstream _contend;
 };
 
