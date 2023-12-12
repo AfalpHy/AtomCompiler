@@ -8,11 +8,6 @@ namespace ATC {
 
 namespace AtomIR {
 
-Type* Type::getInt1Ty() {
-    static Type* ret = new Type(INT1_TY);
-    return ret;
-}
-
 Type* Type::getInt32Ty() {
     static Type* ret = new Type(INT32_TY);
     return ret;
@@ -30,8 +25,6 @@ Type* Type::getVoidTy() {
 
 std::string Type::toString() {
     switch (_type) {
-        case INT1_TY:
-            return "i1";
         case INT32_TY:
             return "i32";
         case FLOAT_TY:

@@ -86,7 +86,7 @@ BinaryInst::BinaryInst(int type, Value* operand1, Value* operand2, const std::st
         case INST_GE:
         case INST_EQ:
         case INST_NE:
-            _result = new Value(Type::getInt1Ty(), resultName);
+            _result = new Value(Type::getInt32Ty(), resultName);
             break;
         default:
             assert(false && " should not reach here");

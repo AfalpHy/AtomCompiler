@@ -89,7 +89,6 @@ private:
     Value *_value;
 
     Type *_voidTy;
-    Type *_int1Ty;
     Type *_int32Ty;
     Type *_int32PtrTy;
     Type *_floatTy;

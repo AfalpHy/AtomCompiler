@@ -13,7 +13,6 @@ namespace ATC {
 namespace AtomIR {
 IRBuilder::IRBuilder() {
     _voidTy = Type::getVoidTy();
-    _int1Ty = Type::getInt1Ty();
     _int32Ty = Type::getInt32Ty();
     _floatTy = Type::getFloatTy();
     _int32PtrTy = _int32Ty->getPointerTy();
@@ -312,13 +311,15 @@ void IRBuilder::visit(BinaryExpression *node) {
             auto tmpTrueBB = _trueBB;
             _trueBB = rhsCondBB;
             node->getLeft()->accept(this);
-            createCondJump(CondJumpInst::INST_JNE, rhsCondBB, _falseBB, _value, _int32Zero);
+            createCondJump(CondJumpInst::INST_JNE, rhsCondBB, _falseBB, _value,
+                           castToDestTyIfNeed(_int32Zero, _value->getType()));
             _trueBB = tmpTrueBB;
         } else {
             auto tmpFalseBB = _falseBB;
             _falseBB = rhsCondBB;
             node->getLeft()->accept(this);
-            createCondJump(CondJumpInst::INST_JNE, rhsCondBB, _falseBB, _value, _int32Zero);
+            createCondJump(CondJumpInst::INST_JNE, rhsCondBB, _falseBB, _value,
+                           castToDestTyIfNeed(_int32Zero, _value->getType()));
             _falseBB = tmpFalseBB;
         }
 
@@ -326,7 +327,8 @@ void IRBuilder::visit(BinaryExpression *node) {
         node->getRight()->accept(this);
 
         if (forValue) {
-            createCondJump(CondJumpInst::INST_JNE, _trueBB, _falseBB, _value, _int32Zero);
+            createCondJump(CondJumpInst::INST_JNE, _trueBB, _falseBB, _value,
+                           castToDestTyIfNeed(_int32Zero, _value->getType()));
 
             BasicBlock *afterCalcShortCircuitBB = new BasicBlock(_currentFunction, "afterCalcShortCircuitBB");
 
@@ -480,7 +482,8 @@ void IRBuilder::visit(IfStatement *node) {
 
         _falseBB = elseBB;
         node->getCond()->accept(this);
-        createCondJump(CondJumpInst::INST_JNE, _trueBB, _falseBB, _value, _int32Zero);
+        createCondJump(CondJumpInst::INST_JNE, _trueBB, _falseBB, _value,
+                       castToDestTyIfNeed(_int32Zero, _value->getType()));
 
         _currentBasicBlock = elseBB;
         node->getElseStmt()->accept(this);
@@ -488,7 +491,8 @@ void IRBuilder::visit(IfStatement *node) {
     } else {
         _falseBB = afterIfBB;
         node->getCond()->accept(this);
-        createCondJump(CondJumpInst::INST_JNE, _trueBB, _falseBB, _value, _int32Zero);
+        createCondJump(CondJumpInst::INST_JNE, _trueBB, _falseBB, _value,
+                       castToDestTyIfNeed(_int32Zero, _value->getType()));
     }
 
     _currentBasicBlock = ifBB;
@@ -513,7 +517,8 @@ void IRBuilder::visit(WhileStatement *node) {
     _trueBB = whileBB;
     _falseBB = afterWhileBB;
     node->getCond()->accept(this);
-    createCondJump(CondJumpInst::INST_JNE, _trueBB, _falseBB, _value, _int32Zero);
+    createCondJump(CondJumpInst::INST_JNE, _trueBB, _falseBB, _value,
+                   castToDestTyIfNeed(_int32Zero, _value->getType()));
 
     auto tmpCondBB = _condBB;
     auto tmpAfterBB = _afterBB;
@@ -639,8 +644,6 @@ void IRBuilder::createCondJump(int type, BasicBlock *trueBB, BasicBlock *falseBB
 
 Type *IRBuilder::convertToAtomType(int basicType) {
     switch (basicType) {
-        case BasicType::BOOL:
-            return Type::getInt1Ty();
         case BasicType::INT:
             return Type::getInt32Ty();
         case BasicType::FLOAT:
@@ -670,26 +673,14 @@ Value *IRBuilder::castToDestTyIfNeed(Value *value, Type *destTy) {
     if (destTy == _floatTy) {
         if (value->isConst()) {
             return ConstantFloat::get(std::stof(value->getValueStr()));
-        }
-        if (value->getType() == _int32Ty) {
-            return createUnaryInst(UnaryInst::INST_ITOF, value);
-        } else if (value->getType() == _int1Ty) {
+        } else if (value->getType() == _int32Ty) {
             return createUnaryInst(UnaryInst::INST_ITOF, value);
         }
     } else if (destTy == _int32Ty) {
         if (value->isConst()) {
             return ConstantInt::get(std::stoi(value->getValueStr()));
-        }
-        if (value->getType() == _floatTy) {
+        } else if (value->getType() == _floatTy) {
             return createUnaryInst(UnaryInst::INST_FTOI, value);
-        } else if (value->getType() == _int1Ty) {
-            return createUnaryInst(UnaryInst::INST_FTOI, value);
-        }
-    } else {
-        if (value->getType() == _floatTy) {
-            return createBinaryInst(BinaryInst::INST_NE, value, _floatZero);
-        } else if (value->getType() == _int32Ty) {
-            return createBinaryInst(BinaryInst::INST_NE, value, _int32One);
         }
     }
     return value;

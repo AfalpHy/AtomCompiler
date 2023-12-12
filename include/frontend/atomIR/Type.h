@@ -5,13 +5,12 @@
 namespace ATC {
 
 namespace AtomIR {
-enum TypeEnum { INT1_TY, INT32_TY, FLOAT_TY, VOID_TY, ARRAY_TY, POINTER_TY };
+enum TypeEnum { INT32_TY, FLOAT_TY, VOID_TY, ARRAY_TY, POINTER_TY };
 
 class PointerType;
 
 class Type {
 public:
-    static Type* getInt1Ty();
     static Type* getInt32Ty();
     static Type* getFloatTy();
     static Type* getVoidTy();
