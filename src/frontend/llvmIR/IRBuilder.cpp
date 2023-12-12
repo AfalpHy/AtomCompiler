@@ -111,9 +111,10 @@ void IRBuilder::visit(FunctionDef *node) {
     entryBB->insertInto(_currentFunction);
 
     _theIRBuilder->SetInsertPoint(allocBB);
-    allocForScopeVars(node->getScope());
+
     int i = 0;
     for (auto param : node->getParams()) {
+        param->accept(this);
         // the decl of formal param is the only one
         Variable *var = param->getVariables()[0];
         auto arg = func->getArg(i++);
@@ -158,18 +159,26 @@ void IRBuilder::visit(Variable *node) {
         globalVar->setInitializer((llvm::Constant *)_value);
         node->setLLVMAddr(globalVar);
     } else {
+        llvm::Value *varAddr;
+        if (_currentFunction->getEntryBlock().getInstList().empty()) {
+            varAddr = _theIRBuilder->CreateAlloca(convertToLLVMType(node->getDataType()), nullptr, node->getName());
+        } else {
+            auto currentBB = _theIRBuilder->GetInsertBlock();
+            _theIRBuilder->SetInsertPoint(&_currentFunction->getEntryBlock().getInstList().front());
+            varAddr = _theIRBuilder->CreateAlloca(convertToLLVMType(node->getDataType()), nullptr, node->getName());
+            _theIRBuilder->SetInsertPoint(currentBB);
+        }
+        node->setLLVMAddr(varAddr);
         if (auto initValue = node->getInitValue()) {
             initValue->accept(this);
             if (initValue->getClassId() == ID_NESTED_EXPRESSION) {
-                auto addr = node->getLLVMAddr();
-
                 auto memsetFunc = _module->getOrInsertFunction(
                     "llvm.memset.p0i8.i64", _voidTy, _theIRBuilder->getInt8PtrTy(), _theIRBuilder->getInt8Ty(),
                     _theIRBuilder->getInt64Ty(), _theIRBuilder->getInt1Ty());
-                auto size = _module->getDataLayout().getTypeAllocSize(addr->getType()->getPointerElementType());
+                auto size = _module->getDataLayout().getTypeAllocSize(varAddr->getType()->getPointerElementType());
                 _theIRBuilder->CreateCall(
                     memsetFunc,
-                    {_theIRBuilder->CreateBitCast(addr, _theIRBuilder->getInt8PtrTy()), _theIRBuilder->getInt8(0),
+                    {_theIRBuilder->CreateBitCast(varAddr, _theIRBuilder->getInt8PtrTy()), _theIRBuilder->getInt8(0),
                      _theIRBuilder->getInt64(size), _theIRBuilder->getInt1(true)});
 
                 auto dimension = static_cast<ArrayType *>(node->getDataType())->getDimensions();
@@ -177,7 +186,7 @@ void IRBuilder::visit(Variable *node) {
                 for (auto item : _nestedExpressionValues) {
                     // get address of the array element from the index
                     int index = item.first;
-                    auto tmpAddr = addr;
+                    auto tmpAddr = varAddr;
                     for (int i = 0; i < elementSize.size(); i++) {
                         tmpAddr = _theIRBuilder->CreateInBoundsGEP(
                             tmpAddr->getType()->getPointerElementType(), tmpAddr,
@@ -190,7 +199,7 @@ void IRBuilder::visit(Variable *node) {
 
             } else {
                 _value = castToDestTyIfNeed(_value, basicLLVMType);
-                _theIRBuilder->CreateStore(_value, node->getLLVMAddr());
+                _theIRBuilder->CreateStore(_value, varAddr);
             }
         }
     }
@@ -602,17 +611,6 @@ llvm::Type *IRBuilder::convertToLLVMType(DataType *dataType) {
         return tmpType;
     } else {
         return convertToLLVMType(dataType->getBasicType());
-    }
-}
-
-void IRBuilder::allocForScopeVars(Scope *currentScope) {
-    for (const auto &[name, var] : currentScope->getVarMap()) {
-        llvm::Value *addr = nullptr;
-        addr = _theIRBuilder->CreateAlloca(convertToLLVMType(var->getDataType()), nullptr, name);
-        var->setLLVMAddr(addr);
-    }
-    for (auto child : currentScope->getChildren()) {
-        allocForScopeVars(child);
     }
 }
 
