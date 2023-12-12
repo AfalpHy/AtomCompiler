@@ -38,11 +38,16 @@ std::string ArrayValue::toString() {
     assert(_type->isArrayType() && "should be array type");
     ArrayType* type = (ArrayType*)_type;
     std::string str = _type->toString();
-
+    Type* baseType = type->getBaseType();
     str.append(" {");
     for (auto& item : _elements) {
         if (item.second.empty()) {
-            str.append(std::to_string(item.first).append(" x ")).append(type->getBaseType()->toString()).append(" 0, ");
+            str.append(std::to_string(item.first).append(" x ")).append(baseType->toString());
+            if (baseType->getTypeEnum() == INT32_TY) {
+                str.append(" 0, ");
+            } else {
+                str.append(" 0.000000, ");
+            }
         } else {
             for (auto& element : item.second) {
                 str.append(element->toString()).append(", ");
