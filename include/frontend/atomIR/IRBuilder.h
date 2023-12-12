@@ -105,6 +105,8 @@ private:
     // for break/continue statement
     BasicBlock *_condBB = nullptr;
     BasicBlock *_afterBB = nullptr;
+
+    std::unordered_map<Variable *, Value *> _var2addr;
 };
 }  // namespace AtomIR
 }  // namespace ATC

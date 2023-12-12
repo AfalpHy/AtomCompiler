@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <unordered_map>
 
 #include "AST/ASTVisitor.h"
 #include "llvm/IR/IRBuilder.h"
@@ -94,8 +95,10 @@ private:
     llvm::Function *_currentFunction = nullptr;
 
     std::set<llvm::BasicBlock *> _hasBrOrRetBlk;
-    std::map<int, llvm::Value *> _nestedExpressionValues;
-    std::map<std::string, llvm::Function *> _definedElseWhere;
+    std::map<int, llvm::Value *> _nestedExpressionValues;  // use map deliberately for order
+    std::unordered_map<std::string, llvm::Function *> _definedElseWhere;
+
+    std::unordered_map<Variable *, llvm::Value *> _var2addr;
 };
 }  // namespace LLVMIR
 }  // namespace ATC

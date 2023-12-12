@@ -118,7 +118,7 @@ void IRBuilder::visit(FunctionDef *node) {
         // the decl of formal param is the only one
         Variable *var = param->getVariables()[0];
         auto arg = func->getArg(i++);
-        _theIRBuilder->CreateStore(arg, var->getLLVMAddr());
+        _theIRBuilder->CreateStore(arg, _var2addr[var]);
     }
     checkAndCreateBr(entryBB);
 
@@ -157,7 +157,7 @@ void IRBuilder::visit(Variable *node) {
         _module->getOrInsertGlobal(node->getName(), _value->getType());
         auto globalVar = _module->getNamedGlobal(node->getName());
         globalVar->setInitializer((llvm::Constant *)_value);
-        node->setLLVMAddr(globalVar);
+        _var2addr.insert({node, globalVar});
     } else {
         llvm::Value *varAddr;
         if (_currentFunction->getEntryBlock().getInstList().empty()) {
@@ -168,7 +168,8 @@ void IRBuilder::visit(Variable *node) {
             varAddr = _theIRBuilder->CreateAlloca(convertToLLVMType(node->getDataType()), nullptr, node->getName());
             _theIRBuilder->SetInsertPoint(currentBB);
         }
-        node->setLLVMAddr(varAddr);
+        _var2addr.insert({node, varAddr});
+
         if (auto initValue = node->getInitValue()) {
             initValue->accept(this);
             if (initValue->getClassId() == ID_NESTED_EXPRESSION) {
@@ -222,7 +223,7 @@ void IRBuilder::visit(VarRef *node) {
         }
         return;
     }
-    auto addr = node->getVariable()->getLLVMAddr();
+    auto addr = _var2addr[node->getVariable()];
     if (node->getVariable()->getDataType()->getClassId() == ID_ARRAY_TYPE) {
         // cast the array to pointer,
         // int a[10]; 'a' is treated as a pointer when used as a function argument
@@ -496,7 +497,7 @@ void IRBuilder::visit(Block *node) {
 void IRBuilder::visit(AssignStatement *node) {
     llvm::Value *addr = nullptr;
     if (node->getLval()->getClassId() == ID_VAR_REF) {
-        addr = static_cast<VarRef *>(node->getLval())->getVariable()->getLLVMAddr();
+        addr = _var2addr[static_cast<VarRef *>(node->getLval())->getVariable()];
     } else {
         addr = getIndexedRefAddress((IndexedRef *)node->getLval());
     }
@@ -657,7 +658,7 @@ void IRBuilder::checkAndCreateCondBr(llvm::Value *value, llvm::BasicBlock *trueB
 
 llvm::Value *IRBuilder::getIndexedRefAddress(IndexedRef *indexedRef) {
     Variable *var = indexedRef->getVariable();
-    llvm::Value *addr = var->getLLVMAddr();
+    llvm::Value *addr = _var2addr[var];
     if (var->isGlobal() && var->getDataType()->getClassId() == ID_ARRAY_TYPE) {
         addr = _theIRBuilder->CreateBitCast(addr, llvm::PointerType::get(convertToLLVMType(var->getDataType()), 0));
     }

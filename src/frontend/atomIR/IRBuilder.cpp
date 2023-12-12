@@ -42,10 +42,11 @@ void IRBuilder::visit(FunctionDef *node) {
 
     int i = 0;
     for (auto param : node->getParams()) {
+        param->accept(this);
         // the decl of formal param is the only one
         Variable *var = param->getVariables()[0];
         auto arg = _currentFunction->getParams()[i++];
-        createStore(arg, var->getAtomAddr());
+        createStore(arg, _var2addr[var]);
     }
     node->setAtomFunction(_currentFunction);
     auto entry = new BasicBlock(_currentFunction, "entry");
@@ -84,10 +85,10 @@ void IRBuilder::visit(Variable *node) {
         globalVar->setInitialValue(_value);
         _currentModule->addGlobalVariable(globalVar);
 
-        node->setAtomAddr(globalVar);
+        _var2addr.insert({node, globalVar});
     } else {
         Value *addr = createAlloc(convertToAtomType(node->getDataType()), node->getName());
-        node->setAtomAddr(addr);
+        _var2addr.insert({node, addr});
         if (auto initValue = node->getInitValue()) {
             initValue->accept(this);
             if (initValue->getClassId() == ID_NESTED_EXPRESSION) {
@@ -139,7 +140,7 @@ void IRBuilder::visit(VarRef *node) {
         }
         return;
     }
-    auto addr = node->getVariable()->getAtomAddr();
+    auto addr = _var2addr[node->getVariable()];
     if (node->getVariable()->getDataType()->getClassId() == ID_ARRAY_TYPE) {
         // cast the array to pointer,
         // int a[10]; 'a' is treated as a pointer when used as a function argument
@@ -462,7 +463,7 @@ void IRBuilder::visit(Block *node) {
 void IRBuilder::visit(AssignStatement *node) {
     Value *addr = nullptr;
     if (node->getLval()->getClassId() == ID_VAR_REF) {
-        addr = static_cast<VarRef *>(node->getLval())->getVariable()->getAtomAddr();
+        addr = _var2addr[static_cast<VarRef *>(node->getLval())->getVariable()];
     } else {
         addr = getIndexedRefAddress((IndexedRef *)node->getLval());
     }
@@ -688,7 +689,7 @@ Value *IRBuilder::castToDestTyIfNeed(Value *value, Type *destTy) {
 
 Value *IRBuilder::getIndexedRefAddress(IndexedRef *indexedRef) {
     Variable *var = indexedRef->getVariable();
-    Value *addr = var->getAtomAddr();
+    Value *addr = _var2addr[var];
 
     assert(addr->getType()->isPointerType());
     PointerType *addrType = (PointerType *)addr->getType();
