@@ -556,6 +556,7 @@ Value *IRBuilder::createAlloc(Type *allocType, const std::string &resultName) {
     entryBB->getInstructionList().push_front(inst);
     Value *result = inst->getResult();
     result->setBelong(_currentFunction);
+    _currentFunction->setNeedUpdateName(true);
     return result;
 }
 
