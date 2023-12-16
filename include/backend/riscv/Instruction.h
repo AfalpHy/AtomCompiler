@@ -5,7 +5,7 @@
 #include "Register.h"
 
 namespace ATC {
-namespace RISCV_ARCH {
+namespace RISCV {
 
 class BasicBlock;
 
@@ -192,5 +192,5 @@ public:
     enum { INST_BEQ, INST_BNE, INST_BLT, INST_BGE };
 };
 
-}  // namespace RISCV_ARCH
+}  // namespace RISCV
 }  // namespace ATC

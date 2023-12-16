@@ -6,7 +6,7 @@
 
 namespace ATC {
 
-namespace RISCV_ARCH {
+namespace RISCV {
 std::string LoadInst::toString() {
     std::string str;
     switch (_type) {
@@ -80,6 +80,6 @@ std::string ImmInst::toString() {
     return "";
 }
 
-}  // namespace RISCV_ARCH
+}  // namespace RISCV
 
 }  // namespace ATC

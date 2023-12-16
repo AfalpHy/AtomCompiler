@@ -1,7 +1,7 @@
 #include "arm/CodeGenerator.h"
 
 namespace ATC {
-namespace ARM_ARCH {
+namespace ARM {
 void CodeGenerator::dump(std::ostream& os) { os << "arm" << std::endl; }
-}  // namespace ARM_ARCH
+}  // namespace ARM
 }  // namespace ATC

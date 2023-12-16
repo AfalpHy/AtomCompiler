@@ -4,7 +4,7 @@
 
 namespace ATC {
 
-namespace ARM_ARCH {
+namespace ARM {
 class CodeGenerator {
 public:
     void dump(std::ostream& os);
@@ -12,6 +12,6 @@ public:
 private:
 };
 
-}  // namespace ARM_ARCH
+}  // namespace ARM
 
 }  // namespace ATC

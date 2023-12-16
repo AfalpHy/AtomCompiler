@@ -8,7 +8,7 @@
 
 namespace ATC {
 
-namespace RISCV_ARCH {
+namespace RISCV {
 
 class Function;
 class BasicBlock;
@@ -68,6 +68,6 @@ private:
     Register *_sp = nullptr;
 };
 
-}  // namespace RISCV_ARCH
+}  // namespace RISCV
 
 }  // namespace ATC

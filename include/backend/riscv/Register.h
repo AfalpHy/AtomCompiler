@@ -2,7 +2,7 @@
 
 #include <string>
 namespace ATC {
-namespace RISCV_ARCH {
+namespace RISCV {
 
 class Register {
 public:
@@ -16,5 +16,5 @@ private:
     std::string _name;
 };
 
-}  // namespace RISCV_ARCH
+}  // namespace RISCV
 }  // namespace ATC

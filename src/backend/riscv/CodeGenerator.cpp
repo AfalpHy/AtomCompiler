@@ -8,7 +8,7 @@
 #include "riscv/Function.h"
 
 namespace ATC {
-namespace RISCV_ARCH {
+namespace RISCV {
 
 using std::endl;
 
@@ -207,5 +207,5 @@ Register* CodeGenerator::loadConstInt(int value, const std::string& name) {
     return li->getDest();
 }
 
-}  // namespace RISCV_ARCH
+}  // namespace RISCV
 }  // namespace ATC

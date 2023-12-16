@@ -128,7 +128,7 @@ int main(int argc, const char *argv[]) {
         }
     } else {
         AtomIR::IRBuilder irBuilder;
-        RISCV_ARCH::CodeGenerator codeGenerator;
+        RISCV::CodeGenerator codeGenerator;
         for (auto compUnit : CompUnit::AllCompUnits) {
             compUnit->accept(&irBuilder);
             codeGenerator.emitModule(irBuilder.getCurrentModule());

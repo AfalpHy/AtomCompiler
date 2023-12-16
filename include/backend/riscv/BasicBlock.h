@@ -5,7 +5,7 @@
 #include "Instruction.h"
 
 namespace ATC {
-namespace RISCV_ARCH {
+namespace RISCV {
 
 class BasicBlock {
 public:
@@ -30,5 +30,5 @@ private:
     std::list<Instruction *> _instructions;
 };
 
-}  // namespace RISCV_ARCH
+}  // namespace RISCV
 }  // namespace ATC

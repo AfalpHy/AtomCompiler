@@ -5,7 +5,7 @@
 
 namespace ATC {
 
-namespace RISCV_ARCH {
+namespace RISCV {
 
 class BasicBlock;
 
@@ -19,5 +19,5 @@ private:
     std::vector<BasicBlock*> _basicBlocks;
 };
 
-}  // namespace RISCV_ARCH
+}  // namespace RISCV
 }  // namespace ATC
