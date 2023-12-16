@@ -544,9 +544,9 @@ void IRBuilder::visit(ContinueStatement *node) { createJump(_condBB); }
 void IRBuilder::visit(ReturnStatement *node) {
     if (node->getExpr()) {
         node->getExpr()->accept(this);
-        _currentBasicBlock->addInstruction(new ReturnInst(_value));
+        createRet(_value);
     } else {
-        _currentBasicBlock->addInstruction(new ReturnInst());
+        createRet(nullptr);
     }
 }
 

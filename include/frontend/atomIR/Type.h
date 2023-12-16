@@ -24,6 +24,8 @@ public:
     virtual bool isPointerType() { return 0; }
     virtual bool isArrayType() { return 0; }
 
+    virtual int getByteLen() { return 4; }
+
 protected:
     Type(TypeEnum type) : _type(type) {}
     TypeEnum _type;
@@ -38,6 +40,8 @@ public:
     virtual std::string toString() override;
 
     virtual bool isArrayType() override { return 1; }
+
+    virtual int getByteLen() override { return _size * _baseType->getByteLen(); }
 
 private:
     ArrayType(Type* baseType, int size) : Type(ARRAY_TY), _baseType(baseType), _size(size) {}
@@ -54,6 +58,8 @@ public:
     virtual std::string toString() override;
 
     virtual bool isPointerType() override { return 1; }
+
+    virtual int getByteLen() override { return 8; }
 
 private:
     PointerType(Type* baseType) : Type(POINTER_TY), _baseType(baseType) {}

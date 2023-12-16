@@ -12,6 +12,8 @@ namespace RISCV_ARCH {
 
 using std::endl;
 
+CodeGenerator::CodeGenerator() { _sp = new Register("sp"); }
+
 void CodeGenerator::dump(std::ostream& os) { os << _contend.str() << endl; }
 
 void CodeGenerator::emitModule(AtomIR::Module* module) {
@@ -111,21 +113,99 @@ void CodeGenerator::emitInstruction(AtomIR::Instruction* inst) {
     }
 }
 
-void CodeGenerator::emitAllocInst(AtomIR::AllocInst* inst) {}
+void CodeGenerator::emitAllocInst(AtomIR::AllocInst* inst) {
+    _value2offset[inst->getResult()] = _offset;
+    auto type = static_cast<AtomIR::PointerType*>(inst->getResult()->getType())->getBaseType();
+    _offset += type->getByteLen();
+    _value2reg[inst->getResult()] = _sp;
+}
 
-void CodeGenerator::emitStoreInst(AtomIR::StoreInst* inst) {}
+void CodeGenerator::emitStoreInst(AtomIR::StoreInst* inst) {
+    auto value = inst->getValue();
+    auto dest = inst->getDest();
+    int instType;
+    if (inst->isIntInst()) {
+        instType = StoreInst::INST_SW;
+    } else {
+        /// TODO:fsw
+    }
+    Register* src1;
+    if (value->isConst()) {
+        AtomIR::Constant* constValue = (AtomIR::Constant*)value;
+        if (constValue->isInt()) {
+            src1 = loadConstInt(static_cast<AtomIR::ConstantInt*>(constValue)->getConstValue(), "");
+            _value2reg[value] = src1;
+        } else {
+            // src1 = loadConstFloat(static_cast<AtomIR::ConstantFloat*>(constValue)->getConstValue(),"");
+        }
+    } else {
+        src1 = _value2reg[inst->getValue()];
+    }
 
-void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {}
+    if (dest->isGlobal()) {
+        auto la = new LoadGlobalAddrInst(dest->getName());
+        _currentBasicBlock->addInstruction(la);
+        _currentBasicBlock->addInstruction(new StoreInst(instType, src1, la->getDest(), 0));
+    } else {
+        _currentBasicBlock->addInstruction(new StoreInst(instType, src1, _sp, _value2offset[inst->getDest()]));
+    }
+}
+
+void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
+    _currentBasicBlock->addInstruction(new FunctionCallInst(inst->getFuncName()));
+    if (inst->getResult()) {
+        _value2reg[inst->getResult()] = new Register("");
+    }
+}
 
 void CodeGenerator::emitGEPInst(AtomIR::GetElementPtrInst* inst) {}
 
-void CodeGenerator::emitRetInst(AtomIR::ReturnInst* inst) {}
+void CodeGenerator::emitRetInst(AtomIR::ReturnInst* inst) { _currentBasicBlock->addInstruction(new ReturnInst()); }
 
-void CodeGenerator::emitUnaryInst(AtomIR::UnaryInst* inst) {}
+void CodeGenerator::emitUnaryInst(AtomIR::UnaryInst* inst) {
+    switch (inst->getInstType()) {
+        case AtomIR::UnaryInst::INST_LOAD: {
+            auto riscvInst =
+                new LoadInst(LoadInst::INST_LW, _value2reg[inst->getOperand()], _value2offset[inst->getOperand()]);
+            _value2reg[inst->getResult()] = riscvInst->getDest();
+            _currentBasicBlock->addInstruction(riscvInst);
+            break;
+        }
 
-void CodeGenerator::emitBinaryInst(AtomIR::BinaryInst* inst) {}
+        case AtomIR::UnaryInst::INST_ITOF:
+            break;
+        case AtomIR::UnaryInst::INST_FTOI:
+            break;
+        default:
+            assert(0 && "shouldn't reach here");
+            break;
+    }
+}
+
+void CodeGenerator::emitBinaryInst(AtomIR::BinaryInst* inst) {
+    auto dest = inst->getResult();
+    auto operand1 = inst->getOperand1();
+    auto operand2 = inst->getOperand2();
+
+    switch (inst->getInstType()) {
+        case AtomIR::BinaryInst::INST_ADD: {
+            auto riscvInst = new BinaryInst(BinaryInst::INST_ADD, _value2reg[operand1], _value2reg[operand2]);
+            _value2reg[inst->getResult()] = riscvInst->getDest();
+            _currentBasicBlock->addInstruction(riscvInst);
+            break;
+        }
+        default:
+            break;
+    }
+}
 
 void CodeGenerator::emitCondJumpInst(AtomIR::CondJumpInst* inst) {}
+
+Register* CodeGenerator::loadConstInt(int value, const std::string& name) {
+    auto li = new ImmInst(ImmInst::INST_LI, value, name);
+    _currentBasicBlock->addInstruction(li);
+    return li->getDest();
+}
 
 }  // namespace RISCV_ARCH
 }  // namespace ATC

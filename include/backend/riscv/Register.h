@@ -6,6 +6,8 @@ namespace RISCV_ARCH {
 
 class Register {
 public:
+    Register(const std::string &name) : _name(name) {}
+
     void setName(const std::string &name) { _name = name; }
 
     const std::string &getName() { return _name; }

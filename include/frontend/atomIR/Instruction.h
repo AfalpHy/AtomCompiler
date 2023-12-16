@@ -49,15 +49,24 @@ private:
 
 class StoreInst : public Instruction {
 public:
-    StoreInst(Value* value, Value* dest) : _value(value), _dest(dest) {}
+    StoreInst(Value* value, Value* dest) : _value(value), _dest(dest) {
+        _intInst = value->getType()->getTypeEnum() == INT32_TY;
+    }
 
     virtual int getClassId() override { return ID_STORE_INST; }
 
     virtual std::string toString() override;
 
+    bool isIntInst() { return _intInst; }
+
+    Value* getValue() { return _value; }
+
+    Value* getDest() { return _dest; }
+
 private:
     Value* _value;
     Value* _dest;
+    bool _intInst;
 };
 
 class FunctionCallInst : public Instruction {
@@ -70,6 +79,8 @@ public:
     virtual std::string toString() override;
 
     virtual Value* getResult() override { return _result; }
+
+    const std::string& getFuncName() { return _funcName; }
 
 private:
     std::string _funcName;
@@ -131,6 +142,8 @@ public:
 
     virtual Value* getResult() override { return _result; }
 
+    Value* getOperand() { return _operand; }
+
     int getInstType() { return _type; }
 
     enum { INST_LOAD, INST_ITOF, INST_FTOI };
@@ -150,6 +163,10 @@ public:
     virtual std::string toString() override;
 
     virtual Value* getResult() override { return _result; }
+
+    Value* getOperand1() { return _operand1; }
+
+    Value* getOperand2() { return _operand2; }
 
     bool isIntInst() { return _intInst; }
 
@@ -200,6 +217,14 @@ public:
     virtual int getClassId() override { return ID_COND_JUMP_INST; }
 
     virtual std::string toString() override;
+
+    BasicBlock* getTureBB() { return _trueBB; }
+
+    BasicBlock* getFalseBB() { return _falseBB; }
+
+    Value* getOperand1() { return _operand1; }
+
+    Value* getOperand2() { return _operand2; }
 
     bool isIntInst() { return _intInst; }
 

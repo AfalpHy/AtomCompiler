@@ -28,6 +28,8 @@ public:
 
     virtual bool isConst() { return false; }
 
+    virtual bool isGlobal() { return false; }
+
     virtual void dump();
 
 protected:
@@ -44,6 +46,10 @@ public:
     virtual bool isConst() override { return true; }
 
     virtual std::string getLiteralStr() = 0;
+
+    virtual bool isInt() { return false; }
+
+    virtual bool isFloat() { return false; }
 };
 
 class ConstantInt : public Constant {
@@ -53,6 +59,8 @@ public:
     virtual std::string getValueStr() override;
 
     virtual std::string getLiteralStr() override { return std::to_string(_constValue); }
+
+    virtual bool isInt() { return true; }
 
     int getConstValue() { return _constValue; }
 
@@ -71,6 +79,8 @@ public:
         int* valuePtr = (int*)&_constValue;
         return std::to_string(*valuePtr);
     }
+
+    virtual bool isFloat() { return true; }
 
     float getConstValue() { return _constValue; }
 
@@ -102,6 +112,8 @@ public:
     Value* getInitialValue() { return _init; }
 
     virtual std::string getValueStr() override;
+
+    virtual bool isGlobal() { return true; }
 
     virtual void dump() override;
 
