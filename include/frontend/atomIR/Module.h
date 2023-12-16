@@ -9,33 +9,19 @@ class Module {
 public:
     Module(const std::string& name) { _name = name; }
 
-    void addFunction(Function* function) { _functions.insert({function->getName(), function}); }
+    void addFunction(Function* function) { _functions.push_back(function); }
     void addGlobalVariable(GloabalVariable* var);
 
     const std::string& getName() { return _name; }
-    const std::unordered_map<std::string, Function*>& getFunctions() { return _functions; }
-    const std::unordered_map<std::string, GloabalVariable*>& getGlobalVariables() { return _globalVariables; }
-
-    Function* getFunction(const std::string& name) {
-        if (_functions.find(name) != _functions.end()) {
-            return _functions[name];
-        }
-        return nullptr;
-    }
-
-    Value* getGlobalVariable(const std::string& name) {
-        if (_globalVariables.find(name) != _globalVariables.end()) {
-            return _globalVariables[name];
-        }
-        return nullptr;
-    }
+    const std::vector<Function*>& getFunctions() { return _functions; }
+    const std::vector<GloabalVariable*>& getGlobalVariables() { return _globalVariables; }
 
     void dump();
 
 private:
     std::string _name;
-    std::unordered_map<std::string, Function*> _functions;
-    std::unordered_map<std::string, GloabalVariable*> _globalVariables;
+    std::vector<Function*> _functions;
+    std::vector<GloabalVariable*> _globalVariables;
 };
 }  // namespace AtomIR
 }  // namespace ATC

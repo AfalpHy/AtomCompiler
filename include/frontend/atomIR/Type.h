@@ -21,6 +21,8 @@ public:
 
     virtual std::string toString();
 
+    virtual Type* getBaseType() { return nullptr; }
+
     virtual bool isPointerType() { return 0; }
     virtual bool isArrayType() { return 0; }
 
@@ -35,7 +37,7 @@ class ArrayType : public Type {
 public:
     static ArrayType* get(Type* baseType, int size);
 
-    Type* getBaseType() { return _baseType; }
+    virtual Type* getBaseType() { return _baseType; }
 
     virtual std::string toString() override;
 
@@ -53,7 +55,7 @@ class PointerType : public Type {
 public:
     static PointerType* get(Type* baseType);
 
-    Type* getBaseType() { return _baseType; }
+    virtual Type* getBaseType() { return _baseType; }
 
     virtual std::string toString() override;
 

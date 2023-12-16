@@ -1,6 +1,5 @@
 #pragma once
 #include <list>
-#include <string>
 
 #include "Instruction.h"
 
@@ -9,7 +8,7 @@ namespace RISCV {
 
 class BasicBlock {
 public:
-    BasicBlock(const std::string &name) { _name = name; }
+    BasicBlock(const std::string &name) : _name(name) {}
 
     const std::string &getName() { return _name; }
 
@@ -19,11 +18,16 @@ public:
 
     std::string toString() {
         std::string str;
+        if (!_name.empty()) {
+            str.append(_name + ":\n");
+        }
         for (auto inst : _instructions) {
             str.append("\t").append(inst->toString()).append("\n");
         }
         return str;
     }
+
+    static int Index;
 
 private:
     std::string _name;

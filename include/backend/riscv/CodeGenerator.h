@@ -47,11 +47,9 @@ public:
     void emitCondJumpInst(AtomIR::CondJumpInst *);
 
 private:
-    Register *loadConstInt(int value, const std::string &name = "");
+    Register *loadConst(AtomIR::Constant *);
 
-    Register *loadConstFloat(float value, const std::string &name = "");
-
-    Register *loadGlobalAddr(AtomIR::GloabalVariable *global);
+    Register *getRegFromValue(AtomIR::Value *);
 
 private:
     Function *_currentFunction;
@@ -60,7 +58,9 @@ private:
     int _offset = 0;                                         // record current offset of sp
     std::unordered_map<AtomIR::Value *, int> _value2offset;  // offset of sp
 
-    std::unordered_map<AtomIR::Value *, Register *> _value2reg;  // IR value to backend reg
+    std::unordered_map<AtomIR::Value *, Register *> _value2reg;  // IR value to asm reg
+
+    std::unordered_map<AtomIR::BasicBlock *, std::string> _bb2lable;  // IR BasicBlock to asm lable
 
     std::stringstream _contend;
 

@@ -102,7 +102,7 @@ void IRBuilder::visit(FunctionDef *node) {
     }
     llvm::FunctionType *funcTy = llvm::FunctionType::get(convertToLLVMType(node->getRetType()), params, false);
     llvm::Function *func = llvm::Function::Create(funcTy, llvm::GlobalValue::ExternalLinkage, node->getName(), _module);
-    node->setLLVMFunction(func);
+    _functonDef2function.insert({node, func});
     _currentFunction = func;
 
     llvm::BasicBlock *allocBB = llvm::BasicBlock::Create(_module->getContext(), "init");
@@ -471,7 +471,7 @@ void IRBuilder::visit(FunctionCall *node) {
     std::vector<llvm::Value *> params;
     llvm::Function *function = nullptr;
     if (node->getFunctionDef()) {
-        function = node->getFunctionDef()->getLLVMFunction();
+        function = _functonDef2function[node->getFunctionDef()];
     } else {
         function = _definedElseWhere[node->getName()];
     }

@@ -98,6 +98,10 @@ public:
 
     virtual Value* getResult() override { return _result; }
 
+    Value* getPtr() { return _ptr; }
+
+    const std::vector<Value*>& getIndexes() { return _indexes; }
+
 private:
     Value* _ptr;
     std::vector<Value*> _indexes;

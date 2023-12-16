@@ -48,9 +48,9 @@ void IRBuilder::visit(FunctionDef *node) {
         auto arg = _currentFunction->getParams()[i++];
         createStore(arg, _var2addr[var]);
     }
-    node->setAtomFunction(_currentFunction);
-    auto entry = new BasicBlock(_currentFunction, "entry");
+    _functonDef2function.insert({node, _currentFunction});
 
+    auto entry = new BasicBlock(_currentFunction, "entry");
     createJump(entry);
     _currentBasicBlock = entry;
 
@@ -437,7 +437,7 @@ void IRBuilder::visit(FunctionCall *node) {
     std::vector<Value *> params;
     Function *function = nullptr;
     if (node->getFunctionDef()) {
-        function = node->getFunctionDef()->getAtomFunction();
+        function = _functonDef2function[node->getFunctionDef()];
     } else {
         /// TODO:
     }

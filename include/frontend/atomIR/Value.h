@@ -47,9 +47,7 @@ public:
 
     virtual std::string getLiteralStr() = 0;
 
-    virtual bool isInt() { return false; }
-
-    virtual bool isFloat() { return false; }
+    virtual bool isInt() = 0;
 };
 
 class ConstantInt : public Constant {
@@ -80,7 +78,7 @@ public:
         return std::to_string(*valuePtr);
     }
 
-    virtual bool isFloat() { return true; }
+    virtual bool isInt() { return false; }
 
     float getConstValue() { return _constValue; }
 

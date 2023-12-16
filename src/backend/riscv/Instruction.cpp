@@ -58,10 +58,27 @@ std::string StoreInst::toString() {
 
 std::string JumpInst::toString() { return "j\t" + _targetBB; }
 
+std::string CondJumpInst::toString() {
+    switch (_type) {
+        case INST_BEQ: {
+            return "beq\t" + _src1->getName() + ", " + _src2->getName() + ", " + _targetBB;
+        }
+        default:
+            break;
+    }
+    return "";
+}
+
 std::string BinaryInst::toString() {
     switch (_type) {
+        case INST_ADDI: {
+            return "addi\t" + _dest->getName() + ", " + _src1->getName() + ", " + std::to_string(_imm);
+        }
         case INST_ADD: {
             return "add\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
+        }
+        case INST_MUL: {
+            return "mul\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
         }
         default:
             break;

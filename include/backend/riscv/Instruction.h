@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string>
-
 #include "Register.h"
 
 namespace ATC {
@@ -46,10 +44,10 @@ protected:
 
 class ImmInst : public Instruction {
 public:
-    ImmInst(int type, int imm, const std::string& resultName = "") {
+    ImmInst(int type, int imm) {
         _type = type;
         _imm = imm;
-        _dest = new Register(resultName);
+        _dest = new Register();
     }
 
     virtual int getClassId() override { return ID_LOAD_INST; }
@@ -61,13 +59,11 @@ public:
 
 class LoadGlobalAddrInst : public Instruction {
 public:
-    LoadGlobalAddrInst(const std::string& name, const std::string& resultName = "") {
-        _dest = new Register(resultName);
-    }
+    LoadGlobalAddrInst(const std::string& name) : _name(name) { _dest = new Register(); }
 
     virtual int getClassId() override { return ID_LOAD_GLOBAL_ADDR_INST; }
 
-    virtual std::string toString() override { return "la\t" + _dest->getName() + ",\t" + _name; }
+    virtual std::string toString() override { return "la\t" + _dest->getName() + ", " + _name; }
 
 private:
     std::string _name;
@@ -75,11 +71,11 @@ private:
 
 class LoadInst : public Instruction {
 public:
-    LoadInst(int type, Register* src1, int imm, const std::string& resultName = "") {
+    LoadInst(int type, Register* src1, int imm) {
         _type = type;
         _src1 = src1;
         _imm = imm;
-        _dest = new Register(resultName);
+        _dest = new Register();
     }
 
     virtual int getClassId() override { return ID_LOAD_INST; }
@@ -126,18 +122,18 @@ public:
 
 class BinaryInst : public Instruction {
 public:
-    BinaryInst(int type, Register* src1, Register* src2, const std::string& resultName = "") {
+    BinaryInst(int type, Register* src1, Register* src2) {
         _type = type;
         _src1 = src1;
         _src2 = src2;
-        _dest = new Register(resultName);
+        _dest = new Register();
     }
 
-    BinaryInst(int type, Register* src1, int imm, const std::string& resultName = "") {
+    BinaryInst(int type, Register* src1, int imm) {
         _type = type;
         _src1 = src1;
         _imm = imm;
-        _dest = new Register(resultName);
+        _dest = new Register();
     }
 
     virtual int getClassId() override { return ID_BINARY_INST; }

@@ -99,6 +99,7 @@ private:
     std::unordered_map<std::string, llvm::Function *> _definedElseWhere;
 
     std::unordered_map<Variable *, llvm::Value *> _var2addr;
+    std::unordered_map<FunctionDef *, llvm::Function *> _functonDef2function;
 };
 }  // namespace LLVMIR
 }  // namespace ATC

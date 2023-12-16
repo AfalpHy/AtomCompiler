@@ -5,17 +5,17 @@
 namespace ATC {
 namespace AtomIR {
 
-void Module::addGlobalVariable(GloabalVariable* var) { _globalVariables.insert({var->getName(), var}); }
+void Module::addGlobalVariable(GloabalVariable* var) { _globalVariables.push_back(var); }
 
 void Module::dump() {
     for (auto item : _globalVariables) {
-        item.second->dump();
+        item->dump();
     }
 
     std::cout << std::endl;
 
     for (auto item : _functions) {
-        item.second->dump();
+        item->dump();
     }
 }
 }  // namespace AtomIR
