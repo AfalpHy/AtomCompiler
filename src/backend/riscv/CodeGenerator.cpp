@@ -233,9 +233,8 @@ void CodeGenerator::emitBinaryInst(AtomIR::BinaryInst* inst) {
     auto operand1 = inst->getOperand1();
     auto operand2 = inst->getOperand2();
     Register* src1;
-    Register* src2;
+    Register* src2 = nullptr;
     int imm;
-    bool isImmInst = false;
     bool needXor = false;
     if (operand1->isConst()) {
         auto constOp1 = (AtomIR::Constant*)operand1;
@@ -256,22 +255,18 @@ void CodeGenerator::emitBinaryInst(AtomIR::BinaryInst* inst) {
                     break;
                 }
                 case AtomIR::BinaryInst::INST_GT:
-                    isImmInst = true;
                     src1 = getRegFromValue(inst->getOperand2());
                     break;
                 case AtomIR::BinaryInst::INST_GE:
-                    isImmInst = true;
                     imm += 1;
                     src1 = getRegFromValue(inst->getOperand2());
                     break;
                 case AtomIR::BinaryInst::INST_EQ:
                 case AtomIR::BinaryInst::INST_NE:
-                    isImmInst = true;
                     imm = -imm;
                     src1 = getRegFromValue(inst->getOperand2());
                     break;
                 default:
-                    isImmInst = true;
                     src1 = getRegFromValue(inst->getOperand2());
                     break;
             }
@@ -283,40 +278,33 @@ void CodeGenerator::emitBinaryInst(AtomIR::BinaryInst* inst) {
             imm = static_cast<AtomIR::ConstantInt*>(constOp2)->getConstValue();
             switch (inst->getInstType()) {
                 case AtomIR::BinaryInst::INST_SUB:
-                    isImmInst = true;
                     imm = -imm;
                     src1 = getRegFromValue(inst->getOperand1());
                     break;
                 case AtomIR::BinaryInst::INST_MUL:
                 case AtomIR::BinaryInst::INST_DIV:
                 case AtomIR::BinaryInst::INST_MOD:
-                    isImmInst = false;
                     src1 = getRegFromValue(inst->getOperand1());
                     src2 = loadConstInt(imm);
                     break;
                 case AtomIR::BinaryInst::INST_LE:
-                    isImmInst = true;
                     imm += 1;
                     src1 = getRegFromValue(inst->getOperand1());
                     break;
                 case AtomIR::BinaryInst::INST_GT:
-                    isImmInst = false;
                     src1 = loadConstInt(imm);
                     src2 = getRegFromValue(inst->getOperand1());
                     break;
                 case AtomIR::BinaryInst::INST_GE:
-                    isImmInst = false;
                     src1 = loadConstInt(imm - 1);
                     src2 = getRegFromValue(inst->getOperand1());
                     break;
                 case AtomIR::BinaryInst::INST_EQ:
                 case AtomIR::BinaryInst::INST_NE:
-                    isImmInst = true;
                     imm = -imm;
                     src1 = getRegFromValue(inst->getOperand1());
                     break;
                 default:
-                    isImmInst = true;
                     src1 = getRegFromValue(inst->getOperand1());
                     break;
             }
@@ -345,17 +333,17 @@ void CodeGenerator::emitBinaryInst(AtomIR::BinaryInst* inst) {
     Instruction* binaryInst;
     switch (inst->getInstType()) {
         case AtomIR::BinaryInst::INST_ADD:
-            if (isImmInst) {
-                binaryInst = new BinaryInst(BinaryInst::INST_ADDI, src1, imm);
-            } else {
+            if (src2) {
                 binaryInst = new BinaryInst(BinaryInst::INST_ADD, src1, src2);
+            } else {
+                binaryInst = new BinaryInst(BinaryInst::INST_ADDI, src1, imm);
             }
             break;
         case AtomIR::BinaryInst::INST_SUB:
-            if (isImmInst) {
-                binaryInst = new BinaryInst(BinaryInst::INST_ADDI, src1, imm);
-            } else {
+            if (src2) {
                 binaryInst = new BinaryInst(BinaryInst::INST_SUB, src1, src2);
+            } else {
+                binaryInst = new BinaryInst(BinaryInst::INST_ADDI, src1, imm);
             }
             break;
         case AtomIR::BinaryInst::INST_MUL:
@@ -371,18 +359,18 @@ void CodeGenerator::emitBinaryInst(AtomIR::BinaryInst* inst) {
         case AtomIR::BinaryInst::INST_LE:
         case AtomIR::BinaryInst::INST_GT:
         case AtomIR::BinaryInst::INST_GE:
-            if (isImmInst) {
-                binaryInst = new BinaryInst(BinaryInst::INST_SLTI, src1, imm);
-            } else {
+            if (src2) {
                 binaryInst = new BinaryInst(BinaryInst::INST_SLT, src1, src2);
+            } else {
+                binaryInst = new BinaryInst(BinaryInst::INST_SLTI, src1, imm);
             }
             break;
         case AtomIR::BinaryInst::INST_EQ:
         case AtomIR::BinaryInst::INST_NE:
-            if (isImmInst) {
-                binaryInst = new BinaryInst(BinaryInst::INST_ADDI, src1, imm);
-            } else {
+            if (src2) {
                 binaryInst = new BinaryInst(BinaryInst::INST_XOR, src1, src2);
+            } else {
+                binaryInst = new BinaryInst(BinaryInst::INST_ADDI, src1, imm);
             }
             break;
         default:
