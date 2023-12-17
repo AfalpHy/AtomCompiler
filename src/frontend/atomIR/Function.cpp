@@ -18,12 +18,7 @@ Function::Function(Module* parent, const FunctionType& functionType, const std::
     parent->addFunction(this);
 }
 
-std::string Function::getUniqueNameInFunction(void* ptr) {
-    updateNameIfNeed();
-    auto find = _nameMap.find(ptr);
-    assert(find != _nameMap.end() && "should get a unique name");
-    return find->second;
-}
+std::string Function::getUniqueNameInFunction(void* ptr) { return _nameMap[ptr]; }
 
 void Function::insertName(Value* value) { insertName(value, value->getName()); }
 
@@ -48,11 +43,7 @@ void Function::insertName(void* ptr, const std::string& name) {
     _nameMap.insert({ptr, uniqueName});
 }
 
-void Function::updateNameIfNeed() {
-    if (!_needUpdateName) {
-        return;
-    }
-    _needUpdateName = false;
+void Function::updateName() {
     _valueIndex = 0;
     _nameSet.clear();
     _nameMap.clear();
