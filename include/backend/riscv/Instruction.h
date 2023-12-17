@@ -186,7 +186,7 @@ public:
 
     virtual int getClassId() override { return ID_JUMP_INST; }
 
-    virtual std::string toString() override;
+    virtual std::string toString() override { return "j\t" + _targetBB; }
 
 protected:
     std::string _targetBB;

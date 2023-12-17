@@ -7,6 +7,17 @@
 namespace ATC {
 
 namespace RISCV {
+
+std::string ImmInst::toString() {
+    switch (_type) {
+        case INST_LI:
+            return "li\t" + _dest->getName() + ", " + std::to_string(_imm);
+        default:
+            assert(0 && "unsupported");
+            break;
+    }
+}
+
 std::string LoadInst::toString() {
     switch (_type) {
         case INST_LB:
@@ -47,18 +58,16 @@ std::string StoreInst::toString() {
     }
 }
 
-std::string JumpInst::toString() { return "j\t" + _targetBB; }
-
-std::string CondJumpInst::toString() {
+std::string UnaryInst::toString() {
     switch (_type) {
-        case INST_BEQ:
-            return "beq\t" + _src1->getName() + ", " + _src2->getName() + ", " + _targetBB;
-        case INST_BNE:
-            return "bne\t" + _src1->getName() + ", " + _src2->getName() + ", " + _targetBB;
-        case INST_BLT:
-            return "blt\t" + _src1->getName() + ", " + _src2->getName() + ", " + _targetBB;
-        case INST_BGE:
-            return "bge\t" + _src1->getName() + ", " + _src2->getName() + ", " + _targetBB;
+        case INST_FCVT_S_W:
+            return "fcvt.s.w\t" + _dest->getName() + ", " + _src1->getName();
+        case INST_FCVT_W_S:
+            return "fcvt.w.s\t" + _dest->getName() + ", " + _src1->getName();
+        case INST_SEQZ:
+            return "seqz\t" + _dest->getName() + ", " + _src1->getName();
+        case INST_SNEZ:
+            return "snez\t" + _dest->getName() + ", " + _src1->getName();
         default:
             assert(0 && "unsupported");
             break;
@@ -93,26 +102,16 @@ std::string BinaryInst::toString() {
     }
 }
 
-std::string ImmInst::toString() {
+std::string CondJumpInst::toString() {
     switch (_type) {
-        case INST_LI:
-            return "li\t" + _dest->getName() + ", " + std::to_string(_imm);
-        default:
-            assert(0 && "unsupported");
-            break;
-    }
-}
-
-std::string UnaryInst::toString() {
-    switch (_type) {
-        case INST_FCVT_S_W:
-            return "fcvt.s.w\t" + _dest->getName() + ", " + _src1->getName();
-        case INST_FCVT_W_S:
-            return "fcvt.w.s\t" + _dest->getName() + ", " + _src1->getName();
-        case INST_SEQZ:
-            return "seqz\t" + _dest->getName() + ", " + _src1->getName();
-        case INST_SNEZ:
-            return "snez\t" + _dest->getName() + ", " + _src1->getName();
+        case INST_BEQ:
+            return "beq\t" + _src1->getName() + ", " + _src2->getName() + ", " + _targetBB;
+        case INST_BNE:
+            return "bne\t" + _src1->getName() + ", " + _src2->getName() + ", " + _targetBB;
+        case INST_BLT:
+            return "blt\t" + _src1->getName() + ", " + _src2->getName() + ", " + _targetBB;
+        case INST_BGE:
+            return "bge\t" + _src1->getName() + ", " + _src2->getName() + ", " + _targetBB;
         default:
             assert(0 && "unsupported");
             break;
