@@ -8,93 +8,115 @@ namespace ATC {
 
 namespace RISCV {
 std::string LoadInst::toString() {
-    std::string str;
     switch (_type) {
         case INST_LB:
-            str.append("lb");
-            break;
+            return "lb\t" + _dest->getName() + ", " + std::to_string(_imm) + "(" + _src1->getName() + ")";
         case INST_LH:
-            str.append("lh");
-            break;
+            return "lh\t" + _dest->getName() + ", " + std::to_string(_imm) + "(" + _src1->getName() + ")";
         case INST_LW:
-            str.append("lw");
-            break;
+            return "lw\t" + _dest->getName() + ", " + std::to_string(_imm) + "(" + _src1->getName() + ")";
         case INST_LD:
-            str.append("ld");
-            break;
+            return "ld\t" + _dest->getName() + ", " + std::to_string(_imm) + "(" + _src1->getName() + ")";
+        case INST_FlW:
+            return "flw\t" + _dest->getName() + ", " + std::to_string(_imm) + "(" + _src1->getName() + ")";
+        case INST_FLD:
+            return "fld\t" + _dest->getName() + ", " + std::to_string(_imm) + "(" + _src1->getName() + ")";
         default:
-            assert(0 && "should't reach here");
+            assert(0 && "unsupported");
             break;
     }
-
-    str.append("\t").append(_dest->getName()).append(", ").append(std::to_string(_imm) + "(" + _src1->getName() + ")");
-    return str;
 }
 
 std::string StoreInst::toString() {
-    std::string str;
     switch (_type) {
         case INST_SB:
-            str.append("sb");
-            break;
+            return "sb\t" + _src1->getName() + ", " + std::to_string(_imm) + "(" + _src2->getName() + ")";
         case INST_SH:
-            str.append("sh");
-            break;
+            return "sh\t" + _src1->getName() + ", " + std::to_string(_imm) + "(" + _src2->getName() + ")";
         case INST_SW:
-            str.append("sw");
-            break;
+            return "sw\t" + _src1->getName() + ", " + std::to_string(_imm) + "(" + _src2->getName() + ")";
         case INST_SD:
-            str.append("sd");
-            break;
-
+            return "sd\t" + _src1->getName() + ", " + std::to_string(_imm) + "(" + _src2->getName() + ")";
+        case INST_FSW:
+            return "fsw\t" + _src1->getName() + ", " + std::to_string(_imm) + "(" + _src2->getName() + ")";
+        case INST_FSD:
+            return "fsd\t" + _src1->getName() + ", " + std::to_string(_imm) + "(" + _src2->getName() + ")";
         default:
             assert(0 && "should't reach here");
             break;
     }
-
-    str.append("\t").append(_src1->getName()).append(", ").append(std::to_string(_imm) + "(" + _src2->getName() + ")");
-    return str;
 }
 
 std::string JumpInst::toString() { return "j\t" + _targetBB; }
 
 std::string CondJumpInst::toString() {
     switch (_type) {
-        case INST_BEQ: {
+        case INST_BEQ:
             return "beq\t" + _src1->getName() + ", " + _src2->getName() + ", " + _targetBB;
-        }
+        case INST_BNE:
+            return "bne\t" + _src1->getName() + ", " + _src2->getName() + ", " + _targetBB;
+        case INST_BLT:
+            return "blt\t" + _src1->getName() + ", " + _src2->getName() + ", " + _targetBB;
+        case INST_BGE:
+            return "bge\t" + _src1->getName() + ", " + _src2->getName() + ", " + _targetBB;
         default:
+            assert(0 && "unsupported");
             break;
     }
-    return "";
 }
 
 std::string BinaryInst::toString() {
     switch (_type) {
-        case INST_ADDI: {
+        case INST_ADDI:
             return "addi\t" + _dest->getName() + ", " + _src1->getName() + ", " + std::to_string(_imm);
-        }
-        case INST_ADD: {
+        case INST_SLTI:
+            return "slti\t" + _dest->getName() + ", " + _src1->getName() + ", " + std::to_string(_imm);
+        case INST_XORI:
+            return "xori\t" + _dest->getName() + ", " + _src1->getName() + ", " + std::to_string(_imm);
+        case INST_ADD:
             return "add\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
-        }
-        case INST_MUL: {
+        case INST_SUB:
+            return "sub\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
+        case INST_SLT:
+            return "slt\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
+        case INST_XOR:
+            return "xor\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
+        case INST_MUL:
             return "mul\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
-        }
+        case INST_DIV:
+            return "div\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
+        case INST_REM:
+            return "rem\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
         default:
+            assert(0 && "unsupported");
             break;
     }
-    return "";
 }
 
 std::string ImmInst::toString() {
     switch (_type) {
-        case INST_LI: {
+        case INST_LI:
             return "li\t" + _dest->getName() + ", " + std::to_string(_imm);
-        }
         default:
+            assert(0 && "unsupported");
             break;
     }
-    return "";
+}
+
+std::string UnaryInst::toString() {
+    switch (_type) {
+        case INST_FCVT_S_W:
+            return "fcvt.s.w\t" + _dest->getName() + ", " + _src1->getName();
+        case INST_FCVT_W_S:
+            return "fcvt.w.s\t" + _dest->getName() + ", " + _src1->getName();
+        case INST_SEQZ:
+            return "seqz\t" + _dest->getName() + ", " + _src1->getName();
+        case INST_SNEZ:
+            return "snez\t" + _dest->getName() + ", " + _src1->getName();
+        default:
+            assert(0 && "unsupported");
+            break;
+    }
 }
 
 }  // namespace RISCV

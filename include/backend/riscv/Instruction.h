@@ -8,10 +8,12 @@ namespace RISCV {
 class BasicBlock;
 
 enum InstId {
+    ID_IMM_INST,
     ID_LOAD_INST,
     ID_STORE_INST,
     ID_FUNCTION_CALL_INST,
     ID_RETURN_INST,
+    ID_UNARY_INST,
     ID_BINARY_INST,
     ID_LOAD_GLOBAL_ADDR_INST,
     ID_JUMP_INST,
@@ -50,7 +52,7 @@ public:
         _dest = new Register();
     }
 
-    virtual int getClassId() override { return ID_LOAD_INST; }
+    virtual int getClassId() override { return ID_IMM_INST; }
 
     virtual std::string toString() override;
 
@@ -82,7 +84,7 @@ public:
 
     virtual std::string toString() override;
 
-    enum { INST_LB, INST_LH, INST_LW, INST_LD, INST_LBU, INST_LHU, INST_LWU };
+    enum { INST_LB, INST_LH, INST_LW, INST_LD, INST_LBU, INST_LHU, INST_LWU, INST_FlW, INST_FLD };
 };
 
 class StoreInst : public Instruction {
@@ -98,7 +100,7 @@ public:
 
     virtual std::string toString() override;
 
-    enum { INST_SB, INST_SH, INST_SW, INST_SD };
+    enum { INST_SB, INST_SH, INST_SW, INST_SD, INST_FSW, INST_FSD };
 };
 
 class FunctionCallInst : public Instruction {
@@ -118,6 +120,21 @@ public:
     virtual int getClassId() override { return ID_RETURN_INST; }
 
     virtual std::string toString() override { return "ret"; }
+};
+
+class UnaryInst : public Instruction {
+public:
+    UnaryInst(int type, Register* src1) {
+        _type = type;
+        _src1 = src1;
+        _dest = new Register();
+    }
+
+    virtual int getClassId() override { return ID_UNARY_INST; }
+
+    virtual std::string toString() override;
+
+    enum { INST_FCVT_S_W, INST_FCVT_W_S, INST_SEQZ, INST_SNEZ };
 };
 
 class BinaryInst : public Instruction {
@@ -143,12 +160,14 @@ public:
     enum {
         INST_ADDI,
         INST_SLTI,
+        INST_XORI,
 
         INST_ADDIW,
 
         INST_ADD,
         INST_SUB,
         INST_SLT,
+        INST_XOR,
         INST_MUL,
         INST_DIV,
         INST_REM,

@@ -47,6 +47,10 @@ public:
     void emitCondJumpInst(AtomIR::CondJumpInst *);
 
 private:
+    Register *loadConstInt(int value);
+
+    Register *loadConstFloat(float value);
+
     Register *loadConst(AtomIR::Constant *);
 
     Register *getRegFromValue(AtomIR::Value *);
