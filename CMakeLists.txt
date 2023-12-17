@@ -2,6 +2,8 @@ project(atc)
 
 cmake_minimum_required(VERSION 3.10)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # 重新生成antlr前端
 if(UPDATE_ANTLR STREQUAL "ON")
   execute_process(COMMAND rm -rf ${CMAKE_CURRENT_SOURCE_DIR}/src/frontend/antlr)
