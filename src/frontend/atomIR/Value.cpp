@@ -23,7 +23,7 @@ ConstantInt* ConstantInt::get(int value) {
 }
 
 ConstantFloat* ConstantFloat::get(float value) {
-    static std::unordered_map<int, ConstantFloat*> num2Value;
+    static std::unordered_map<float, ConstantFloat*> num2Value;
     if (num2Value.find(value) != num2Value.end()) {
         return num2Value[value];
     }

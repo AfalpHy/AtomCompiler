@@ -67,7 +67,7 @@ private:
     int _constValue;
 };
 
-class ConstantFloat : public Constant {
+class  ConstantFloat : public Constant {
 public:
     static ConstantFloat* get(float value);
 
