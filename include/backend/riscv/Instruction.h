@@ -84,7 +84,7 @@ public:
 
     virtual std::string toString() override;
 
-    enum { INST_LB, INST_LH, INST_LW, INST_LD, INST_LBU, INST_LHU, INST_LWU, INST_FlW, INST_FLD };
+    enum { INST_LB, INST_LH, INST_LW, INST_LD, INST_LBU, INST_LHU, INST_LWU, INST_FLW, INST_FLD };
 };
 
 class StoreInst : public Instruction {
@@ -130,11 +130,17 @@ public:
         _dest = new Register();
     }
 
+    UnaryInst(int type, Register* dest, Register* src1) {
+        _type = type;
+        _src1 = src1;
+        _dest = dest;
+    }
+
     virtual int getClassId() override { return ID_UNARY_INST; }
 
     virtual std::string toString() override;
 
-    enum { INST_FCVT_S_W, INST_FCVT_W_S, INST_SEQZ, INST_SNEZ };
+    enum { INST_FCVT_S_W, INST_FCVT_W_S, INST_SEQZ, INST_SNEZ, INST_FMV_W_X };
 };
 
 class BinaryInst : public Instruction {
@@ -176,7 +182,15 @@ public:
         INST_SUBW,
         INST_MULW,
         INST_DIVW,
-        INST_REMW
+        INST_REMW,
+
+        INST_FADD_S,
+        INST_FSUB_S,
+        INST_FMUL_S,
+        INST_FDIV_S,
+        INST_FSLT_S,
+        INST_FSLE_S,
+        INST_FSEQ_S
     };
 };
 

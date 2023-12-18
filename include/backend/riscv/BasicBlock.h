@@ -27,9 +27,10 @@ public:
         return str;
     }
 
-    static int Index;
+    static std::string getNewBBName() { return ".LBB" + std::to_string(Index++); }
 
 private:
+    static int Index;
     std::string _name;
     std::list<Instruction *> _instructions;
 };

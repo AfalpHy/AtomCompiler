@@ -19,6 +19,10 @@ CodeGenerator::CodeGenerator() {
     _sp = new Register();
     _sp->setName("sp");
     _sp->setFixed();
+
+    _zero = new Register();
+    _zero->setName("zero");
+    _zero->setFixed();
 }
 
 void CodeGenerator::dump(std::ostream& os) { os << _contend.str() << endl; }
@@ -36,6 +40,15 @@ void CodeGenerator::emitModule(AtomIR::Module* module) {
     }
     for (auto& item : module->getFunctions()) {
         emitFunction(item);
+    }
+
+    if (!_float2lable.empty()) {
+        _contend << "\t.section\t.rdata" << endl;
+    }
+    for (auto& [value, lable] : _float2lable) {
+        _contend << "\t.p2align\t2" << endl;
+        _contend << lable << ":" << endl;
+        _contend << "\t.word\t" << std::to_string(*(int*)(&value)) << endl;
     }
 }
 
@@ -79,7 +92,7 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
             first = false;
             continue;
         }
-        _bb2lable[bb] = ".LBB" + std::to_string(BasicBlock::Index++);
+        _bb2lable[bb] = BasicBlock::getNewBBName();
     }
 
     for (auto bb : function->getBasicBlocks()) {
@@ -100,11 +113,10 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
 
 void CodeGenerator::emitBasicBlock(AtomIR::BasicBlock* basicBlock) {
     _currentBasicBlock = new BasicBlock(_bb2lable[basicBlock]);
-
+    _currentFunction->addBasicBlock(_currentBasicBlock);
     for (auto inst : basicBlock->getInstructionList()) {
         emitInstruction(inst);
     }
-    _currentFunction->addBasicBlock(_currentBasicBlock);
 }
 
 void CodeGenerator::emitInstruction(AtomIR::Instruction* inst) {
@@ -211,7 +223,9 @@ void CodeGenerator::emitUnaryInst(AtomIR::UnaryInst* inst) {
     switch (inst->getInstType()) {
         case AtomIR::UnaryInst::INST_LOAD: {
             int offset = inst->getOperand()->isGlobal() ? 0 : _value2offset[inst->getOperand()];
-            unaryInst = new LoadInst(LoadInst::INST_LW, src1, offset);
+            unaryInst = new LoadInst(
+                inst->getResult()->getType() == AtomIR::Type::getInt32Ty() ? LoadInst::INST_LW : LoadInst::INST_FLW,
+                src1, offset);
             break;
         }
         case AtomIR::UnaryInst::INST_ITOF:
@@ -232,106 +246,138 @@ void CodeGenerator::emitBinaryInst(AtomIR::BinaryInst* inst) {
     auto dest = inst->getResult();
     auto operand1 = inst->getOperand1();
     auto operand2 = inst->getOperand2();
+    if (inst->isIntInst()) {
+        _value2reg[dest] = emitIntBinaryInst(inst->getInstType(), operand1, operand2);
+    } else {
+        _value2reg[dest] = emitFloatBinaryInst(inst->getInstType(), operand1, operand2);
+    }
+}
+
+void CodeGenerator::emitCondJumpInst(AtomIR::CondJumpInst* inst) {
+    Register* src1 = getRegFromValue(inst->getOperand1());
+    Register* src2 = getRegFromValue(inst->getOperand2());
+
+    int type;
+    switch (inst->getInstType()) {
+        case AtomIR::CondJumpInst::INST_JEQ:
+            type = CondJumpInst::INST_BEQ;
+            break;
+        case AtomIR::CondJumpInst::INST_JNE:
+            type = CondJumpInst::INST_BNE;
+            break;
+        case AtomIR::CondJumpInst::INST_JLT:
+            type = CondJumpInst::INST_BLT;
+            break;
+        case AtomIR::CondJumpInst::INST_JLE:
+            type = CondJumpInst::INST_BGE;
+            std::swap(src1, src2);
+            break;
+        case AtomIR::CondJumpInst::INST_JGT:
+            type = CondJumpInst::INST_BLT;
+            std::swap(src1, src2);
+            break;
+        case AtomIR::CondJumpInst::INST_JGE:
+            type = CondJumpInst::INST_BGE;
+        default:
+            break;
+    }
+    _currentBasicBlock->addInstruction(new CondJumpInst(type, src1, src2, _bb2lable[inst->getTureBB()]));
+    _currentBasicBlock->addInstruction(new JumpInst(_bb2lable[inst->getFalseBB()]));
+}
+
+Register* CodeGenerator::emitIntBinaryInst(int instType, AtomIR::Value* operand1, AtomIR::Value* operand2) {
     Register* src1;
     Register* src2 = nullptr;
     int imm;
     bool needXor = false;
     if (operand1->isConst()) {
-        auto constOp1 = (AtomIR::Constant*)operand1;
-        if (constOp1->isInt()) {
-            imm = static_cast<AtomIR::ConstantInt*>(constOp1)->getConstValue();
-            switch (inst->getInstType()) {
-                case AtomIR::BinaryInst::INST_SUB:
-                case AtomIR::BinaryInst::INST_DIV:
-                case AtomIR::BinaryInst::INST_MOD:
-                case AtomIR::BinaryInst::INST_LT: {
-                    src1 = loadConstInt(imm);
-                    src2 = getRegFromValue(inst->getOperand2());
-                    break;
-                }
-                case AtomIR::BinaryInst::INST_LE: {
-                    src1 = loadConstInt(imm - 1);
-                    src2 = getRegFromValue(inst->getOperand2());
-                    break;
-                }
-                case AtomIR::BinaryInst::INST_GT:
-                    src1 = getRegFromValue(inst->getOperand2());
-                    break;
-                case AtomIR::BinaryInst::INST_GE:
-                    imm += 1;
-                    src1 = getRegFromValue(inst->getOperand2());
-                    break;
-                case AtomIR::BinaryInst::INST_EQ:
-                case AtomIR::BinaryInst::INST_NE:
-                    imm = -imm;
-                    src1 = getRegFromValue(inst->getOperand2());
-                    break;
-                default:
-                    src1 = getRegFromValue(inst->getOperand2());
-                    break;
+        imm = static_cast<AtomIR::ConstantInt*>(operand1)->getConstValue();
+        switch (instType) {
+            case AtomIR::BinaryInst::INST_SUB:
+            case AtomIR::BinaryInst::INST_DIV:
+            case AtomIR::BinaryInst::INST_MOD:
+            case AtomIR::BinaryInst::INST_LT: {
+                src1 = loadConstInt(imm);
+                src2 = getRegFromValue(operand2);
+                break;
             }
-        } else {
+            case AtomIR::BinaryInst::INST_LE: {
+                src1 = loadConstInt(imm - 1);
+                src2 = getRegFromValue(operand2);
+                break;
+            }
+            case AtomIR::BinaryInst::INST_GT:
+                src1 = getRegFromValue(operand2);
+                break;
+            case AtomIR::BinaryInst::INST_GE:
+                imm += 1;
+                src1 = getRegFromValue(operand2);
+                break;
+            case AtomIR::BinaryInst::INST_EQ:
+            case AtomIR::BinaryInst::INST_NE:
+                imm = -imm;
+                src1 = getRegFromValue(operand2);
+                break;
+            default:
+                src1 = getRegFromValue(operand2);
+                break;
         }
     } else if (operand2->isConst()) {
-        auto constOp2 = (AtomIR::Constant*)operand2;
-        if (constOp2->isInt()) {
-            imm = static_cast<AtomIR::ConstantInt*>(constOp2)->getConstValue();
-            switch (inst->getInstType()) {
-                case AtomIR::BinaryInst::INST_SUB:
-                    imm = -imm;
-                    src1 = getRegFromValue(inst->getOperand1());
-                    break;
-                case AtomIR::BinaryInst::INST_MUL:
-                case AtomIR::BinaryInst::INST_DIV:
-                case AtomIR::BinaryInst::INST_MOD:
-                    src1 = getRegFromValue(inst->getOperand1());
-                    src2 = loadConstInt(imm);
-                    break;
-                case AtomIR::BinaryInst::INST_LE:
-                    imm += 1;
-                    src1 = getRegFromValue(inst->getOperand1());
-                    break;
-                case AtomIR::BinaryInst::INST_GT:
-                    src1 = loadConstInt(imm);
-                    src2 = getRegFromValue(inst->getOperand1());
-                    break;
-                case AtomIR::BinaryInst::INST_GE:
-                    src1 = loadConstInt(imm - 1);
-                    src2 = getRegFromValue(inst->getOperand1());
-                    break;
-                case AtomIR::BinaryInst::INST_EQ:
-                case AtomIR::BinaryInst::INST_NE:
-                    imm = -imm;
-                    src1 = getRegFromValue(inst->getOperand1());
-                    break;
-                default:
-                    src1 = getRegFromValue(inst->getOperand1());
-                    break;
-            }
-        } else {
-        }
-    } else {
-        switch (inst->getInstType()) {
+        imm = static_cast<AtomIR::ConstantInt*>(operand2)->getConstValue();
+        switch (instType) {
+            case AtomIR::BinaryInst::INST_SUB:
+                imm = -imm;
+                src1 = getRegFromValue(operand1);
+                break;
+            case AtomIR::BinaryInst::INST_MUL:
+            case AtomIR::BinaryInst::INST_DIV:
+            case AtomIR::BinaryInst::INST_MOD:
+                src1 = getRegFromValue(operand1);
+                src2 = loadConstInt(imm);
+                break;
             case AtomIR::BinaryInst::INST_LE:
-                needXor = true;
-                src1 = getRegFromValue(inst->getOperand2());
-                src2 = getRegFromValue(inst->getOperand1());
+                imm += 1;
+                src1 = getRegFromValue(operand1);
                 break;
             case AtomIR::BinaryInst::INST_GT:
-                src1 = getRegFromValue(inst->getOperand2());
-                src2 = getRegFromValue(inst->getOperand1());
+                src1 = loadConstInt(imm);
+                src2 = getRegFromValue(operand1);
+                break;
+            case AtomIR::BinaryInst::INST_GE:
+                src1 = loadConstInt(imm - 1);
+                src2 = getRegFromValue(operand1);
+                break;
+            case AtomIR::BinaryInst::INST_EQ:
+            case AtomIR::BinaryInst::INST_NE:
+                imm = -imm;
+                src1 = getRegFromValue(operand1);
+                break;
+            default:
+                src1 = getRegFromValue(operand1);
+                break;
+        }
+    } else {
+        switch (instType) {
+            case AtomIR::BinaryInst::INST_LE:
+                needXor = true;
+                src1 = getRegFromValue(operand2);
+                src2 = getRegFromValue(operand1);
+                break;
+            case AtomIR::BinaryInst::INST_GT:
+                src1 = getRegFromValue(operand2);
+                src2 = getRegFromValue(operand1);
                 break;
             case AtomIR::BinaryInst::INST_GE:
                 needXor = true;
             default:
-                src1 = getRegFromValue(inst->getOperand1());
-                src2 = getRegFromValue(inst->getOperand2());
+                src1 = getRegFromValue(operand1);
+                src2 = getRegFromValue(operand2);
                 break;
         }
     }
 
     Instruction* binaryInst;
-    switch (inst->getInstType()) {
+    switch (instType) {
         case AtomIR::BinaryInst::INST_ADD:
             if (src2) {
                 binaryInst = new BinaryInst(BinaryInst::INST_ADD, src1, src2);
@@ -378,60 +424,101 @@ void CodeGenerator::emitBinaryInst(AtomIR::BinaryInst* inst) {
             break;
     }
     _currentBasicBlock->addInstruction(binaryInst);
-    _value2reg[dest] = binaryInst->getDest();
+    auto dest = binaryInst->getDest();
     if (needXor) {
         auto xorInst = new BinaryInst(BinaryInst::INST_XORI, binaryInst->getDest(), 1);
         _currentBasicBlock->addInstruction(xorInst);
-        _value2reg[dest] = xorInst->getDest();
+        dest = xorInst->getDest();
     }
-    switch (inst->getInstType()) {
+    if (instType == AtomIR::BinaryInst::INST_EQ) {
+        auto seqz = new UnaryInst(UnaryInst::INST_SEQZ, binaryInst->getDest());
+        _currentBasicBlock->addInstruction(seqz);
+        dest = seqz->getDest();
+    } else if (instType == AtomIR::BinaryInst::INST_EQ) {
+        auto snez = new UnaryInst(UnaryInst::INST_SNEZ, binaryInst->getDest());
+        _currentBasicBlock->addInstruction(snez);
+        dest = snez->getDest();
+    }
+
+    return dest;
+}
+
+Register* CodeGenerator::emitFloatBinaryInst(int instType, AtomIR::Value* operand1, AtomIR::Value* operand2) {
+    Register* src1 = getRegFromValue(operand1);
+    Register* src2 = getRegFromValue(operand2);
+    Instruction* binaryInst;
+    switch (instType) {
+        case AtomIR::BinaryInst::INST_ADD:
+            binaryInst = new BinaryInst(BinaryInst::INST_FADD_S, src1, src2);
+            break;
+        case AtomIR::BinaryInst::INST_SUB:
+            binaryInst = new BinaryInst(BinaryInst::INST_FSUB_S, src1, src2);
+            break;
+        case AtomIR::BinaryInst::INST_MUL:
+            binaryInst = new BinaryInst(BinaryInst::INST_FMUL_S, src1, src2);
+            break;
+        case AtomIR::BinaryInst::INST_DIV:
+            binaryInst = new BinaryInst(BinaryInst::INST_FDIV_S, src1, src2);
+            break;
+        case AtomIR::BinaryInst::INST_LT:
+            binaryInst = new BinaryInst(BinaryInst::INST_FSLT_S, src1, src2);
+            break;
+        case AtomIR::BinaryInst::INST_LE:
+            binaryInst = new BinaryInst(BinaryInst::INST_FSLE_S, src1, src2);
+            break;
+        case AtomIR::BinaryInst::INST_GT:
+            std::swap(src1, src2);
+            binaryInst = new BinaryInst(BinaryInst::INST_FSLT_S, src1, src2);
+            break;
+        case AtomIR::BinaryInst::INST_GE:
+            std::swap(src1, src2);
+            binaryInst = new BinaryInst(BinaryInst::INST_FSLE_S, src1, src2);
+            break;
+        case AtomIR::BinaryInst::INST_EQ:
+        case AtomIR::BinaryInst::INST_NE:
+            binaryInst = new BinaryInst(BinaryInst::INST_FSEQ_S, src1, src2);
+            break;
+        default:
+            assert(0 && "unsupported yet");
+            break;
+    }
+    _currentBasicBlock->addInstruction(binaryInst);
+    auto dest = binaryInst->getDest();
+
+    switch (instType) {
+        case AtomIR::BinaryInst::INST_LT:
+        case AtomIR::BinaryInst::INST_LE:
+        case AtomIR::BinaryInst::INST_GT:
+        case AtomIR::BinaryInst::INST_GE:
         case AtomIR::BinaryInst::INST_EQ: {
-            auto seqz = new UnaryInst(UnaryInst::INST_SEQZ, binaryInst->getDest());
-            _currentBasicBlock->addInstruction(seqz);
-            _value2reg[dest] = seqz->getDest();
+            auto zeroBB = new BasicBlock(BasicBlock::getNewBBName());
+            _currentFunction->addBasicBlock(zeroBB);
+            auto afterBB = new BasicBlock(BasicBlock::getNewBBName());
+            _currentFunction->addBasicBlock(afterBB);
+            auto beq = new CondJumpInst(CondJumpInst::INST_BEQ, dest, _zero, zeroBB->getName());
+            _currentBasicBlock->addInstruction(beq);
+            dest = loadConstFloat(1);
+            _currentBasicBlock->addInstruction(new JumpInst(afterBB->getName()));
+            zeroBB->addInstruction(new UnaryInst(UnaryInst::INST_FMV_W_X, dest, _zero));
+            _currentBasicBlock = afterBB;
             break;
         }
         case AtomIR::BinaryInst::INST_NE: {
-            auto snez = new UnaryInst(UnaryInst::INST_SNEZ, binaryInst->getDest());
-            _currentBasicBlock->addInstruction(snez);
-            _value2reg[dest] = snez->getDest();
-            break;
+            auto zeroBB = new BasicBlock(BasicBlock::getNewBBName());
+            _currentFunction->addBasicBlock(zeroBB);
+            auto afterBB = new BasicBlock(BasicBlock::getNewBBName());
+            _currentFunction->addBasicBlock(afterBB);
+            auto bne = new CondJumpInst(CondJumpInst::INST_BNE, dest, _zero, zeroBB->getName());
+            _currentBasicBlock->addInstruction(bne);
+            dest = loadConstFloat(1);
+            _currentBasicBlock->addInstruction(new JumpInst(afterBB->getName()));
+            zeroBB->addInstruction(new UnaryInst(UnaryInst::INST_FMV_W_X, dest, _zero));
+            _currentBasicBlock = afterBB;
         }
         default:
             break;
     }
-}
-
-void CodeGenerator::emitCondJumpInst(AtomIR::CondJumpInst* inst) {
-    Register* src1 = getRegFromValue(inst->getOperand1());
-    Register* src2 = getRegFromValue(inst->getOperand2());
-
-    int type;
-    switch (inst->getInstType()) {
-        case AtomIR::CondJumpInst::INST_JEQ:
-            type = CondJumpInst::INST_BEQ;
-            break;
-        case AtomIR::CondJumpInst::INST_JNE:
-            type = CondJumpInst::INST_BNE;
-            break;
-        case AtomIR::CondJumpInst::INST_JLT:
-            type = CondJumpInst::INST_BLT;
-            break;
-        case AtomIR::CondJumpInst::INST_JLE:
-            type = CondJumpInst::INST_BGE;
-            std::swap(src1, src2);
-            break;
-        case AtomIR::CondJumpInst::INST_JGT:
-            type = CondJumpInst::INST_BLT;
-            std::swap(src1, src2);
-            break;
-        case AtomIR::CondJumpInst::INST_JGE:
-            type = CondJumpInst::INST_BGE;
-        default:
-            break;
-    }
-    _currentBasicBlock->addInstruction(new CondJumpInst(type, src1, src2, _bb2lable[inst->getTureBB()]));
-    _currentBasicBlock->addInstruction(new JumpInst(_bb2lable[inst->getFalseBB()]));
+    return dest;
 }
 
 Register* CodeGenerator::loadConstInt(int value) {
@@ -440,13 +527,26 @@ Register* CodeGenerator::loadConstInt(int value) {
     return li->getDest();
 }
 
-Register* CodeGenerator::loadConstFloat(float value) { return nullptr; }
+Register* CodeGenerator::loadConstFloat(float value) {
+    std::string lable;
+    if (_float2lable.find(value) != _float2lable.end()) {
+        lable = _float2lable[value];
+    } else {
+        lable = ".LC" + std::to_string(_float2lable.size());
+        _float2lable.insert({value, lable});
+    }
+    auto la = new LoadGlobalAddrInst(_float2lable[value]);
+    _currentBasicBlock->addInstruction(la);
+    auto flw = new LoadInst(LoadInst::INST_FLW, la->getDest(), 0);
+    _currentBasicBlock->addInstruction(flw);
+    return flw->getDest();
+}
 
 Register* CodeGenerator::loadConst(AtomIR::Constant* value) {
     if (value->isInt()) {
         return loadConstInt(static_cast<AtomIR::ConstantInt*>(value)->getConstValue());
     } else {
-        return nullptr;
+        return loadConstFloat(static_cast<AtomIR::ConstantFloat*>(value)->getConstValue());
     }
 }
 

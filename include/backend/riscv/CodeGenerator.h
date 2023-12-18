@@ -47,6 +47,10 @@ public:
     void emitCondJumpInst(AtomIR::CondJumpInst *);
 
 private:
+    Register *emitIntBinaryInst(int instType, AtomIR::Value *operand1, AtomIR::Value *operand2);
+
+    Register *emitFloatBinaryInst(int instType, AtomIR::Value *operand1, AtomIR::Value *operand2);
+
     Register *loadConstInt(int value);
 
     Register *loadConstFloat(float value);
@@ -66,10 +70,13 @@ private:
 
     std::unordered_map<AtomIR::BasicBlock *, std::string> _bb2lable;  // IR BasicBlock to asm lable
 
+    std::unordered_map<float, std::string> _float2lable;  // float constant global lable
+
     std::stringstream _contend;
 
     // common regs
     Register *_sp = nullptr;
+    Register *_zero = nullptr;
 };
 
 }  // namespace RISCV

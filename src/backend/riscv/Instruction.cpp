@@ -28,7 +28,7 @@ std::string LoadInst::toString() {
             return "lw\t" + _dest->getName() + ", " + std::to_string(_imm) + "(" + _src1->getName() + ")";
         case INST_LD:
             return "ld\t" + _dest->getName() + ", " + std::to_string(_imm) + "(" + _src1->getName() + ")";
-        case INST_FlW:
+        case INST_FLW:
             return "flw\t" + _dest->getName() + ", " + std::to_string(_imm) + "(" + _src1->getName() + ")";
         case INST_FLD:
             return "fld\t" + _dest->getName() + ", " + std::to_string(_imm) + "(" + _src1->getName() + ")";
@@ -68,6 +68,8 @@ std::string UnaryInst::toString() {
             return "seqz\t" + _dest->getName() + ", " + _src1->getName();
         case INST_SNEZ:
             return "snez\t" + _dest->getName() + ", " + _src1->getName();
+        case INST_FMV_W_X:
+            return "fmv.w.x\t" + _dest->getName() + ", " + _src1->getName();
         default:
             assert(0 && "unsupported");
             break;
@@ -96,6 +98,20 @@ std::string BinaryInst::toString() {
             return "div\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
         case INST_REM:
             return "rem\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
+        case INST_FADD_S:
+            return "fadd.s\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
+        case INST_FSUB_S:
+            return "fsub.s\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
+        case INST_FMUL_S:
+            return "fmul.s\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
+        case INST_FDIV_S:
+            return "fdiv.s\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
+        case INST_FSLT_S:
+            return "flt.s\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
+        case INST_FSLE_S:
+            return "fle.s\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
+        case INST_FSEQ_S:
+            return "feq.s\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
         default:
             assert(0 && "unsupported");
             break;
