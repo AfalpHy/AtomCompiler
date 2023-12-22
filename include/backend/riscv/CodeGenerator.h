@@ -68,14 +68,14 @@ private:
 
     std::unordered_map<AtomIR::Value *, Register *> _value2reg;  // IR value to asm reg
 
-    std::unordered_map<AtomIR::BasicBlock *, std::string> _bb2lable;  // IR BasicBlock to asm lable
+    std::unordered_map<AtomIR::BasicBlock *, BasicBlock *> _atomBB2asmBB;  // IR BasicBlock to asm BasicBlock
 
     std::unordered_map<float, std::string> _float2lable;  // float constant global lable
 
     std::stringstream _contend;
 
     // common regs
-    Register *_sp = nullptr;
+    Register *_s0 = nullptr;
     Register *_zero = nullptr;
 };
 

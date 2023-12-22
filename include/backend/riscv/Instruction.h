@@ -196,19 +196,21 @@ public:
 
 class JumpInst : public Instruction {
 public:
-    JumpInst(const std::string& targetBB) : _targetBB(targetBB) {}
+    JumpInst(BasicBlock* targetBB) : _targetBB(targetBB) {}
+
+    BasicBlock* getTargetBB() { return _targetBB; }
 
     virtual int getClassId() override { return ID_JUMP_INST; }
 
-    virtual std::string toString() override { return "j\t" + _targetBB; }
+    virtual std::string toString() override;
 
 protected:
-    std::string _targetBB;
+    BasicBlock* _targetBB;
 };
 
 class CondJumpInst : public JumpInst {
 public:
-    CondJumpInst(int type, Register* src1, Register* src2, const std::string& targetBB) : JumpInst(targetBB) {
+    CondJumpInst(int type, Register* src1, Register* src2, BasicBlock* targetBB) : JumpInst(targetBB) {
         _type = type;
         _src1 = src1;
         _src2 = src2;

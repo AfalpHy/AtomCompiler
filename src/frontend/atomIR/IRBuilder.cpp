@@ -569,6 +569,7 @@ Value *IRBuilder::createFunctionCall(const FunctionType &functionType, const std
                                      const std::vector<Value *> &params, const std::string &resultName) {
     Instruction *inst = new FunctionCallInst(functionType, funcName, params, resultName);
     _currentBasicBlock->addInstruction(inst);
+    _currentFunction->setHasFunctionCall(true);
     Value *result = inst->getResult();
     if (result) {
         result->setBelong(_currentFunction);

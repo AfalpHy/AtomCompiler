@@ -1,25 +1,26 @@
 #pragma once
 
+#include <set>
 #include <string>
 namespace ATC {
 namespace RISCV {
 
 class Register {
 public:
-    Register() { _name = "virtual_reg" + std::to_string(Index++); }
+    Register();
 
     void setName(const std::string &name) { _name = name; }
+    void addInterference(Register *reg) { _interferences.insert(reg); }
 
     const std::string &getName() { return _name; }
-
-    void setFixed() { _fixed = true; }
+    const std::set<Register *> &getInterferences() { return _interferences; }
 
 private:
     static int Index;
 
-    bool _fixed = false;
-
     std::string _name;
+
+    std::set<Register *> _interferences;
 };
 
 }  // namespace RISCV

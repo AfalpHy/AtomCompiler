@@ -26,6 +26,8 @@ public:
         _basicBlocks.push_back(bb);
     }
 
+    void setHasFunctionCall(bool b) { _hasFunctionCall = b; }
+
     Module* getParent() { return _parent; }
 
     const std::string& getName() { return _name; }
@@ -41,6 +43,8 @@ public:
 
     const std::vector<Value*>& getParams() { return _params; }
     const std::vector<BasicBlock*>& getBasicBlocks() { return _basicBlocks; }
+
+    bool hasFunctionCall() { return _hasFunctionCall; }
 
     std::string getUniqueNameInFunction(void* ptr);
 
@@ -62,6 +66,7 @@ private:
     std::vector<BasicBlock*> _basicBlocks;
     std::set<std::string> _nameSet;                   // value and block name set
     std::unordered_map<void*, std::string> _nameMap;  // value and block pointer to unique name
+    bool _hasFunctionCall = false;                    // Ture if there are some functionCall in this function
     int _valueIndex = 0;
 };
 }  // namespace AtomIR

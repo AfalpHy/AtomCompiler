@@ -6,6 +6,7 @@
 #include "atomIR/Module.h"
 #include "riscv/BasicBlock.h"
 #include "riscv/Function.h"
+#include "riscv/RegAllocator.h"
 
 namespace ATC {
 namespace RISCV {
@@ -15,14 +16,14 @@ using std::endl;
 int BasicBlock::Index = 0;
 int Register::Index = 0;
 
+std::set<Register*> Function::AllRegInFunction;
+
 CodeGenerator::CodeGenerator() {
-    _sp = new Register();
-    _sp->setName("sp");
-    _sp->setFixed();
+    _s0 = new Register();
+    _s0->setName("s0");
 
     _zero = new Register();
     _zero->setName("zero");
-    _zero->setFixed();
 }
 
 void CodeGenerator::dump(std::ostream& os) { os << _contend.str() << endl; }
@@ -79,26 +80,29 @@ void CodeGenerator::emitGlobalVariable(AtomIR::GloabalVariable* var) {
 
 void CodeGenerator::emitFunction(AtomIR::Function* function) {
     // reset
-    _offset = 0;
+    if (function->hasFunctionCall()) {
+        // save ra and s0
+        _offset = -16;
+    } else {
+        // save s0
+        _offset = -8;
+    }
     _value2offset.clear();
+    Function::AllRegInFunction.clear();
 
     _currentFunction = new Function();
 
-    // prepare the BasicBlock lable
-    bool first = true;
+    // prepare the BasicBlock
     for (auto bb : function->getBasicBlocks()) {
-        // first block does not need the label
-        if (first) {
-            first = false;
-            continue;
-        }
-        _bb2lable[bb] = BasicBlock::getNewBBName();
+        _atomBB2asmBB[bb] = new BasicBlock();
     }
 
     for (auto bb : function->getBasicBlocks()) {
         emitBasicBlock(bb);
     }
     /// TODO: modify the instruct
+    RegAllocator regAllocator(_currentFunction, true);
+    regAllocator.run();
 
     _contend << "\t.globl\t" << function->getName() << endl;
     _contend << "\t.p2align\t1" << endl;
@@ -112,7 +116,7 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
 }
 
 void CodeGenerator::emitBasicBlock(AtomIR::BasicBlock* basicBlock) {
-    _currentBasicBlock = new BasicBlock(_bb2lable[basicBlock]);
+    _currentBasicBlock = _atomBB2asmBB[basicBlock];
     _currentFunction->addBasicBlock(_currentBasicBlock);
     for (auto inst : basicBlock->getInstructionList()) {
         emitInstruction(inst);
@@ -146,7 +150,7 @@ void CodeGenerator::emitInstruction(AtomIR::Instruction* inst) {
             break;
         case AtomIR::ID_JUMP_INST: {
             AtomIR::JumpInst* jumpInst = (AtomIR::JumpInst*)inst;
-            _currentBasicBlock->addInstruction(new JumpInst(_bb2lable[jumpInst->getTargetBB()]));
+            _currentBasicBlock->addInstruction(new JumpInst(_atomBB2asmBB[jumpInst->getTargetBB()]));
             break;
         }
         case AtomIR::ID_COND_JUMP_INST:
@@ -159,10 +163,10 @@ void CodeGenerator::emitInstruction(AtomIR::Instruction* inst) {
 }
 
 void CodeGenerator::emitAllocInst(AtomIR::AllocInst* inst) {
-    _value2offset[inst->getResult()] = _offset;
     auto type = inst->getResult()->getType()->getBaseType();
-    _offset += type->getByteLen();
-    _value2reg[inst->getResult()] = _sp;
+    _offset -= type->getByteLen();
+    _value2offset[inst->getResult()] = _offset;
+    _value2reg[inst->getResult()] = _s0;
 }
 
 void CodeGenerator::emitStoreInst(AtomIR::StoreInst* inst) {
@@ -281,8 +285,8 @@ void CodeGenerator::emitCondJumpInst(AtomIR::CondJumpInst* inst) {
         default:
             break;
     }
-    _currentBasicBlock->addInstruction(new CondJumpInst(type, src1, src2, _bb2lable[inst->getTureBB()]));
-    _currentBasicBlock->addInstruction(new JumpInst(_bb2lable[inst->getFalseBB()]));
+    _currentBasicBlock->addInstruction(new CondJumpInst(type, src1, src2, _atomBB2asmBB[inst->getTureBB()]));
+    _currentBasicBlock->addInstruction(new JumpInst(_atomBB2asmBB[inst->getFalseBB()]));
 }
 
 Register* CodeGenerator::emitIntBinaryInst(int instType, AtomIR::Value* operand1, AtomIR::Value* operand2) {
@@ -434,7 +438,7 @@ Register* CodeGenerator::emitIntBinaryInst(int instType, AtomIR::Value* operand1
         auto seqz = new UnaryInst(UnaryInst::INST_SEQZ, binaryInst->getDest());
         _currentBasicBlock->addInstruction(seqz);
         dest = seqz->getDest();
-    } else if (instType == AtomIR::BinaryInst::INST_EQ) {
+    } else if (instType == AtomIR::BinaryInst::INST_NE) {
         auto snez = new UnaryInst(UnaryInst::INST_SNEZ, binaryInst->getDest());
         _currentBasicBlock->addInstruction(snez);
         dest = snez->getDest();
@@ -491,27 +495,27 @@ Register* CodeGenerator::emitFloatBinaryInst(int instType, AtomIR::Value* operan
         case AtomIR::BinaryInst::INST_GT:
         case AtomIR::BinaryInst::INST_GE:
         case AtomIR::BinaryInst::INST_EQ: {
-            auto zeroBB = new BasicBlock(BasicBlock::getNewBBName());
+            auto zeroBB = new BasicBlock();
             _currentFunction->addBasicBlock(zeroBB);
-            auto afterBB = new BasicBlock(BasicBlock::getNewBBName());
+            auto afterBB = new BasicBlock();
             _currentFunction->addBasicBlock(afterBB);
-            auto beq = new CondJumpInst(CondJumpInst::INST_BEQ, dest, _zero, zeroBB->getName());
+            auto beq = new CondJumpInst(CondJumpInst::INST_BEQ, dest, _zero, zeroBB);
             _currentBasicBlock->addInstruction(beq);
             dest = loadConstFloat(1);
-            _currentBasicBlock->addInstruction(new JumpInst(afterBB->getName()));
+            _currentBasicBlock->addInstruction(new JumpInst(afterBB));
             zeroBB->addInstruction(new UnaryInst(UnaryInst::INST_FMV_W_X, dest, _zero));
             _currentBasicBlock = afterBB;
             break;
         }
         case AtomIR::BinaryInst::INST_NE: {
-            auto zeroBB = new BasicBlock(BasicBlock::getNewBBName());
+            auto zeroBB = new BasicBlock();
             _currentFunction->addBasicBlock(zeroBB);
-            auto afterBB = new BasicBlock(BasicBlock::getNewBBName());
+            auto afterBB = new BasicBlock();
             _currentFunction->addBasicBlock(afterBB);
-            auto bne = new CondJumpInst(CondJumpInst::INST_BNE, dest, _zero, zeroBB->getName());
+            auto bne = new CondJumpInst(CondJumpInst::INST_BNE, dest, _zero, zeroBB);
             _currentBasicBlock->addInstruction(bne);
             dest = loadConstFloat(1);
-            _currentBasicBlock->addInstruction(new JumpInst(afterBB->getName()));
+            _currentBasicBlock->addInstruction(new JumpInst(afterBB));
             zeroBB->addInstruction(new UnaryInst(UnaryInst::INST_FMV_W_X, dest, _zero));
             _currentBasicBlock = afterBB;
         }
@@ -562,7 +566,7 @@ Register* CodeGenerator::getRegFromValue(AtomIR::Value* value) {
     }
 
     if (value->getType()->isPointerType() && _value2reg.find(value) == _value2reg.end()) {
-        return _sp;
+        return _s0;
     }
 
     return _value2reg[value];

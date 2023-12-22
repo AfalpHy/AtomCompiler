@@ -1,5 +1,3 @@
-#include "riscv/Instruction.h"
-
 #include <assert.h>
 
 #include "riscv/BasicBlock.h"
@@ -118,16 +116,18 @@ std::string BinaryInst::toString() {
     }
 }
 
+std::string JumpInst::toString() { return "j\t" + _targetBB->getName(); }
+
 std::string CondJumpInst::toString() {
     switch (_type) {
         case INST_BEQ:
-            return "beq\t" + _src1->getName() + ", " + _src2->getName() + ", " + _targetBB;
+            return "beq\t" + _src1->getName() + ", " + _src2->getName() + ", " + _targetBB->getName();
         case INST_BNE:
-            return "bne\t" + _src1->getName() + ", " + _src2->getName() + ", " + _targetBB;
+            return "bne\t" + _src1->getName() + ", " + _src2->getName() + ", " + _targetBB->getName();
         case INST_BLT:
-            return "blt\t" + _src1->getName() + ", " + _src2->getName() + ", " + _targetBB;
+            return "blt\t" + _src1->getName() + ", " + _src2->getName() + ", " + _targetBB->getName();
         case INST_BGE:
-            return "bge\t" + _src1->getName() + ", " + _src2->getName() + ", " + _targetBB;
+            return "bge\t" + _src1->getName() + ", " + _src2->getName() + ", " + _targetBB->getName();
         default:
             assert(0 && "unsupported");
             break;
