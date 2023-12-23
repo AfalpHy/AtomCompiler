@@ -31,21 +31,21 @@ CodeGenerator::CodeGenerator() {
     _sp->setName("sp");
     _sp->setIsFixed(true);
 
-    _a0 = new Register();
-    _a0->setName("a0");
-    _a0->setIsFixed(true);
-
-    _a1 = new Register();
-    _a1->setName("a1");
-    _a1->setIsFixed(true);
-
-    _a2 = new Register();
-    _a2->setName("a2");
-    _a2->setIsFixed(true);
-
     _zero = new Register();
     _zero->setName("zero");
     _zero->setIsFixed(true);
+
+    for (int i = 0; i < 8; i++) {
+        auto argReg = new Register();
+        argReg->setName("a" + std::to_string(i));
+        argReg->setIsFixed(true);
+        _intArgReg.push_back(argReg);
+
+        argReg = new Register();
+        argReg->setName("fa" + std::to_string(i));
+        argReg->setIsFixed(true);
+        _floatArgReg.push_back(argReg);
+    }
 }
 
 void CodeGenerator::dump(std::ostream& os) { os << _contend.str() << endl; }
@@ -114,6 +114,14 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
 
     _currentFunction = new Function();
 
+    int i = 0;
+    for (auto param : function->getParams()) {
+        _value2reg[param] = _intArgReg[i++];
+    }
+    auto entryBB = new BasicBlock("");
+    retBB = new BasicBlock("." + function->getName() + "_ret");
+    _currentFunction->addBasicBlock(entryBB);
+
     // prepare the BasicBlock
     for (auto bb : function->getBasicBlocks()) {
         _atomBB2asmBB[bb] = new BasicBlock();
@@ -122,24 +130,29 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
     for (auto bb : function->getBasicBlocks()) {
         emitBasicBlock(bb);
     }
-    /// TODO: modify the instruct
+    _currentFunction->addBasicBlock(retBB);
+
     RegAllocator regAllocator(_currentFunction, true);
     regAllocator.run();
+
+    entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, _sp, _sp, _offset));
+    if (function->hasFunctionCall()) {
+        entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, _ra, _sp, -_offset - 8));
+        entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, _s0, _sp, -_offset - 16));
+        retBB->addInstruction(new LoadInst(LoadInst::INST_LD, _ra, _sp, -_offset - 8));
+        retBB->addInstruction(new LoadInst(LoadInst::INST_LD, _s0, _sp, -_offset - 16));
+    } else {
+        entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, _s0, _sp, -_offset - 8));
+        retBB->addInstruction(new LoadInst(LoadInst::INST_LD, _s0, _sp, -_offset - 8));
+    }
+    entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, _s0, _sp, -_offset));
+    retBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, _sp, _sp, -_offset));
+    retBB->addInstruction(new ReturnInst());
 
     _contend << "\t.globl\t" << function->getName() << endl;
     _contend << "\t.p2align\t1" << endl;
     _contend << "\t.type\t" << function->getName() << ",@function" << endl;
     _contend << "." << function->getName() << ":";
-    auto entryBB = new BasicBlock("");
-    entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, _sp, _sp, _offset));
-    if (function->hasFunctionCall()) {
-        entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, _ra, _sp, -_offset - 8));
-        entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, _s0, _sp, -_offset - 16));
-    } else {
-        entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, _s0, _sp, -_offset - 8));
-    }
-    entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, _s0, _sp, -_offset));
-    _currentFunction->insertFront(entryBB);
     // append completed code into content
     for (auto bb : _currentFunction->getBasicBlocks()) {
         _contend << endl << bb->toString();
@@ -251,7 +264,7 @@ void CodeGenerator::emitGEPInst(AtomIR::GetElementPtrInst* inst) {
     }
 }
 
-void CodeGenerator::emitRetInst(AtomIR::ReturnInst* inst) { _currentBasicBlock->addInstruction(new ReturnInst()); }
+void CodeGenerator::emitRetInst(AtomIR::ReturnInst* inst) { _currentBasicBlock->addInstruction(new JumpInst(retBB)); }
 
 void CodeGenerator::emitUnaryInst(AtomIR::UnaryInst* inst) {
     Register* src1 = getRegFromValue(inst->getOperand());

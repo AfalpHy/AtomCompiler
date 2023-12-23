@@ -62,6 +62,7 @@ private:
 private:
     Function *_currentFunction;
     BasicBlock *_currentBasicBlock;
+    BasicBlock *retBB;
 
     int _offset = 0;                                         // record current offset of sp
     std::unordered_map<AtomIR::Value *, int> _value2offset;  // offset of sp
@@ -78,10 +79,10 @@ private:
     Register *_ra = nullptr;
     Register *_s0 = nullptr;
     Register *_sp = nullptr;
-    Register *_a0 = nullptr;
-    Register *_a1 = nullptr;
-    Register *_a2 = nullptr;
     Register *_zero = nullptr;
+
+    std::vector<Register *> _intArgReg;
+    std::vector<Register *> _floatArgReg;
 };
 
 }  // namespace RISCV
