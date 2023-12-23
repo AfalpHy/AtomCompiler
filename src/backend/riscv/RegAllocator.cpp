@@ -10,9 +10,49 @@ void RegAllocator::run() {
 }
 
 void RegAllocator::buildInterference() {
-    for (auto bb : _theFunction->getBasicBlocks()) {
-        analyzeRegAlive(bb);
-    }
+    bool update;
+    do {
+        update = false;
+        for (auto bb : _theFunction->getBasicBlocks()) {
+            std::set<Register*> alives;
+            for (auto succ : bb->getSuccessors()) {
+                alives.insert(succ->getAlives().begin(), succ->getAlives().end());
+            }
+
+            for (auto rbegin = bb->getInstructionList().rbegin(); rbegin != bb->getInstructionList().rend(); rbegin++) {
+                auto inst = *rbegin;
+                if (Register* dest = inst->getDest()) {
+                    alives.erase(dest);
+                }
+
+                if (Register* src1 = inst->getSrc1()) {
+                    for (auto reg : alives) {
+                        if (reg == src1) {
+                            continue;
+                        }
+                        src1->addInterference(reg);
+                        reg->addInterference(src1);
+                    }
+                    alives.insert(src1);
+                }
+
+                if (Register* src2 = inst->getSrc2()) {
+                    for (auto reg : alives) {
+                        if (reg == src2) {
+                            continue;
+                        }
+                        src2->addInterference(reg);
+                        reg->addInterference(src2);
+                    }
+                    alives.insert(src2);
+                }
+            }
+            if (bb->getAlives() != alives) {
+                update = true;
+                bb->setAlives(alives);
+            }
+        }
+    } while (update);
 }
 
 void RegAllocator::coloring() {
@@ -34,42 +74,6 @@ void RegAllocator::coloring() {
     }
 }
 
-void RegAllocator::analyzeRegAlive(BasicBlock* bb) {
-    if (bb->isAnalyzed()) {
-        return;
-    }
-    std::set<Register*> alive;
-    for (auto succ : bb->getSuccessors()) {
-        analyzeRegAlive(succ);
-        alive.insert(succ->getAlives().begin(), succ->getAlives().end());
-    }
-
-    for (auto rbegin = bb->getInstructionList().rbegin(); rbegin != bb->getInstructionList().rend(); rbegin++) {
-        auto inst = *rbegin;
-        if (Register* dest = inst->getDest()) {
-            alive.erase(dest);
-        }
-
-        if (Register* src1 = inst->getSrc1()) {
-            for (auto reg : alive) {
-                src1->addInterference(reg);
-                reg->addInterference(src1);
-            }
-            alive.insert(src1);
-        }
-
-        if (Register* src2 = inst->getSrc2()) {
-            for (auto reg : alive) {
-                src2->addInterference(reg);
-                reg->addInterference(src2);
-            }
-            alive.insert(src2);
-        }
-    }
-
-    bb->setAlive(alive);
-    bb->setAnalyzed(true);
-}
 }  // namespace RISCV
 
 }  // namespace ATC

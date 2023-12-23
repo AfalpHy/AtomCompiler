@@ -18,8 +18,6 @@ private:
     void spill();
     void coalescing();
 
-    void analyzeRegAlive(BasicBlock* bb);
-
 private:
     Function* _theFunction;
     bool _useGraphColoring;
