@@ -135,6 +135,10 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
     RegAllocator regAllocator(_currentFunction, true);
     regAllocator.run();
 
+    // The stack is aligned to 16 bytes
+    if (_offset % 16 != 0) {
+        _offset = (_offset - 15) / 16 * 16;
+    }
     entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, _sp, _sp, _offset));
     if (function->hasFunctionCall()) {
         entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, _ra, _sp, -_offset - 8));

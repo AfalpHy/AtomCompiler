@@ -128,7 +128,7 @@ std::string FunctionCallInst::toString() {
             .append(" ")
             .append(_result->getType()->toString());
     }
-    str.append(" ").append(_funcName).append("(");
+    str.append(" @").append(_funcName).append("(");
     for (auto param : _params) {
         str.append(param->toString()).append(", ");
     }

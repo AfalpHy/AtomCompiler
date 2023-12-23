@@ -54,7 +54,7 @@ void IRBuilder::visit(FunctionDef *node) {
     createJump(entry);
     _currentBasicBlock = entry;
 
-    ASTVisitor::visit(node);
+    node->getBlock()->accept(this);
 }
 
 void IRBuilder::visit(Variable *node) {
