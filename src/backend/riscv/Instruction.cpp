@@ -82,6 +82,8 @@ std::string BinaryInst::toString() {
             return "slti\t" + _dest->getName() + ", " + _src1->getName() + ", " + std::to_string(_imm);
         case INST_XORI:
             return "xori\t" + _dest->getName() + ", " + _src1->getName() + ", " + std::to_string(_imm);
+        case INST_ADDIW:
+            return "addiw\t" + _dest->getName() + ", " + _src1->getName() + ", " + std::to_string(_imm);
         case INST_ADD:
             return "add\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
         case INST_SUB:
@@ -96,6 +98,16 @@ std::string BinaryInst::toString() {
             return "div\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
         case INST_REM:
             return "rem\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
+        case INST_ADDW:
+            return "addw\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
+        case INST_SUBW:
+            return "subw\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
+        case INST_MULW:
+            return "mulw\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
+        case INST_DIVW:
+            return "divw\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
+        case INST_REMW:
+            return "remw\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
         case INST_FADD_S:
             return "fadd.s\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
         case INST_FSUB_S:

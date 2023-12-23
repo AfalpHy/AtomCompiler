@@ -384,26 +384,26 @@ Register* CodeGenerator::emitIntBinaryInst(int instType, AtomIR::Value* operand1
     switch (instType) {
         case AtomIR::BinaryInst::INST_ADD:
             if (src2) {
-                binaryInst = new BinaryInst(BinaryInst::INST_ADD, src1, src2);
+                binaryInst = new BinaryInst(BinaryInst::INST_ADDW, src1, src2);
             } else {
-                binaryInst = new BinaryInst(BinaryInst::INST_ADDI, src1, imm);
+                binaryInst = new BinaryInst(BinaryInst::INST_ADDIW, src1, imm);
             }
             break;
         case AtomIR::BinaryInst::INST_SUB:
             if (src2) {
-                binaryInst = new BinaryInst(BinaryInst::INST_SUB, src1, src2);
+                binaryInst = new BinaryInst(BinaryInst::INST_SUBW, src1, src2);
             } else {
-                binaryInst = new BinaryInst(BinaryInst::INST_ADDI, src1, imm);
+                binaryInst = new BinaryInst(BinaryInst::INST_ADDIW, src1, imm);
             }
             break;
         case AtomIR::BinaryInst::INST_MUL:
-            binaryInst = new BinaryInst(BinaryInst::INST_MUL, src1, src2);
+            binaryInst = new BinaryInst(BinaryInst::INST_MULW, src1, src2);
             break;
         case AtomIR::BinaryInst::INST_DIV:
-            binaryInst = new BinaryInst(BinaryInst::INST_DIV, src1, src2);
+            binaryInst = new BinaryInst(BinaryInst::INST_DIVW, src1, src2);
             break;
         case AtomIR::BinaryInst::INST_MOD:
-            binaryInst = new BinaryInst(BinaryInst::INST_REM, src1, src2);
+            binaryInst = new BinaryInst(BinaryInst::INST_REMW, src1, src2);
             break;
         case AtomIR::BinaryInst::INST_LT:
         case AtomIR::BinaryInst::INST_LE:
