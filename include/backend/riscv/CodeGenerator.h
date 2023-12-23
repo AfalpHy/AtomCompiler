@@ -75,7 +75,12 @@ private:
     std::stringstream _contend;
 
     // common regs
+    Register *_ra = nullptr;
     Register *_s0 = nullptr;
+    Register *_sp = nullptr;
+    Register *_a0 = nullptr;
+    Register *_a1 = nullptr;
+    Register *_a2 = nullptr;
     Register *_zero = nullptr;
 };
 

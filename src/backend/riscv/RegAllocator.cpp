@@ -58,6 +58,9 @@ void RegAllocator::buildInterference() {
 void RegAllocator::coloring() {
     std::set<std::string> intPhyReg = {"a1", "a2", "a3", "a4", "a5"};
     for (auto reg : Function::AllRegInFunction) {
+        if (reg->isFixed()) {
+            continue;
+        }
         for (auto phyReg : intPhyReg) {
             bool conflict = false;
             for (auto interference : reg->getInterferences()) {

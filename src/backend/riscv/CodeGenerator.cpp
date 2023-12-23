@@ -19,11 +19,33 @@ int Register::Index = 0;
 std::set<Register*> Function::AllRegInFunction;
 
 CodeGenerator::CodeGenerator() {
+    _ra = new Register();
+    _ra->setName("ra");
+    _ra->setIsFixed(true);
+
     _s0 = new Register();
     _s0->setName("s0");
+    _s0->setIsFixed(true);
+
+    _sp = new Register();
+    _sp->setName("sp");
+    _sp->setIsFixed(true);
+
+    _a0 = new Register();
+    _a0->setName("a0");
+    _a0->setIsFixed(true);
+
+    _a1 = new Register();
+    _a1->setName("a1");
+    _a1->setIsFixed(true);
+
+    _a2 = new Register();
+    _a2->setName("a2");
+    _a2->setIsFixed(true);
 
     _zero = new Register();
     _zero->setName("zero");
+    _zero->setIsFixed(true);
 }
 
 void CodeGenerator::dump(std::ostream& os) { os << _contend.str() << endl; }
@@ -108,6 +130,16 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
     _contend << "\t.p2align\t1" << endl;
     _contend << "\t.type\t" << function->getName() << ",@function" << endl;
     _contend << "." << function->getName() << ":";
+    auto entryBB = new BasicBlock("");
+    entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, _sp, _sp, _offset));
+    if (function->hasFunctionCall()) {
+        entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, _ra, _sp, -_offset - 8));
+        entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, _s0, _sp, -_offset - 16));
+    } else {
+        entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, _s0, _sp, -_offset - 8));
+    }
+    entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, _s0, _sp, -_offset));
+    _currentFunction->insertFront(entryBB);
     // append completed code into content
     for (auto bb : _currentFunction->getBasicBlocks()) {
         _contend << endl << bb->toString();

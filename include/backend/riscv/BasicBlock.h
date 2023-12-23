@@ -11,6 +11,8 @@ class BasicBlock {
 public:
     BasicBlock() : _name(".LBB" + std::to_string(Index++)) {}
 
+    BasicBlock(const std::string &name) : _name(name) {}
+
     const std::string &getName() { return _name; }
 
     void addInstruction(Instruction *inst);

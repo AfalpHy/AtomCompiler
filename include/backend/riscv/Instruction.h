@@ -159,6 +159,13 @@ public:
         _dest = new Register();
     }
 
+    BinaryInst(int type, Register* dest, Register* src1, int imm) {
+        _type = type;
+        _dest = dest;
+        _src1 = src1;
+        _imm = imm;
+    }
+
     virtual int getClassId() override { return ID_BINARY_INST; }
 
     virtual std::string toString() override;
