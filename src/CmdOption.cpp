@@ -14,8 +14,7 @@ llvm::cl::opt<std::string> OtherSrc("other-src", llvm::cl::desc("other src which
 llvm::cl::opt<bool> RunAfterCompiling("R", llvm::cl::desc("run after compiling"), llvm::cl::init(false),
                                       llvm::cl::cat(MyCategory));
 
-llvm::cl::opt<std::string> RunInput(("R-input",
-                                     llvm::cl::desc("input file for program which will run after compiling")),
+llvm::cl::opt<std::string> RunInput("R-input", llvm::cl::desc("input file for program which will run after compiling"),
                                     llvm::cl::cat(MyCategory));
 
 llvm::cl::opt<bool> DumpAst("dump-ast", llvm::cl::desc("dump the ATC Ast"), llvm::cl::cat(MyCategory));
