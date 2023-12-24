@@ -58,6 +58,8 @@ std::string StoreInst::toString() {
 
 std::string UnaryInst::toString() {
     switch (_type) {
+        case INST_MV:
+            return "mv\t" + _dest->getName() + ", " + _src1->getName();
         case INST_FCVT_S_W:
             return "fcvt.s.w\t" + _dest->getName() + ", " + _src1->getName();
         case INST_FCVT_W_S:

@@ -82,6 +82,8 @@ public:
 
     const std::string& getFuncName() { return _funcName; }
 
+    const std::vector<Value*>& getParams() { return _params; }
+
 private:
     std::string _funcName;
     std::vector<Value*> _params;

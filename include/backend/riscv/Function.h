@@ -18,6 +18,8 @@ public:
 
     static std::set<Register*> AllRegInFunction;
 
+    static std::vector<Register*> CallerSavedRegs;
+
 private:
     std::list<BasicBlock*> _basicBlocks;
 };

@@ -147,7 +147,7 @@ public:
 
     virtual std::string toString() override;
 
-    enum { INST_FCVT_S_W, INST_FCVT_W_S, INST_SEQZ, INST_SNEZ, INST_FMV_W_X };
+    enum { INST_MV, INST_FCVT_S_W, INST_FCVT_W_S, INST_SEQZ, INST_SNEZ, INST_FMV_W_X };
 };
 
 class BinaryInst : public Instruction {

@@ -17,6 +17,7 @@ int BasicBlock::Index = 0;
 int Register::Index = 0;
 
 std::set<Register*> Function::AllRegInFunction;
+std::vector<Register*> Function::CallerSavedRegs;
 
 CodeGenerator::CodeGenerator() {
     _ra = new Register();
@@ -40,12 +41,15 @@ CodeGenerator::CodeGenerator() {
         argReg->setName("a" + std::to_string(i));
         argReg->setIsFixed(true);
         _intArgReg.push_back(argReg);
+        Function::CallerSavedRegs.push_back(argReg);
 
         argReg = new Register();
         argReg->setName("fa" + std::to_string(i));
         argReg->setIsFixed(true);
         _floatArgReg.push_back(argReg);
+        Function::CallerSavedRegs.push_back(argReg);
     }
+    /// TODO:add t0-t6 to Function::CallerSavedRegs
 }
 
 void CodeGenerator::dump(std::ostream& os) { os << _contend.str() << endl; }
@@ -239,9 +243,33 @@ void CodeGenerator::emitStoreInst(AtomIR::StoreInst* inst) {
 }
 
 void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
+    int intOrder = 0;
+    int floatOrder = 0;
+    for (auto param : inst->getParams()) {
+        if (param->getType()->isPointerType() || param->getType()->getTypeEnum() == AtomIR::INT32_TY) {
+            if (intOrder < 8) {
+                _currentBasicBlock->addInstruction(
+                    new UnaryInst(UnaryInst::INST_MV, _intArgReg[intOrder++], _value2reg[param]));
+            } else {
+            }
+        } else {
+            if (floatOrder < 8) {
+                _currentBasicBlock->addInstruction(
+                    new UnaryInst(UnaryInst::INST_MV, _floatArgReg[floatOrder++], _value2reg[param]));
+            } else {
+            }
+        }
+    }
     _currentBasicBlock->addInstruction(new FunctionCallInst(inst->getFuncName()));
     if (inst->getResult()) {
-        _value2reg[inst->getResult()] = new Register();
+        Instruction* mv;
+        if (inst->getResult()->getType()->getTypeEnum() == AtomIR::INT32_TY) {
+            mv = new UnaryInst(UnaryInst::INST_MV, _intArgReg[0]);
+        } else {
+            mv = new UnaryInst(UnaryInst::INST_MV, _floatArgReg[0]);
+        }
+        _currentBasicBlock->addInstruction(mv);
+        _value2reg[inst->getResult()] = mv->getDest();
     }
 }
 
@@ -268,7 +296,18 @@ void CodeGenerator::emitGEPInst(AtomIR::GetElementPtrInst* inst) {
     }
 }
 
-void CodeGenerator::emitRetInst(AtomIR::ReturnInst* inst) { _currentBasicBlock->addInstruction(new JumpInst(retBB)); }
+void CodeGenerator::emitRetInst(AtomIR::ReturnInst* inst) {
+    if (inst->getResult()) {
+        if (inst->getResult()->getType()->getTypeEnum() == AtomIR::INT32_TY) {
+            _currentBasicBlock->addInstruction(
+                new UnaryInst(UnaryInst::INST_MV, _intArgReg[0], _value2reg[inst->getResult()]));
+        } else {
+            _currentBasicBlock->addInstruction(
+                new UnaryInst(UnaryInst::INST_MV, _floatArgReg[0], _value2reg[inst->getResult()]));
+        }
+    }
+    _currentBasicBlock->addInstruction(new JumpInst(retBB));
+}
 
 void CodeGenerator::emitUnaryInst(AtomIR::UnaryInst* inst) {
     Register* src1 = getRegFromValue(inst->getOperand());

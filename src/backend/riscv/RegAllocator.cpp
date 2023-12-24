@@ -46,6 +46,17 @@ void RegAllocator::buildInterference() {
                     }
                     alives.insert(src2);
                 }
+
+                if (inst->getClassId() == ID_FUNCTION_CALL_INST) {
+                    for (auto saved : Function::CallerSavedRegs) {
+                        for (auto reg : alives) {
+                            if (reg == saved) {
+                                continue;
+                            }
+                            reg->addInterference(saved);
+                        }
+                    }
+                }
             }
             if (bb->getAlives() != alives) {
                 update = true;
@@ -56,7 +67,7 @@ void RegAllocator::buildInterference() {
 }
 
 void RegAllocator::coloring() {
-    std::set<std::string> intPhyReg = {"a1", "a2", "a3", "a4", "a5"};
+    std::set<std::string> intPhyReg = {"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7"};
     for (auto reg : Function::AllRegInFunction) {
         if (reg->isFixed()) {
             continue;
