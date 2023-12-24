@@ -376,10 +376,23 @@ void IRBuilder::visit(BinaryExpression *node) {
         return;
     }
 
-    node->getLeft()->accept(this);
-    auto left = _value;
-    node->getRight()->accept(this);
-    auto right = _value;
+    llvm::Value *left;
+    llvm::Value *right;
+
+    // When the left expression is neither a binary operation nor a function call,
+    // the right expression is evaluated first.
+    // This is particularly useful when the right expression involves a binary operation or a function call.
+    if (node->getLeft()->getClassId() != ID_BINARY_EXPRESSION || node->getLeft()->getClassId() != ID_FUNCTION_CALL) {
+        node->getRight()->accept(this);
+        right = _value;
+        node->getLeft()->accept(this);
+        left = _value;
+    } else {
+        node->getLeft()->accept(this);
+        left = _value;
+        node->getRight()->accept(this);
+        right = _value;
+    }
 
     // make the left expr and right expr has the same type
     if (left->getType() == _floatTy || right->getType() == _floatTy) {
