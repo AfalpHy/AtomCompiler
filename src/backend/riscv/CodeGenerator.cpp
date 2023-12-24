@@ -43,7 +43,7 @@ CodeGenerator::CodeGenerator() {
         _intArgReg.push_back(argReg);
         Function::CallerSavedRegs.push_back(argReg);
 
-        argReg = new Register();
+        argReg = new Register(false);
         argReg->setName("fa" + std::to_string(i));
         argReg->setIsFixed(true);
         _floatArgReg.push_back(argReg);
@@ -118,9 +118,14 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
 
     _currentFunction = new Function();
 
-    int i = 0;
+    int intOrder = 0;
+    int floatOrder = 0;
     for (auto param : function->getParams()) {
-        _value2reg[param] = _intArgReg[i++];
+        if (param->getType()->getTypeEnum() == AtomIR::INT32_TY) {
+            _value2reg[param] = _intArgReg[intOrder++];
+        } else {
+            _value2reg[param] = _floatArgReg[floatOrder++];
+        }
     }
     auto entryBB = new BasicBlock("");
     retBB = new BasicBlock("." + function->getName() + "_ret");
@@ -160,10 +165,10 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
     _contend << "\t.globl\t" << function->getName() << endl;
     _contend << "\t.p2align\t1" << endl;
     _contend << "\t.type\t" << function->getName() << ",@function" << endl;
-    _contend << "." << function->getName() << ":";
+    _contend << function->getName() << ":" << endl;
     // append completed code into content
     for (auto bb : _currentFunction->getBasicBlocks()) {
-        _contend << endl << bb->toString();
+        _contend << bb->toString();
     }
     _contend << "\t.size\t" << function->getName() << ", .-" << function->getName() << endl << endl;
 }
@@ -255,7 +260,7 @@ void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
         } else {
             if (floatOrder < 8) {
                 _currentBasicBlock->addInstruction(
-                    new UnaryInst(UnaryInst::INST_MV, _floatArgReg[floatOrder++], _value2reg[param]));
+                    new UnaryInst(UnaryInst::INST_FMV_S, _floatArgReg[floatOrder++], _value2reg[param]));
             } else {
             }
         }
@@ -266,7 +271,7 @@ void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
         if (inst->getResult()->getType()->getTypeEnum() == AtomIR::INT32_TY) {
             mv = new UnaryInst(UnaryInst::INST_MV, _intArgReg[0]);
         } else {
-            mv = new UnaryInst(UnaryInst::INST_MV, _floatArgReg[0]);
+            mv = new UnaryInst(UnaryInst::INST_FMV_S, _floatArgReg[0]);
         }
         _currentBasicBlock->addInstruction(mv);
         _value2reg[inst->getResult()] = mv->getDest();
@@ -303,7 +308,7 @@ void CodeGenerator::emitRetInst(AtomIR::ReturnInst* inst) {
                 new UnaryInst(UnaryInst::INST_MV, _intArgReg[0], _value2reg[inst->getResult()]));
         } else {
             _currentBasicBlock->addInstruction(
-                new UnaryInst(UnaryInst::INST_MV, _floatArgReg[0], _value2reg[inst->getResult()]));
+                new UnaryInst(UnaryInst::INST_FMV_S, _floatArgReg[0], _value2reg[inst->getResult()]));
         }
     }
     _currentBasicBlock->addInstruction(new JumpInst(retBB));
@@ -320,9 +325,47 @@ void CodeGenerator::emitUnaryInst(AtomIR::UnaryInst* inst) {
                 src1, offset);
             break;
         }
-        case AtomIR::UnaryInst::INST_ITOF:
+        case AtomIR::UnaryInst::INST_ITOF: {
+            if (!_currentBasicBlock->getInstructionList().empty() &&
+                _currentBasicBlock->getInstructionList().back()->getClassId() == ID_BINARY_INST) {
+                Register* dest;
+                auto lastInst = _currentBasicBlock->getInstructionList().back();
+                switch (lastInst->getInstType()) {
+                    case BinaryInst::INST_FSEQ_S: {
+                        auto zeroBB = new BasicBlock();
+                        _currentFunction->addBasicBlock(zeroBB);
+                        auto afterBB = new BasicBlock();
+                        _currentFunction->addBasicBlock(afterBB);
+                        auto beq = new CondJumpInst(CondJumpInst::INST_BEQ, src1, _zero, zeroBB);
+                        _currentBasicBlock->addInstruction(beq);
+                        dest = loadConstFloat(1);
+                        _currentBasicBlock->addInstruction(new JumpInst(afterBB));
+                        zeroBB->addInstruction(new UnaryInst(UnaryInst::INST_FMV_W_X, dest, _zero));
+                        _currentBasicBlock = afterBB;
+                        _value2reg[inst->getResult()] = dest;
+                        return;
+                    }
+                    case BinaryInst::INST_FSNE_S: {
+                        auto zeroBB = new BasicBlock();
+                        _currentFunction->addBasicBlock(zeroBB);
+                        auto afterBB = new BasicBlock();
+                        _currentFunction->addBasicBlock(afterBB);
+                        auto bne = new CondJumpInst(CondJumpInst::INST_BNE, src1, _zero, zeroBB);
+                        _currentBasicBlock->addInstruction(bne);
+                        dest = loadConstFloat(1);
+                        _currentBasicBlock->addInstruction(new JumpInst(afterBB));
+                        zeroBB->addInstruction(new UnaryInst(UnaryInst::INST_FMV_W_X, dest, _zero));
+                        _currentBasicBlock = afterBB;
+                        _value2reg[inst->getResult()] = dest;
+                        return;
+                    }
+                    default:
+                        break;
+                }
+            }
             unaryInst = new UnaryInst(UnaryInst::INST_FCVT_S_W, src1);
             break;
+        }
         case AtomIR::UnaryInst::INST_FTOI:
             unaryInst = new UnaryInst(UnaryInst::INST_FCVT_W_S, src1);
             break;
@@ -567,50 +610,17 @@ Register* CodeGenerator::emitFloatBinaryInst(int instType, AtomIR::Value* operan
             binaryInst = new BinaryInst(BinaryInst::INST_FSLE_S, src1, src2);
             break;
         case AtomIR::BinaryInst::INST_EQ:
-        case AtomIR::BinaryInst::INST_NE:
             binaryInst = new BinaryInst(BinaryInst::INST_FSEQ_S, src1, src2);
+            break;
+        case AtomIR::BinaryInst::INST_NE:
+            binaryInst = new BinaryInst(BinaryInst::INST_FSNE_S, src1, src2);
             break;
         default:
             assert(0 && "unsupported yet");
             break;
     }
     _currentBasicBlock->addInstruction(binaryInst);
-    auto dest = binaryInst->getDest();
-
-    switch (instType) {
-        case AtomIR::BinaryInst::INST_LT:
-        case AtomIR::BinaryInst::INST_LE:
-        case AtomIR::BinaryInst::INST_GT:
-        case AtomIR::BinaryInst::INST_GE:
-        case AtomIR::BinaryInst::INST_EQ: {
-            auto zeroBB = new BasicBlock();
-            _currentFunction->addBasicBlock(zeroBB);
-            auto afterBB = new BasicBlock();
-            _currentFunction->addBasicBlock(afterBB);
-            auto beq = new CondJumpInst(CondJumpInst::INST_BEQ, dest, _zero, zeroBB);
-            _currentBasicBlock->addInstruction(beq);
-            dest = loadConstFloat(1);
-            _currentBasicBlock->addInstruction(new JumpInst(afterBB));
-            zeroBB->addInstruction(new UnaryInst(UnaryInst::INST_FMV_W_X, dest, _zero));
-            _currentBasicBlock = afterBB;
-            break;
-        }
-        case AtomIR::BinaryInst::INST_NE: {
-            auto zeroBB = new BasicBlock();
-            _currentFunction->addBasicBlock(zeroBB);
-            auto afterBB = new BasicBlock();
-            _currentFunction->addBasicBlock(afterBB);
-            auto bne = new CondJumpInst(CondJumpInst::INST_BNE, dest, _zero, zeroBB);
-            _currentBasicBlock->addInstruction(bne);
-            dest = loadConstFloat(1);
-            _currentBasicBlock->addInstruction(new JumpInst(afterBB));
-            zeroBB->addInstruction(new UnaryInst(UnaryInst::INST_FMV_W_X, dest, _zero));
-            _currentBasicBlock = afterBB;
-        }
-        default:
-            break;
-    }
-    return dest;
+    return binaryInst->getDest();
 }
 
 Register* CodeGenerator::loadConstInt(int value) {

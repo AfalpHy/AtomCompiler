@@ -5,7 +5,8 @@ namespace ATC {
 
 namespace RISCV {
 
-Register::Register() {
+Register::Register(bool b) {
+    _intReg = b;
     _name = "virtual_reg" + std::to_string(Index++);
     Function::AllRegInFunction.insert(this);
 }

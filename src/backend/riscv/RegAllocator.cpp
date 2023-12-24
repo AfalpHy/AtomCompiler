@@ -27,7 +27,7 @@ void RegAllocator::buildInterference() {
 
                 if (Register* src1 = inst->getSrc1()) {
                     for (auto reg : alives) {
-                        if (reg == src1) {
+                        if (reg == src1 || reg->isIntReg() != src1->isIntReg()) {
                             continue;
                         }
                         src1->addInterference(reg);
@@ -38,7 +38,7 @@ void RegAllocator::buildInterference() {
 
                 if (Register* src2 = inst->getSrc2()) {
                     for (auto reg : alives) {
-                        if (reg == src2) {
+                        if (reg == src2 || reg->isIntReg() != src2->isIntReg()) {
                             continue;
                         }
                         src2->addInterference(reg);
@@ -50,7 +50,7 @@ void RegAllocator::buildInterference() {
                 if (inst->getClassId() == ID_FUNCTION_CALL_INST) {
                     for (auto saved : Function::CallerSavedRegs) {
                         for (auto reg : alives) {
-                            if (reg == saved) {
+                            if (reg == saved || reg->isIntReg() != saved->isIntReg()) {
                                 continue;
                             }
                             reg->addInterference(saved);
@@ -68,11 +68,10 @@ void RegAllocator::buildInterference() {
 
 void RegAllocator::coloring() {
     std::set<std::string> intPhyReg = {"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7"};
-    for (auto reg : Function::AllRegInFunction) {
-        if (reg->isFixed()) {
-            continue;
-        }
-        for (auto phyReg : intPhyReg) {
+    std::set<std::string> floatPhyReg = {"fa0", "fa1", "fa2", "fa3", "fa4", "fa5", "fa6", "fa7"};
+
+    auto colorOneReg = [](Register* reg, const std::set<std::string>& phyRegs) {
+        for (auto phyReg : phyRegs) {
             bool conflict = false;
             for (auto interference : reg->getInterferences()) {
                 if (interference->getName() == phyReg) {
@@ -84,6 +83,17 @@ void RegAllocator::coloring() {
                 reg->setName(phyReg);
                 break;
             }
+        }
+    };
+
+    for (auto reg : Function::AllRegInFunction) {
+        if (reg->isFixed()) {
+            continue;
+        }
+        if (reg->isIntReg()) {
+            colorOneReg(reg, intPhyReg);
+        } else {
+            colorOneReg(reg, floatPhyReg);
         }
     }
 }

@@ -60,6 +60,8 @@ std::string UnaryInst::toString() {
     switch (_type) {
         case INST_MV:
             return "mv\t" + _dest->getName() + ", " + _src1->getName();
+        case INST_FMV_S:
+            return "fmv.s\t" + _dest->getName() + ", " + _src1->getName();
         case INST_FCVT_S_W:
             return "fcvt.s.w\t" + _dest->getName() + ", " + _src1->getName();
         case INST_FCVT_W_S:
@@ -123,6 +125,7 @@ std::string BinaryInst::toString() {
         case INST_FSLE_S:
             return "fle.s\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
         case INST_FSEQ_S:
+        case INST_FSNE_S:
             return "feq.s\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
         default:
             assert(0 && "unsupported");

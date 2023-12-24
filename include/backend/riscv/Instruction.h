@@ -77,7 +77,15 @@ public:
         _type = type;
         _src1 = src1;
         _imm = imm;
-        _dest = new Register();
+        switch (type) {
+            case INST_FLW:
+            case INST_FLD:
+                _dest = new Register(false);
+                break;
+            default:
+                _dest = new Register();
+                break;
+        }
     }
 
     LoadInst(int type, Register* dest, Register* src1, int imm) {
@@ -134,7 +142,16 @@ public:
     UnaryInst(int type, Register* src1) {
         _type = type;
         _src1 = src1;
-        _dest = new Register();
+        switch (type) {
+            case INST_FMV_S:
+            case INST_FCVT_S_W:
+            case INST_FMV_W_X:
+                _dest = new Register(false);
+                break;
+            default:
+                _dest = new Register();
+                break;
+        }
     }
 
     UnaryInst(int type, Register* dest, Register* src1) {
@@ -147,7 +164,7 @@ public:
 
     virtual std::string toString() override;
 
-    enum { INST_MV, INST_FCVT_S_W, INST_FCVT_W_S, INST_SEQZ, INST_SNEZ, INST_FMV_W_X };
+    enum { INST_MV, INST_FMV_S, INST_FCVT_S_W, INST_FCVT_W_S, INST_SEQZ, INST_SNEZ, INST_FMV_W_X };
 };
 
 class BinaryInst : public Instruction {
@@ -156,7 +173,17 @@ public:
         _type = type;
         _src1 = src1;
         _src2 = src2;
-        _dest = new Register();
+        switch (type) {
+            case INST_FADD_S:
+            case INST_FSUB_S:
+            case INST_FMUL_S:
+            case INST_FDIV_S:
+                _dest = new Register(false);
+                break;
+            default:
+                _dest = new Register();
+                break;
+        }
     }
 
     BinaryInst(int type, Register* src1, int imm) {
@@ -204,7 +231,8 @@ public:
         INST_FDIV_S,
         INST_FSLT_S,
         INST_FSLE_S,
-        INST_FSEQ_S
+        INST_FSEQ_S,
+        INST_FSNE_S // just for next inst, the asm code same as INST_FSEQ_S 
     };
 };
 
