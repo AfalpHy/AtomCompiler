@@ -49,7 +49,7 @@ public:
     ImmInst(int type, int imm) {
         _type = type;
         _imm = imm;
-        _dest = new Register();
+        _dest = new Register(this);
     }
 
     virtual int getClassId() override { return ID_IMM_INST; }
@@ -61,7 +61,7 @@ public:
 
 class LoadGlobalAddrInst : public Instruction {
 public:
-    LoadGlobalAddrInst(const std::string& name) : _name(name) { _dest = new Register(); }
+    LoadGlobalAddrInst(const std::string& name) : _name(name) { _dest = new Register(this); }
 
     virtual int getClassId() override { return ID_LOAD_GLOBAL_ADDR_INST; }
 
@@ -80,10 +80,10 @@ public:
         switch (type) {
             case INST_FLW:
             case INST_FLD:
-                _dest = new Register(false);
+                _dest = new Register(this,false);
                 break;
             default:
-                _dest = new Register();
+                _dest = new Register(this);
                 break;
         }
     }
@@ -146,10 +146,10 @@ public:
             case INST_FMV_S:
             case INST_FCVT_S_W:
             case INST_FMV_W_X:
-                _dest = new Register(false);
+                _dest = new Register(this,false);
                 break;
             default:
-                _dest = new Register();
+                _dest = new Register(this);
                 break;
         }
     }
@@ -178,10 +178,10 @@ public:
             case INST_FSUB_S:
             case INST_FMUL_S:
             case INST_FDIV_S:
-                _dest = new Register(false);
+                _dest = new Register(this,false);
                 break;
             default:
-                _dest = new Register();
+                _dest = new Register(this);
                 break;
         }
     }
@@ -190,7 +190,7 @@ public:
         _type = type;
         _src1 = src1;
         _imm = imm;
-        _dest = new Register();
+        _dest = new Register(this);
     }
 
     BinaryInst(int type, Register* dest, Register* src1, int imm) {

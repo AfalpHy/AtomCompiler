@@ -43,7 +43,7 @@ CodeGenerator::CodeGenerator() {
         _intArgReg.push_back(argReg);
         Function::CallerSavedRegs.push_back(argReg);
 
-        argReg = new Register(false);
+        argReg = new Register(nullptr, false);
         argReg->setName("fa" + std::to_string(i));
         argReg->setIsFixed(true);
         _floatArgReg.push_back(argReg);
@@ -326,42 +326,20 @@ void CodeGenerator::emitUnaryInst(AtomIR::UnaryInst* inst) {
             break;
         }
         case AtomIR::UnaryInst::INST_ITOF: {
-            if (!_currentBasicBlock->getInstructionList().empty() &&
-                _currentBasicBlock->getInstructionList().back()->getClassId() == ID_BINARY_INST) {
-                Register* dest;
-                auto lastInst = _currentBasicBlock->getInstructionList().back();
-                switch (lastInst->getInstType()) {
-                    case BinaryInst::INST_FSEQ_S: {
-                        auto zeroBB = new BasicBlock();
-                        _currentFunction->addBasicBlock(zeroBB);
-                        auto afterBB = new BasicBlock();
-                        _currentFunction->addBasicBlock(afterBB);
-                        auto beq = new CondJumpInst(CondJumpInst::INST_BEQ, src1, _zero, zeroBB);
-                        _currentBasicBlock->addInstruction(beq);
-                        dest = loadConstFloat(1);
-                        _currentBasicBlock->addInstruction(new JumpInst(afterBB));
-                        zeroBB->addInstruction(new UnaryInst(UnaryInst::INST_FMV_W_X, dest, _zero));
-                        _currentBasicBlock = afterBB;
-                        _value2reg[inst->getResult()] = dest;
-                        return;
-                    }
-                    case BinaryInst::INST_FSNE_S: {
-                        auto zeroBB = new BasicBlock();
-                        _currentFunction->addBasicBlock(zeroBB);
-                        auto afterBB = new BasicBlock();
-                        _currentFunction->addBasicBlock(afterBB);
-                        auto bne = new CondJumpInst(CondJumpInst::INST_BNE, src1, _zero, zeroBB);
-                        _currentBasicBlock->addInstruction(bne);
-                        dest = loadConstFloat(1);
-                        _currentBasicBlock->addInstruction(new JumpInst(afterBB));
-                        zeroBB->addInstruction(new UnaryInst(UnaryInst::INST_FMV_W_X, dest, _zero));
-                        _currentBasicBlock = afterBB;
-                        _value2reg[inst->getResult()] = dest;
-                        return;
-                    }
-                    default:
-                        break;
-                }
+            if (src1->getDefined() && src1->getDefined()->getClassId() == ID_BINARY_INST &&
+                src1->getDefined()->getInstType() == BinaryInst::INST_FSEQ_S) {
+                auto zeroBB = new BasicBlock();
+                _currentFunction->addBasicBlock(zeroBB);
+                auto afterBB = new BasicBlock();
+                _currentFunction->addBasicBlock(afterBB);
+                auto beq = new CondJumpInst(CondJumpInst::INST_BEQ, src1, _zero, zeroBB);
+                _currentBasicBlock->addInstruction(beq);
+                Register* dest = loadConstFloat(1);
+                _currentBasicBlock->addInstruction(new JumpInst(afterBB));
+                zeroBB->addInstruction(new UnaryInst(UnaryInst::INST_FMV_W_X, dest, _zero));
+                _currentBasicBlock = afterBB;
+                _value2reg[inst->getResult()] = dest;
+                return;
             }
             unaryInst = new UnaryInst(UnaryInst::INST_FCVT_S_W, src1);
             break;
@@ -610,16 +588,18 @@ Register* CodeGenerator::emitFloatBinaryInst(int instType, AtomIR::Value* operan
             binaryInst = new BinaryInst(BinaryInst::INST_FSLE_S, src1, src2);
             break;
         case AtomIR::BinaryInst::INST_EQ:
-            binaryInst = new BinaryInst(BinaryInst::INST_FSEQ_S, src1, src2);
-            break;
         case AtomIR::BinaryInst::INST_NE:
-            binaryInst = new BinaryInst(BinaryInst::INST_FSNE_S, src1, src2);
+            binaryInst = new BinaryInst(BinaryInst::INST_FSEQ_S, src1, src2);
             break;
         default:
             assert(0 && "unsupported yet");
             break;
     }
     _currentBasicBlock->addInstruction(binaryInst);
+    if (instType == AtomIR::BinaryInst::INST_NE) {
+        _currentBasicBlock->addInstruction(
+            new UnaryInst(UnaryInst::INST_SEQZ, binaryInst->getDest(), binaryInst->getDest()));
+    }
     return binaryInst->getDest();
 }
 
