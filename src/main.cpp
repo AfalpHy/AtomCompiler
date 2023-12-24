@@ -11,6 +11,7 @@
 #include "AST/SemanticChecker.h"
 #include "ATCLexer.h"
 #include "ATCParser.h"
+#include "CmdOption.h"
 #include "antlr4-runtime.h"
 #include "arm/CodeGenerator.h"
 #include "atomIR/IRBuilder.h"
@@ -22,49 +23,14 @@ using namespace antlr4;
 using namespace ATC;
 
 int main(int argc, const char *argv[]) {
-    int current = 1;
-    string sourceFile;
-    string otherSrcFile;
-    string runtimeInput;
-    string compareFile;
-    string compareResult;
-    bool useLLVM = false;
-    bool runAfterCompile = false;
-    bool dumpAst = false;
-    bool check = false;
-
-    while (current < argc) {
-        if (strcmp(argv[current], "--emit-llvm") == 0) {
-            useLLVM = true;
-        } else if (strcmp(argv[current], "--other-src") == 0) {
-            current++;
-            otherSrcFile = argv[current];
-        } else if (strcmp(argv[current], "-R") == 0) {
-            runAfterCompile = true;
-        } else if (strcmp(argv[current], "--R-input") == 0) {
-            current++;
-            runtimeInput = argv[current];
-        } else if (strcmp(argv[current], "--dump-ast") == 0) {
-            dumpAst = true;
-        } else if (strcmp(argv[current], "--check") == 0) {
-            check = true;
-        } else if (strcmp(argv[current], "--compare-file") == 0) {
-            current++;
-            compareFile = argv[current];
-        } else if (strcmp(argv[current], "--compare-result") == 0) {
-            current++;
-            compareResult = argv[current];
-        } else {
-            sourceFile = argv[current];
-        }
-        current++;
-    }
+    llvm::cl::HideUnrelatedOptions({&MyCategory});
+    llvm::cl::ParseCommandLineOptions(argc, argv);
 
     std::ifstream file;
-    file.open(sourceFile);
+    file.open(SrcPath);
 
     if (!file.is_open()) {
-        cerr << filesystem::absolute(sourceFile) << " not exist" << endl;
+        cerr << filesystem::absolute(std::string(SrcPath)) << " not exist" << endl;
         return 0;
     }
     ANTLRInputStream input(file);
@@ -74,7 +40,7 @@ int main(int argc, const char *argv[]) {
     ATCParser parser(&token);
     auto context = parser.compUnit();
     if (parser.getNumberOfSyntaxErrors() != 0) {
-        cerr << "There are syntax errors in " << filesystem::absolute(sourceFile) << endl;
+        cerr << "There are syntax errors in " << filesystem::absolute(std::string(SrcPath)) << endl;
         return -1;
     }
     ASTBuilder astBuilder;
@@ -86,32 +52,32 @@ int main(int argc, const char *argv[]) {
     //     compUnit->accept(&checker);
     // }
 
-    if (dumpAst) {
+    if (DumpAst) {
         ASTDumper dump;
         for (auto compUnit : CompUnit::AllCompUnits) {
             compUnit->accept(&dump);
         }
     }
 
-    if (useLLVM) {
+    if (EmitLLVM) {
         LLVMIR::IRBuilder irBuilder;
         for (auto compUnit : CompUnit::AllCompUnits) {
             compUnit->accept(&irBuilder);
         }
-        std::filesystem::path filePath = sourceFile;
+        std::filesystem::path filePath = std::string(SrcPath);
         string filename = filePath.stem();
         string llFile = filename + ".ll";
         string outFile = filename + ".out";
         irBuilder.dumpLL(llFile);
         string cmd = "clang";
-        cmd.append(" ").append(llFile).append(" ").append(otherSrcFile);
+        cmd.append(" ").append(llFile).append(" ").append(OtherSrc);
         system(cmd.c_str());
-        if (runAfterCompile) {
+        if (RunAfterCompiling) {
             cmd = "./a.out";
-            if (!runtimeInput.empty()) {
-                cmd.append(" < ").append(runtimeInput);
+            if (!RunInput.empty()) {
+                cmd.append(" < ").append(RunInput);
             }
-            if (check) {
+            if (Check) {
                 cmd.append(" > ").append(outFile);
                 int ret = system(cmd.c_str());
                 ret = WEXITSTATUS(ret);
@@ -119,10 +85,10 @@ int main(int argc, const char *argv[]) {
                 cmd.append(" ").append(to_string(ret)).append(" >> ").append(outFile);
                 system(cmd.c_str());
                 cmd = "diff";
-                cmd.append(" ").append(outFile).append(" ").append(compareFile).append(" >> ").append(compareResult);
+                cmd.append(" ").append(outFile).append(" ").append(CompareFile).append(" >> ").append(CompareResult);
                 system(cmd.c_str());
                 cmd = "echo";
-                cmd.append(" \"").append(filePath).append("\"").append(" >> ").append(compareResult);
+                cmd.append(" \"").append(filePath).append("\"").append(" >> ").append(CompareResult);
                 system(cmd.c_str());
             }
         }
