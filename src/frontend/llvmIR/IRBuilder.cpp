@@ -382,7 +382,7 @@ void IRBuilder::visit(BinaryExpression *node) {
     // When the left expression is neither a binary operation nor a function call,
     // the right expression is evaluated first.
     // This is particularly useful when the right expression involves a binary operation or a function call.
-    if (node->getLeft()->getClassId() != ID_BINARY_EXPRESSION || node->getLeft()->getClassId() != ID_FUNCTION_CALL) {
+    if (node->getLeft()->getClassId() != ID_BINARY_EXPRESSION && node->getLeft()->getClassId() != ID_FUNCTION_CALL) {
         node->getRight()->accept(this);
         right = _value;
         node->getLeft()->accept(this);
