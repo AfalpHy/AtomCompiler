@@ -1,6 +1,6 @@
 # AtomCompiler
 
-A toy compiler for fun
+A toy compiler for entertainment
 
 # Grammar
 ~~~
