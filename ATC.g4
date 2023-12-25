@@ -67,7 +67,7 @@ lAndExpr: eqExpr (And eqExpr)*;
 
 lOrExpr: lAndExpr (Or lAndExpr)*;
 
-block: LeftCurlyBracket (decl | stmt)* RightCurlyBracket;
+block: LeftCurlyBracket (varDecl | stmt)* RightCurlyBracket;
 
 lval: varRef | indexedRef;
 
