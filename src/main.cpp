@@ -89,8 +89,8 @@ int main(int argc, const char *argv[]) {
                 system(cmd.c_str());
                 cmd = "echo";
                 cmd.append(" \"").append(filePath).append("\"").append(" >> ").append(CompareResult);
-                system(cmd.c_str());
             }
+            system(cmd.c_str());
         }
     } else {
         AtomIR::IRBuilder irBuilder;
