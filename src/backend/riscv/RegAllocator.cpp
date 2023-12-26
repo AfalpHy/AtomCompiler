@@ -5,8 +5,16 @@ namespace ATC {
 namespace RISCV {
 
 void RegAllocator::run() {
-    buildInterference();
-    coloring();
+    while (true) {
+        // coalescing();
+        buildInterference();
+        if (!coloring()) {
+            reset();
+            spill();
+        } else {
+            break;
+        }
+    }
 }
 
 void RegAllocator::buildInterference() {
@@ -66,7 +74,7 @@ void RegAllocator::buildInterference() {
     } while (update);
 }
 
-void RegAllocator::coloring() {
+bool RegAllocator::coloring() {
     std::set<std::string> intPhyReg = {"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7"};
     std::set<std::string> floatPhyReg = {"fa0", "fa1", "fa2", "fa3", "fa4", "fa5", "fa6", "fa7"};
 
@@ -81,20 +89,68 @@ void RegAllocator::coloring() {
             }
             if (!conflict) {
                 reg->setName(phyReg);
-                break;
+                return true;
             }
         }
+        return false;
     };
 
     for (auto reg : Function::AllRegInFunction) {
         if (reg->isFixed()) {
             continue;
         }
+        bool success;
         if (reg->isIntReg()) {
-            colorOneReg(reg, intPhyReg);
+            success = colorOneReg(reg, intPhyReg);
         } else {
-            colorOneReg(reg, floatPhyReg);
+            success = colorOneReg(reg, floatPhyReg);
         }
+        if (!success) {
+            _needSpill = reg;
+            return false;
+        }
+    }
+    return true;
+}
+
+void RegAllocator::spill() {
+    std::list<Instruction*>::iterator spillPos;
+    for (auto bb : _theFunction->getBasicBlocks()) {
+        std::vector<std::list<Instruction*>::iterator> reloadPos;
+        auto& instList = bb->getMutableInstructionList();
+        spillPos = instList.end();
+        for (auto begin = instList.begin(); begin != instList.end(); begin++) {
+            auto inst = *begin;
+            if (inst->getDest() == _needSpill) {
+                _currentOffset -= 4;
+                spillPos = begin;
+            }
+
+            if (inst->getSrc1() == _needSpill || inst->getSrc2() == _needSpill) {
+                reloadPos.push_back(begin);
+            }
+        }
+        if (spillPos != instList.end()) {
+            instList.insert(++spillPos, new StoreInst(StoreInst::INST_SW, _needSpill, Register::S0, _currentOffset));
+        }
+        for (auto pos : reloadPos) {
+            instList.insert(pos, new LoadInst(LoadInst::INST_LW, _needSpill, Register::S0, _currentOffset));
+        }
+    }
+
+    _needSpill = nullptr;
+}
+
+void RegAllocator::reset() {
+    for (auto bb : _theFunction->getBasicBlocks()) {
+        bb->reset();
+    }
+
+    for (auto reg : Function::AllRegInFunction) {
+        if (reg->isFixed()) {
+            continue;
+        }
+        reg->reset();
     }
 }
 

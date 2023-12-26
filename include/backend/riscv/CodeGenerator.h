@@ -74,15 +74,6 @@ private:
     std::unordered_map<float, std::string> _float2lable;  // float constant global lable
 
     std::stringstream _contend;
-
-    // common regs
-    Register *_ra = nullptr;
-    Register *_s0 = nullptr;
-    Register *_sp = nullptr;
-    Register *_zero = nullptr;
-
-    std::vector<Register *> _intArgReg;
-    std::vector<Register *> _floatArgReg;
 };
 
 }  // namespace RISCV

@@ -12,5 +12,10 @@ Register::Register(Instruction* defined, bool b) {
     Function::AllRegInFunction.insert(this);
 }
 
+void Register::reset() {
+    _name = "virtual_reg" + std::to_string(Index++);
+    _interferences.clear();
+}
+
 }  // namespace RISCV
 }  // namespace ATC

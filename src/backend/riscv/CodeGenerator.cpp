@@ -19,34 +19,43 @@ int Register::Index = 0;
 std::set<Register*> Function::AllRegInFunction;
 std::vector<Register*> Function::CallerSavedRegs;
 
+// common regs
+Register* Register::Ra = nullptr;
+Register* Register::S0 = nullptr;
+Register* Register::Sp = nullptr;
+Register* Register::Zero = nullptr;
+
+std::vector<Register*> Register::IntArgReg;
+std::vector<Register*> Register::FloatArgReg;
+
 CodeGenerator::CodeGenerator() {
-    _ra = new Register();
-    _ra->setName("ra");
-    _ra->setIsFixed(true);
+    Register::Ra = new Register();
+    Register::Ra->setName("ra");
+    Register::Ra->setIsFixed(true);
 
-    _s0 = new Register();
-    _s0->setName("s0");
-    _s0->setIsFixed(true);
+    Register::S0 = new Register();
+    Register::S0->setName("s0");
+    Register::S0->setIsFixed(true);
 
-    _sp = new Register();
-    _sp->setName("sp");
-    _sp->setIsFixed(true);
+    Register::Sp = new Register();
+    Register::Sp->setName("sp");
+    Register::Sp->setIsFixed(true);
 
-    _zero = new Register();
-    _zero->setName("zero");
-    _zero->setIsFixed(true);
+    Register::Zero = new Register();
+    Register::Zero->setName("zero");
+    Register::Zero->setIsFixed(true);
 
     for (int i = 0; i < 8; i++) {
         auto argReg = new Register();
         argReg->setName("a" + std::to_string(i));
         argReg->setIsFixed(true);
-        _intArgReg.push_back(argReg);
+        Register::IntArgReg.push_back(argReg);
         Function::CallerSavedRegs.push_back(argReg);
 
         argReg = new Register(nullptr, false);
         argReg->setName("fa" + std::to_string(i));
         argReg->setIsFixed(true);
-        _floatArgReg.push_back(argReg);
+        Register::FloatArgReg.push_back(argReg);
         Function::CallerSavedRegs.push_back(argReg);
     }
     /// TODO:add t0-t6 to Function::CallerSavedRegs
@@ -122,9 +131,9 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
     int floatOrder = 0;
     for (auto param : function->getParams()) {
         if (param->getType()->getTypeEnum() == AtomIR::INT32_TY) {
-            _value2reg[param] = _intArgReg[intOrder++];
+            _value2reg[param] = Register::IntArgReg[intOrder++];
         } else {
-            _value2reg[param] = _floatArgReg[floatOrder++];
+            _value2reg[param] = Register::FloatArgReg[floatOrder++];
         }
     }
     auto entryBB = new BasicBlock("");
@@ -141,25 +150,25 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
     }
     _currentFunction->addBasicBlock(retBB);
 
-    RegAllocator regAllocator(_currentFunction, true);
+    RegAllocator regAllocator(_currentFunction, _offset, true);
     regAllocator.run();
 
     // The stack is aligned to 16 bytes
     if (_offset % 16 != 0) {
         _offset = (_offset - 15) / 16 * 16;
     }
-    entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, _sp, _sp, _offset));
+    entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::Sp, Register::Sp, _offset));
     if (function->hasFunctionCall()) {
-        entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, _ra, _sp, -_offset - 8));
-        entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, _s0, _sp, -_offset - 16));
-        retBB->addInstruction(new LoadInst(LoadInst::INST_LD, _ra, _sp, -_offset - 8));
-        retBB->addInstruction(new LoadInst(LoadInst::INST_LD, _s0, _sp, -_offset - 16));
+        entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::Ra, Register::Sp, -_offset - 8));
+        entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::S0, Register::Sp, -_offset - 16));
+        retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::Ra, Register::Sp, -_offset - 8));
+        retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::S0, Register::Sp, -_offset - 16));
     } else {
-        entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, _s0, _sp, -_offset - 8));
-        retBB->addInstruction(new LoadInst(LoadInst::INST_LD, _s0, _sp, -_offset - 8));
+        entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::S0, Register::Sp, -_offset - 8));
+        retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::S0, Register::Sp, -_offset - 8));
     }
-    entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, _s0, _sp, -_offset));
-    retBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, _sp, _sp, -_offset));
+    entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::S0, Register::Sp, -_offset));
+    retBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::Sp, Register::Sp, -_offset));
     retBB->addInstruction(new ReturnInst());
 
     _contend << "\t.globl\t" << function->getName() << endl;
@@ -224,7 +233,7 @@ void CodeGenerator::emitAllocInst(AtomIR::AllocInst* inst) {
     auto type = inst->getResult()->getType()->getBaseType();
     _offset -= type->getByteLen();
     _value2offset[inst->getResult()] = _offset;
-    _value2reg[inst->getResult()] = _s0;
+    _value2reg[inst->getResult()] = Register::S0;
 }
 
 void CodeGenerator::emitStoreInst(AtomIR::StoreInst* inst) {
@@ -254,13 +263,13 @@ void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
         if (param->getType()->isPointerType() || param->getType()->getTypeEnum() == AtomIR::INT32_TY) {
             if (intOrder < 8) {
                 _currentBasicBlock->addInstruction(
-                    new UnaryInst(UnaryInst::INST_MV, _intArgReg[intOrder++], _value2reg[param]));
+                    new UnaryInst(UnaryInst::INST_MV, Register::IntArgReg[intOrder++], _value2reg[param]));
             } else {
             }
         } else {
             if (floatOrder < 8) {
                 _currentBasicBlock->addInstruction(
-                    new UnaryInst(UnaryInst::INST_FMV_S, _floatArgReg[floatOrder++], _value2reg[param]));
+                    new UnaryInst(UnaryInst::INST_FMV_S, Register::FloatArgReg[floatOrder++], _value2reg[param]));
             } else {
             }
         }
@@ -269,9 +278,9 @@ void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
     if (inst->getResult()) {
         Instruction* mv;
         if (inst->getResult()->getType()->getTypeEnum() == AtomIR::INT32_TY) {
-            mv = new UnaryInst(UnaryInst::INST_MV, _intArgReg[0]);
+            mv = new UnaryInst(UnaryInst::INST_MV, Register::IntArgReg[0]);
         } else {
-            mv = new UnaryInst(UnaryInst::INST_FMV_S, _floatArgReg[0]);
+            mv = new UnaryInst(UnaryInst::INST_FMV_S, Register::FloatArgReg[0]);
         }
         _currentBasicBlock->addInstruction(mv);
         _value2reg[inst->getResult()] = mv->getDest();
@@ -305,10 +314,10 @@ void CodeGenerator::emitRetInst(AtomIR::ReturnInst* inst) {
     if (inst->getResult()) {
         if (inst->getResult()->getType()->getTypeEnum() == AtomIR::INT32_TY) {
             _currentBasicBlock->addInstruction(
-                new UnaryInst(UnaryInst::INST_MV, _intArgReg[0], _value2reg[inst->getResult()]));
+                new UnaryInst(UnaryInst::INST_MV, Register::IntArgReg[0], _value2reg[inst->getResult()]));
         } else {
             _currentBasicBlock->addInstruction(
-                new UnaryInst(UnaryInst::INST_FMV_S, _floatArgReg[0], _value2reg[inst->getResult()]));
+                new UnaryInst(UnaryInst::INST_FMV_S, Register::FloatArgReg[0], _value2reg[inst->getResult()]));
         }
     }
     _currentBasicBlock->addInstruction(new JumpInst(retBB));
@@ -332,11 +341,11 @@ void CodeGenerator::emitUnaryInst(AtomIR::UnaryInst* inst) {
                 _currentFunction->addBasicBlock(zeroBB);
                 auto afterBB = new BasicBlock();
                 _currentFunction->addBasicBlock(afterBB);
-                auto beq = new CondJumpInst(CondJumpInst::INST_BEQ, src1, _zero, zeroBB);
+                auto beq = new CondJumpInst(CondJumpInst::INST_BEQ, src1, Register::Zero, zeroBB);
                 _currentBasicBlock->addInstruction(beq);
                 Register* dest = loadConstFloat(1);
                 _currentBasicBlock->addInstruction(new JumpInst(afterBB));
-                zeroBB->addInstruction(new UnaryInst(UnaryInst::INST_FMV_W_X, dest, _zero));
+                zeroBB->addInstruction(new UnaryInst(UnaryInst::INST_FMV_W_X, dest, Register::Zero));
                 _currentBasicBlock = afterBB;
                 _value2reg[inst->getResult()] = dest;
                 return;
@@ -644,7 +653,7 @@ Register* CodeGenerator::getRegFromValue(AtomIR::Value* value) {
     }
 
     if (value->getType()->isPointerType() && _value2reg.find(value) == _value2reg.end()) {
-        return _s0;
+        return Register::S0;
     }
 
     return _value2reg[value];

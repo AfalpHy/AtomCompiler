@@ -21,6 +21,7 @@ public:
     void setAlives(const std::set<Register *> &alives) { _alives = alives; }
 
     const std::list<Instruction *> &getInstructionList() { return _instructions; }
+    std::list<Instruction *> &getMutableInstructionList() { return _instructions; }
     const std::vector<BasicBlock *> &getPredecessors() { return _predecessors; }
     const std::vector<BasicBlock *> &getSuccessors() { return _successors; }
     const std::set<Register *> &getAlives() { return _alives; }
@@ -35,6 +36,8 @@ public:
         }
         return str;
     }
+
+    void reset() { _alives.clear(); }
 
 private:
     static int Index;
