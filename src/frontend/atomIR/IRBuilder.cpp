@@ -130,9 +130,9 @@ void IRBuilder::visit(Variable *node) {
             if (initValue->getClassId() == ID_NESTED_EXPRESSION) {
                 ATC::ArrayType *arrayType = static_cast<ATC::ArrayType *>(node->getDataType());
                 FunctionType *funcType = FunctionType::get(_voidTy, {_voidTy->getPointerTy(), _int32Ty}, false);
-                createFunctionCall(
-                    *funcType, "memset",
-                    {castToDestTyIfNeed(addr, _voidTy->getPointerTy()), ConstantInt::get(arrayType->getTotalSize())});
+                createFunctionCall(*funcType, "memset",
+                                   {castToDestTyIfNeed(addr, _voidTy->getPointerTy()),
+                                    ConstantInt::get(arrayType->getTotalSize() * 4)});
 
                 auto dimension = arrayType->getDimensions();
                 auto elementSize = arrayType->getElementSize();
@@ -766,13 +766,13 @@ Value *IRBuilder::getIndexedRefAddress(IndexedRef *indexedRef) {
     int i = 0;
     dimension[i]->accept(this);
     _value = createBinaryInst(BinaryInst::INST_MUL, _value, ConstantInt::get(elementSize[i]));
-
+    auto tmp = _value;
     for (i = 1; i != dimension.size(); i++) {
         dimension[i]->accept(this);
-        auto tmp = createBinaryInst(BinaryInst::INST_MUL, _value, ConstantInt::get(elementSize[i]));
-        _value = createBinaryInst(BinaryInst::INST_ADD, _value, tmp);
+        _value = createBinaryInst(BinaryInst::INST_MUL, _value, ConstantInt::get(elementSize[i]));
+        tmp = createBinaryInst(BinaryInst::INST_ADD, _value, tmp);
     }
-    return createGEP(addr, {_int32Zero, _value});
+    return createGEP(addr, {_int32Zero, tmp});
 }
 
 }  // namespace AtomIR

@@ -120,6 +120,8 @@ public:
 
     virtual Value* getResult() override { return _result; }
 
+    Value* getPtr() { return _ptr; }
+
 private:
     Value* _ptr;
     Value* _result;

@@ -38,6 +38,8 @@ public:
 
     void emitGEPInst(AtomIR::GetElementPtrInst *);
 
+    void emitBitCastInst(AtomIR::BitCastInst *);
+
     void emitRetInst(AtomIR::ReturnInst *);
 
     void emitUnaryInst(AtomIR::UnaryInst *);

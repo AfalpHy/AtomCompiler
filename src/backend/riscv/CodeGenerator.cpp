@@ -204,7 +204,8 @@ void CodeGenerator::emitInstruction(AtomIR::Instruction* inst) {
         case AtomIR::ID_GETELEMENTPTR_INST:
             emitGEPInst((AtomIR::GetElementPtrInst*)inst);
             break;
-        case AtomIR::ID_BITCAST_INST:  //  nothing need to do
+        case AtomIR::ID_BITCAST_INST:
+            emitBitCastInst((AtomIR::BitCastInst*)inst);
             break;
         case AtomIR::ID_RETURN_INST:
             emitRetInst((AtomIR::ReturnInst*)inst);
@@ -275,7 +276,14 @@ void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
             }
         }
     }
-    _currentBasicBlock->addInstruction(new FunctionCallInst(inst->getFuncName()));
+    auto call = new FunctionCallInst(inst->getFuncName());
+    for (int i = 0; i < intOrder; i++) {
+        call->addUsedReg(Register::IntArgReg[i]);
+    }
+    for (int i = 0; i < floatOrder; i++) {
+        call->addUsedReg(Register::FloatArgReg[i]);
+    }
+    _currentBasicBlock->addInstruction(call);
     if (inst->getResult()) {
         Instruction* mv;
         if (inst->getResult()->getType()->getTypeEnum() == AtomIR::INT32_TY) {
@@ -308,6 +316,17 @@ void CodeGenerator::emitGEPInst(AtomIR::GetElementPtrInst* inst) {
             _currentBasicBlock->addInstruction(add);
             _value2reg[inst->getResult()] = add->getDest();
         }
+    }
+}
+
+void CodeGenerator::emitBitCastInst(AtomIR::BitCastInst* inst) {
+    Register* ptr = getRegFromValue(inst->getPtr());
+    if (ptr == Register::S0) {
+        auto getPtr = new BinaryInst(BinaryInst::INST_ADDI, Register::S0, _value2offset[inst->getPtr()]);
+        _value2reg[inst->getResult()] = getPtr->getDest();
+        _currentBasicBlock->addInstruction(getPtr);
+    } else {
+        _value2reg[inst->getResult()] = ptr;
     }
 }
 

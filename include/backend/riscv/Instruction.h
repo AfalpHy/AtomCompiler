@@ -80,7 +80,7 @@ public:
         switch (type) {
             case INST_FLW:
             case INST_FLD:
-                _dest = new Register(this,false);
+                _dest = new Register(this, false);
                 break;
             default:
                 _dest = new Register(this);
@@ -126,8 +126,13 @@ public:
 
     virtual std::string toString() override { return "call\t" + _funcName; }
 
+    void addUsedReg(Register* reg) { _usedRegs.insert(reg); }
+
+    const std::set<Register*> getUsedRges() { return _usedRegs; }
+
 private:
     std::string _funcName;
+    std::set<Register*> _usedRegs;
 };
 
 class ReturnInst : public Instruction {
@@ -146,7 +151,7 @@ public:
             case INST_FMV_S:
             case INST_FCVT_S_W:
             case INST_FMV_W_X:
-                _dest = new Register(this,false);
+                _dest = new Register(this, false);
                 break;
             default:
                 _dest = new Register(this);
@@ -178,7 +183,7 @@ public:
             case INST_FSUB_S:
             case INST_FMUL_S:
             case INST_FDIV_S:
-                _dest = new Register(this,false);
+                _dest = new Register(this, false);
                 break;
             default:
                 _dest = new Register(this);
@@ -232,7 +237,7 @@ public:
         INST_FSLT_S,
         INST_FSLE_S,
         INST_FSEQ_S,
-        INST_FSNE_S // just for next inst, the asm code same as INST_FSEQ_S 
+        INST_FSNE_S  // just for next inst, the asm code same as INST_FSEQ_S
     };
 };
 
