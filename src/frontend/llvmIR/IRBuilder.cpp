@@ -31,62 +31,40 @@ IRBuilder::IRBuilder() {
     _module->setTargetTriple(llvm::sys::getProcessTriple());
     _module->setDataLayout(llvm::DataLayout(_module));
 
-    // int getint
-    llvm::FunctionType *getint = llvm::FunctionType::get(_int32Ty, {}, false);
-    _definedElseWhere["getint"] = llvm::Function::Create(getint, llvm::GlobalValue::ExternalLinkage, "getint", _module);
-    // int getch
-    llvm::FunctionType *getch = llvm::FunctionType::get(_int32Ty, {}, false);
-    _definedElseWhere["getch"] = llvm::Function::Create(getch, llvm::GlobalValue::ExternalLinkage, "getch", _module);
-    // float getfloat
-    llvm::FunctionType *getfloat = llvm::FunctionType::get(_floatTy, {}, false);
-    _definedElseWhere["getfloat"] =
-        llvm::Function::Create(getfloat, llvm::GlobalValue::ExternalLinkage, "getfloat", _module);
-    // int getarray
-    llvm::FunctionType *getarray = llvm::FunctionType::get(_int32Ty, {_int32PtrTy}, false);
-    _definedElseWhere["getarray"] =
-        llvm::Function::Create(getarray, llvm::GlobalValue::ExternalLinkage, "getarray", _module);
-    // int getfarray
-    llvm::FunctionType *getfarray = llvm::FunctionType::get(_int32Ty, {_floatPtrTy}, false);
-    _definedElseWhere["getfarray"] =
-        llvm::Function::Create(getfarray, llvm::GlobalValue::ExternalLinkage, "getfarray", _module);
-    // int putint
-    llvm::FunctionType *putint = llvm::FunctionType::get(_voidTy, {_int32Ty}, false);
-    _definedElseWhere["putint"] = llvm::Function::Create(putint, llvm::GlobalValue::ExternalLinkage, "putint", _module);
-    // int putch
-    llvm::FunctionType *putch = llvm::FunctionType::get(_voidTy, {_int32Ty}, false);
-    _definedElseWhere["putch"] = llvm::Function::Create(putch, llvm::GlobalValue::ExternalLinkage, "putch", _module);
-    // int putarray
-    llvm::FunctionType *putarray = llvm::FunctionType::get(_voidTy, {_int32Ty, _int32PtrTy}, false);
-    _definedElseWhere["putarray"] =
-        llvm::Function::Create(putarray, llvm::GlobalValue::ExternalLinkage, "putarray", _module);
-    // int putfloat
-    llvm::FunctionType *putfloat = llvm::FunctionType::get(_voidTy, {_floatTy}, false);
-    _definedElseWhere["putfloat"] =
-        llvm::Function::Create(putfloat, llvm::GlobalValue::ExternalLinkage, "putfloat", _module);
-    // int putfarray
-    llvm::FunctionType *putfarray = llvm::FunctionType::get(_voidTy, {_int32Ty, _floatPtrTy}, false);
-    _definedElseWhere["putfarray"] =
-        llvm::Function::Create(putfarray, llvm::GlobalValue::ExternalLinkage, "putfarray", _module);
-    // int putf
-    llvm::FunctionType *putf =
-        llvm::FunctionType::get(_voidTy, {llvm::Type::getInt8PtrTy(_module->getContext())}, true);
-    _definedElseWhere["putf"] = llvm::Function::Create(putf, llvm::GlobalValue::ExternalLinkage, "putf", _module);
-    // int before_main
-    llvm::FunctionType *before_main = llvm::FunctionType::get(_voidTy, {}, false);
-    _definedElseWhere["before_main"] =
-        llvm::Function::Create(before_main, llvm::GlobalValue::ExternalLinkage, "before_main", _module);
-    // int after_main
-    llvm::FunctionType *after_main = llvm::FunctionType::get(_voidTy, {}, false);
-    _definedElseWhere["after_main"] =
-        llvm::Function::Create(after_main, llvm::GlobalValue::ExternalLinkage, "after_main", _module);
-    // int _sysy_starttime
-    llvm::FunctionType *_sysy_starttime = llvm::FunctionType::get(_voidTy, {_int32Ty}, false);
-    _definedElseWhere["_sysy_starttime"] =
-        llvm::Function::Create(_sysy_starttime, llvm::GlobalValue::ExternalLinkage, "_sysy_starttime", _module);
-    // int _sysy_stoptime
-    llvm::FunctionType *_sysy_stoptime = llvm::FunctionType::get(_voidTy, {_int32Ty}, false);
-    _definedElseWhere["_sysy_stoptime"] =
-        llvm::Function::Create(_sysy_stoptime, llvm::GlobalValue::ExternalLinkage, "_sysy_stoptime", _module);
+    auto funcTy = llvm::FunctionType::get(_int32Ty, {}, false);
+    _funcName2funcType["getint"] = funcTy;
+    _funcName2funcType["getch"] = funcTy;
+
+    funcTy = llvm::FunctionType::get(_floatTy, {}, false);
+    _funcName2funcType["getfloat"] = funcTy;
+
+    funcTy = llvm::FunctionType::get(_int32Ty, {_int32PtrTy}, false);
+    _funcName2funcType["getarray"] = funcTy;
+
+    funcTy = llvm::FunctionType::get(_int32Ty, {_floatPtrTy}, false);
+    _funcName2funcType["getfarray"] = funcTy;
+
+    funcTy = llvm::FunctionType::get(_voidTy, {_int32Ty, _int32PtrTy}, false);
+    _funcName2funcType["putarray"] = funcTy;
+
+    funcTy = llvm::FunctionType::get(_voidTy, {_floatTy}, false);
+    _funcName2funcType["putfloat"] = funcTy;
+
+    funcTy = llvm::FunctionType::get(_voidTy, {_int32Ty, _floatPtrTy}, false);
+    _funcName2funcType["putfarray"] = funcTy;
+
+    funcTy = llvm::FunctionType::get(_voidTy, {llvm::Type::getInt8PtrTy(_module->getContext())}, true);
+    _funcName2funcType["putf"] = funcTy;
+
+    funcTy = llvm::FunctionType::get(_voidTy, {}, false);
+    _funcName2funcType["before_main"] = funcTy;
+    _funcName2funcType["after_main"] = funcTy;
+
+    funcTy = llvm::FunctionType::get(_voidTy, {_int32Ty}, false);
+    _funcName2funcType["putint"] = funcTy;
+    _funcName2funcType["putch"] = funcTy;
+    _funcName2funcType["_sysy_starttime"] = funcTy;
+    _funcName2funcType["_sysy_stoptime"] = funcTy;
 }
 
 IRBuilder::~IRBuilder() {
@@ -102,7 +80,7 @@ void IRBuilder::visit(FunctionDef *node) {
     }
     llvm::FunctionType *funcTy = llvm::FunctionType::get(convertToLLVMType(node->getRetType()), params, false);
     llvm::Function *func = llvm::Function::Create(funcTy, llvm::GlobalValue::ExternalLinkage, node->getName(), _module);
-    _functonDef2function.insert({node, func});
+    _funcName2funcType.insert({node->getName(), funcTy});
     _currentFunction = func;
 
     llvm::BasicBlock *allocBB = llvm::BasicBlock::Create(_module->getContext(), "init");
@@ -482,19 +460,14 @@ void IRBuilder::visit(BinaryExpression *node) {
 
 void IRBuilder::visit(FunctionCall *node) {
     std::vector<llvm::Value *> params;
-    llvm::Function *function = nullptr;
-    if (node->getFunctionDef()) {
-        function = _functonDef2function[node->getFunctionDef()];
-    } else {
-        function = _definedElseWhere[node->getName()];
-    }
+    llvm::FunctionType *funcTy = _funcName2funcType[node->getName()];
     int i = 0;
     for (auto rParam : node->getParams()) {
         rParam->accept(this);
-        _value = castToDestTyIfNeed(_value, function->getArg(i++)->getType());
+        _value = castToDestTyIfNeed(_value, funcTy->getParamType(i++));
         params.push_back(_value);
     }
-    _value = _theIRBuilder->CreateCall(function, params);
+    _value = _theIRBuilder->CreateCall(_module->getOrInsertFunction(node->getName(), funcTy), params);
 }
 
 void IRBuilder::visit(Block *node) {

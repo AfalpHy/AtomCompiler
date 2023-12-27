@@ -107,7 +107,7 @@ private:
     BasicBlock *_afterBB = nullptr;
 
     std::unordered_map<Variable *, Value *> _var2addr;
-    std::unordered_map<FunctionDef *, Function *> _functonDef2function;
+    std::unordered_map<std::string, FunctionType *> _funcName2funcType;
 };
 }  // namespace AtomIR
 }  // namespace ATC

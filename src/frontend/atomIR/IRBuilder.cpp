@@ -21,6 +21,41 @@ IRBuilder::IRBuilder() {
     _floatZero = ConstantFloat::get(0);
     _int32One = ConstantInt::get(1);
     _floatOne = ConstantFloat::get(1);
+
+    auto funcTy = FunctionType::get(_int32Ty, {}, false);
+    _funcName2funcType["getint"] = funcTy;
+    _funcName2funcType["getch"] = funcTy;
+
+    funcTy = FunctionType::get(_floatTy, {}, false);
+    _funcName2funcType["getfloat"] = funcTy;
+
+    funcTy = FunctionType::get(_int32Ty, {_int32PtrTy}, false);
+    _funcName2funcType["getarray"] = funcTy;
+
+    funcTy = FunctionType::get(_int32Ty, {_floatPtrTy}, false);
+    _funcName2funcType["getfarray"] = funcTy;
+
+    funcTy = FunctionType::get(_voidTy, {_int32Ty, _int32PtrTy}, false);
+    _funcName2funcType["putarray"] = funcTy;
+
+    funcTy = FunctionType::get(_voidTy, {_floatTy}, false);
+    _funcName2funcType["putfloat"] = funcTy;
+
+    funcTy = FunctionType::get(_voidTy, {_int32Ty, _floatPtrTy}, false);
+    _funcName2funcType["putfarray"] = funcTy;
+
+    funcTy = FunctionType::get(_voidTy, {_int32PtrTy}, true);
+    _funcName2funcType["putf"] = funcTy;
+
+    funcTy = FunctionType::get(_voidTy, {}, false);
+    _funcName2funcType["before_main"] = funcTy;
+    _funcName2funcType["after_main"] = funcTy;
+
+    funcTy = FunctionType::get(_voidTy, {_int32Ty}, false);
+    _funcName2funcType["putint"] = funcTy;
+    _funcName2funcType["putch"] = funcTy;
+    _funcName2funcType["_sysy_starttime"] = funcTy;
+    _funcName2funcType["_sysy_stoptime"] = funcTy;
 }
 
 IRBuilder::~IRBuilder() { _currentModule->dump(); }
@@ -31,13 +66,15 @@ void IRBuilder::visit(CompUnit *node) {
 }
 
 void IRBuilder::visit(FunctionDef *node) {
-    FunctionType funcType;
-    funcType._ret = convertToAtomType(node->getRetType());
+    std::vector<Type *> params;
     for (auto param : node->getParams()) {
         DataType *dataType = param->getVariables()[0]->getDataType();
-        funcType._params.push_back(convertToAtomType(dataType));
+        params.push_back(convertToAtomType(dataType));
     }
-    _currentFunction = new Function(_currentModule, funcType, node->getName());
+    auto funcType = FunctionType::get(convertToAtomType(node->getRetType()), params, false);
+    _funcName2funcType.insert({node->getName(), funcType});
+
+    _currentFunction = new Function(_currentModule, *funcType, node->getName());
     _currentBasicBlock = new BasicBlock(_currentFunction, "init");
 
     int i = 0;
@@ -48,7 +85,6 @@ void IRBuilder::visit(FunctionDef *node) {
         auto arg = _currentFunction->getParams()[i++];
         createStore(arg, _var2addr[var]);
     }
-    _functonDef2function.insert({node, _currentFunction});
 
     auto entry = new BasicBlock(_currentFunction, "entry");
     createJump(entry);
@@ -93,12 +129,9 @@ void IRBuilder::visit(Variable *node) {
             initValue->accept(this);
             if (initValue->getClassId() == ID_NESTED_EXPRESSION) {
                 ATC::ArrayType *arrayType = static_cast<ATC::ArrayType *>(node->getDataType());
-                FunctionType funcType;
-                funcType._ret = _voidTy;
-                funcType._params.push_back(_voidTy->getPointerTy());
-                funcType._params.push_back(_int32Ty);
+                FunctionType *funcType = FunctionType::get(_voidTy, {_voidTy->getPointerTy(), _int32Ty}, false);
                 createFunctionCall(
-                    funcType, "memset",
+                    *funcType, "memset",
                     {castToDestTyIfNeed(addr, _voidTy->getPointerTy()), ConstantInt::get(arrayType->getTotalSize())});
 
                 auto dimension = arrayType->getDimensions();
@@ -449,19 +482,15 @@ void IRBuilder::visit(BinaryExpression *node) {
 
 void IRBuilder::visit(FunctionCall *node) {
     std::vector<Value *> params;
-    Function *function = nullptr;
-    if (node->getFunctionDef()) {
-        function = _functonDef2function[node->getFunctionDef()];
-    } else {
-        /// TODO:
-    }
+    FunctionType *funcTy = nullptr;
+    funcTy = _funcName2funcType[node->getName()];
     int i = 0;
     for (auto rParam : node->getParams()) {
         rParam->accept(this);
-        _value = castToDestTyIfNeed(_value, function->getParams()[i++]->getType());
+        _value = castToDestTyIfNeed(_value, funcTy->_params[i++]);
         params.push_back(_value);
     }
-    _value = createFunctionCall(function->getFunctionType(), function->getName(), params);
+    _value = createFunctionCall(*funcTy, node->getName(), params);
 }
 
 void IRBuilder::visit(Block *node) {

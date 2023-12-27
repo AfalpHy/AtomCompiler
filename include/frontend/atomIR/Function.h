@@ -10,9 +10,35 @@ namespace AtomIR {
 
 class Module;
 
+struct FuncTyHash {
+    int operator()(const std::pair<Type*, std::vector<Type*>>& funcTy) const {
+        uint64_t ret = (uint64_t)funcTy.first;
+        for (auto ty : funcTy.second) {
+            ret += (uint64_t)ty;
+        }
+        std::hash<uint64_t> helper;
+        return helper(ret);
+    }
+};
+
 struct FunctionType {
     std::vector<Type*> _params;
     Type* _ret;
+
+    static FunctionType* get(Type* ret, std::vector<Type*> params, bool IsVarArgs) {
+        static std::unordered_map<std::pair<Type*, std::vector<Type*>>, FunctionType*, FuncTyHash> funcTy2ptr;
+        if (funcTy2ptr.find({ret, params}) != funcTy2ptr.end()) {
+            return funcTy2ptr[{ret, params}];
+        }
+        FunctionType* funcTyPtr = new FunctionType();
+        funcTyPtr->_ret = ret;
+        funcTyPtr->_params = params;
+        funcTy2ptr.insert({{ret, params}, funcTyPtr});
+        return funcTyPtr;
+    }
+
+private:
+    FunctionType() {}
 };
 
 class Function {
