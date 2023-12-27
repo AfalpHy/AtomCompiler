@@ -20,6 +20,9 @@ public:
 
     static std::vector<Register*> CallerSavedRegs;
 
+    // for debug
+    void dump();
+
 private:
     std::list<BasicBlock*> _basicBlocks;
 };

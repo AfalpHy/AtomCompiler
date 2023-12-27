@@ -189,10 +189,12 @@ void IRBuilder::visit(IndexedRef *node) {
     ATC::ArrayType *arrayType;
     if (var->getDataType()->getClassId() == ID_POINTER_TYPE) {
         ATC::PointerType *varType = (ATC::PointerType *)var->getDataType();
-        arrayType = (ATC::ArrayType *)varType->getBaseDataType();
-        if (arrayType->getDimensions().size() + 1 > node->getDimensions().size()) {
-            _value = addr;
-            return;
+        if (varType->getBaseDataType()->getClassId() == ID_ARRAY_TYPE) {
+            arrayType = (ATC::ArrayType *)varType->getBaseDataType();
+            if (arrayType->getDimensions().size() + 1 > node->getDimensions().size()) {
+                _value = addr;
+                return;
+            }
         }
     } else {
         arrayType = (ATC::ArrayType *)var->getDataType();

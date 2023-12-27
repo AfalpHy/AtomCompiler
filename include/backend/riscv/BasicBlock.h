@@ -39,6 +39,9 @@ public:
 
     void reset() { _alives.clear(); }
 
+    // for debug
+    void dump();
+
 private:
     static int Index;
     std::string _name;

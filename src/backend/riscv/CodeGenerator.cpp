@@ -260,16 +260,17 @@ void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
     int intOrder = 0;
     int floatOrder = 0;
     for (auto param : inst->getParams()) {
+        auto paramReg = getRegFromValue(param);
         if (param->getType()->isPointerType() || param->getType()->getTypeEnum() == AtomIR::INT32_TY) {
             if (intOrder < 8) {
                 _currentBasicBlock->addInstruction(
-                    new UnaryInst(UnaryInst::INST_MV, Register::IntArgReg[intOrder++], _value2reg[param]));
+                    new UnaryInst(UnaryInst::INST_MV, Register::IntArgReg[intOrder++], paramReg));
             } else {
             }
         } else {
             if (floatOrder < 8) {
                 _currentBasicBlock->addInstruction(
-                    new UnaryInst(UnaryInst::INST_FMV_S, Register::FloatArgReg[floatOrder++], _value2reg[param]));
+                    new UnaryInst(UnaryInst::INST_FMV_S, Register::FloatArgReg[floatOrder++], paramReg));
             } else {
             }
         }
@@ -416,6 +417,7 @@ Register* CodeGenerator::emitIntBinaryInst(int instType, AtomIR::Value* operand1
         imm = static_cast<AtomIR::ConstantInt*>(operand1)->getConstValue();
         switch (instType) {
             case AtomIR::BinaryInst::INST_SUB:
+            case AtomIR::BinaryInst::INST_MUL:
             case AtomIR::BinaryInst::INST_DIV:
             case AtomIR::BinaryInst::INST_MOD:
             case AtomIR::BinaryInst::INST_LT: {
