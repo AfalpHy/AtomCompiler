@@ -65,6 +65,7 @@ void RegAllocator::buildInterference() {
                         }
                     }
                     FunctionCallInst* call = (FunctionCallInst*)inst;
+                    // these reg across the function call
                     for (auto usedReg : call->getUsedRges()) {
                         alives.insert(usedReg);
                     }

@@ -60,18 +60,16 @@ CodeGenerator::CodeGenerator() {
     }
 
     for (int i = 0; i < 7; i++) {
-        auto argReg = new Register();
-        argReg->setName("t" + std::to_string(i));
-        argReg->setIsFixed(true);
-        Register::IntArgReg.push_back(argReg);
-        Function::CallerSavedRegs.push_back(argReg);
+        auto tmpReg = new Register();
+        tmpReg->setName("t" + std::to_string(i));
+        tmpReg->setIsFixed(true);
+        Function::CallerSavedRegs.push_back(tmpReg);
     }
     for (int i = 0; i < 12; i++) {
-        auto argReg = new Register(nullptr, false);
-        argReg->setName("ft" + std::to_string(i));
-        argReg->setIsFixed(true);
-        Register::FloatArgReg.push_back(argReg);
-        Function::CallerSavedRegs.push_back(argReg);
+        auto tmpReg = new Register(nullptr, false);
+        tmpReg->setName("ft" + std::to_string(i));
+        tmpReg->setIsFixed(true);
+        Function::CallerSavedRegs.push_back(tmpReg);
     }
 }
 
@@ -129,6 +127,13 @@ void CodeGenerator::emitGlobalVariable(AtomIR::GloabalVariable* var) {
 
 void CodeGenerator::emitFunction(AtomIR::Function* function) {
     // reset
+    _maxParamsStackOffset = 0;
+    _offset = 0;
+    _value2offset.clear();
+    Function::AllRegInFunction.clear();
+
+    _currentFunction = new Function();
+
     if (function->hasFunctionCall()) {
         // save ra and s0
         _offset = -16;
@@ -136,18 +141,27 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
         // save s0
         _offset = -8;
     }
-    _value2offset.clear();
-    Function::AllRegInFunction.clear();
-
-    _currentFunction = new Function();
 
     int intOrder = 0;
     int floatOrder = 0;
+    int stackOffset = 0;
     for (auto param : function->getParams()) {
         if (param->getType()->getTypeEnum() == AtomIR::INT32_TY) {
-            _value2reg[param] = Register::IntArgReg[intOrder++];
+            if (intOrder < 8) {
+                _value2reg[param] = Register::IntArgReg[intOrder++];
+            } else {
+                _value2reg[param] = Register::S0;
+                _value2offset[param] = stackOffset;
+                stackOffset += 8;
+            }
         } else {
-            _value2reg[param] = Register::FloatArgReg[floatOrder++];
+            if (floatOrder < 8) {
+                _value2reg[param] = Register::FloatArgReg[floatOrder++];
+            } else {
+                _value2reg[param] = Register::S0;
+                _value2offset[param] = stackOffset;
+                stackOffset += 8;
+            }
         }
     }
     auto entryBB = new BasicBlock("");
@@ -167,6 +181,7 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
     RegAllocator regAllocator(_currentFunction, _offset, true);
     regAllocator.run();
 
+    _offset -= _maxParamsStackOffset;
     // The stack is aligned to 16 bytes
     if (_offset % 16 != 0) {
         _offset = (_offset - 15) / 16 * 16;
@@ -274,6 +289,7 @@ void CodeGenerator::emitStoreInst(AtomIR::StoreInst* inst) {
 void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
     int intOrder = 0;
     int floatOrder = 0;
+    int stackOffset = 0;
     for (auto param : inst->getParams()) {
         auto paramReg = getRegFromValue(param);
         if (param->getType()->isPointerType() || param->getType()->getTypeEnum() == AtomIR::INT32_TY) {
@@ -281,12 +297,20 @@ void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
                 _currentBasicBlock->addInstruction(
                     new UnaryInst(UnaryInst::INST_MV, Register::IntArgReg[intOrder++], paramReg));
             } else {
+                _currentBasicBlock->addInstruction(
+                    new StoreInst(StoreInst::INST_SD, paramReg, Register::Sp, stackOffset));
+                stackOffset += 8;
+                _maxParamsStackOffset = std::max(_maxParamsStackOffset, stackOffset);
             }
         } else {
             if (floatOrder < 8) {
                 _currentBasicBlock->addInstruction(
                     new UnaryInst(UnaryInst::INST_FMV_S, Register::FloatArgReg[floatOrder++], paramReg));
             } else {
+                _currentBasicBlock->addInstruction(
+                    new StoreInst(StoreInst::INST_FSW, paramReg, Register::Sp, stackOffset));
+                stackOffset += 8;
+                _maxParamsStackOffset = std::max(_maxParamsStackOffset, stackOffset);
             }
         }
     }
@@ -686,12 +710,19 @@ Register* CodeGenerator::getRegFromValue(AtomIR::Value* value) {
         _currentBasicBlock->addInstruction(la);
         return la->getDest();
     }
-
-    if (value->getType()->isPointerType() && _value2reg.find(value) == _value2reg.end()) {
-        return Register::S0;
+    auto ret = _value2reg[value];
+    if (value->getDefined() == nullptr && ret == Register::S0) {
+        Instruction* load;
+        if (value->getType()->isPointerType() || value->getType()->getTypeEnum() == AtomIR::INT32_TY) {
+            load = new LoadInst(LoadInst::INST_LW, Register::S0, _value2offset[value]);
+        } else {
+            load = new LoadInst(LoadInst::INST_FLW, Register::S0, _value2offset[value]);
+        }
+        _currentBasicBlock->addInstruction(load);
+        ret = load->getDest();
     }
 
-    return _value2reg[value];
+    return ret;
 }
 
 }  // namespace RISCV

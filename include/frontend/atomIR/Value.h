@@ -22,6 +22,8 @@ public:
 
     const std::string& getName() { return _name; }
 
+    Instruction* getDefined() { return _defined; }
+
     virtual std::string getValueStr();
 
     virtual std::string toString();
@@ -67,7 +69,7 @@ private:
     int _constValue;
 };
 
-class  ConstantFloat : public Constant {
+class ConstantFloat : public Constant {
 public:
     static ConstantFloat* get(float value);
 

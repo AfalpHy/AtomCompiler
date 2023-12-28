@@ -76,6 +76,8 @@ private:
     std::unordered_map<float, std::string> _float2lable;  // float constant global lable
 
     std::stringstream _contend;
+
+    int _maxParamsStackOffset = 0; // pass the function params
 };
 
 }  // namespace RISCV
