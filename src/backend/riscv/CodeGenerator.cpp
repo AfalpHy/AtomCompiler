@@ -58,7 +58,21 @@ CodeGenerator::CodeGenerator() {
         Register::FloatArgReg.push_back(argReg);
         Function::CallerSavedRegs.push_back(argReg);
     }
-    /// TODO:add t0-t6 to Function::CallerSavedRegs
+
+    for (int i = 0; i < 7; i++) {
+        auto argReg = new Register();
+        argReg->setName("t" + std::to_string(i));
+        argReg->setIsFixed(true);
+        Register::IntArgReg.push_back(argReg);
+        Function::CallerSavedRegs.push_back(argReg);
+    }
+    for (int i = 0; i < 12; i++) {
+        auto argReg = new Register(nullptr, false);
+        argReg->setName("ft" + std::to_string(i));
+        argReg->setIsFixed(true);
+        Register::FloatArgReg.push_back(argReg);
+        Function::CallerSavedRegs.push_back(argReg);
+    }
 }
 
 void CodeGenerator::dump(std::ostream& os) { os << _contend.str() << endl; }
