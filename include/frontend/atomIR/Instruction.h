@@ -43,8 +43,21 @@ public:
 
     virtual Value* getResult() override { return _result; }
 
+    bool isAllocForParam() { return _allocForParam; }
+
+    int getAllocatedIntParamNum() { return _allocatedIntParamNum; }
+
+    int getAllocatedFloatParamNum() { return _allocatedFloatParamNum; }
+
+    static bool AllocForParam;
+    static int AllocatedIntParamNum;
+    static int AllocatedFloatParamNum;
+
 private:
     Value* _result;
+    bool _allocForParam;
+    int _allocatedIntParamNum = -1;
+    int _allocatedFloatParamNum = -1;
 };
 
 class StoreInst : public Instruction {

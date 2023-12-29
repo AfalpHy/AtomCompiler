@@ -6,7 +6,20 @@ namespace ATC {
 
 namespace AtomIR {
 
-AllocInst::AllocInst(Type* allocType, const std::string& resultName) {
+bool AllocInst::AllocForParam = false;
+int AllocInst::AllocatedIntParamNum = 0;
+int AllocInst::AllocatedFloatParamNum = 0;
+
+AllocInst::AllocInst(Type* allocType, const std::string& resultName) : _allocForParam(AllocForParam) {
+    if (AllocForParam) {
+        if (allocType->isPointerType() || allocType->getTypeEnum() == INT32_TY) {
+            _allocatedIntParamNum = ++AllocatedIntParamNum;
+            _allocatedFloatParamNum = AllocatedFloatParamNum;
+        } else {
+            _allocatedIntParamNum = AllocatedIntParamNum;
+            _allocatedFloatParamNum = ++AllocatedFloatParamNum;
+        }
+    }
     PointerType* ptr = PointerType::get(allocType);
     _result = new Value(ptr, resultName);
     _result->setDefined(this);

@@ -71,13 +71,15 @@ private:
 
     std::unordered_map<AtomIR::Value *, Register *> _value2reg;  // IR value to asm reg
 
+    std::set<AtomIR::Value *> _paramInStack;  // params saved in stack
+
     std::unordered_map<AtomIR::BasicBlock *, BasicBlock *> _atomBB2asmBB;  // IR BasicBlock to asm BasicBlock
 
     std::unordered_map<float, std::string> _float2lable;  // float constant global lable
 
     std::stringstream _contend;
 
-    int _maxParamsStackOffset = 0; // pass the function params
+    int _maxPassParamsStackOffset = 0;  // pass the function params
 };
 
 }  // namespace RISCV

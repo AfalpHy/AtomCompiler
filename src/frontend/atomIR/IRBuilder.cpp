@@ -71,12 +71,16 @@ void IRBuilder::visit(FunctionDef *node) {
         DataType *dataType = param->getVariables()[0]->getDataType();
         params.push_back(convertToAtomType(dataType));
     }
+
     auto funcType = FunctionType::get(convertToAtomType(node->getRetType()), params, false);
     _funcName2funcType.insert({node->getName(), funcType});
 
     _currentFunction = new Function(_currentModule, *funcType, node->getName());
     _currentBasicBlock = new BasicBlock(_currentFunction, "init");
 
+    AllocInst::AllocatedIntParamNum = 0;
+    AllocInst::AllocatedFloatParamNum = 0;
+    AllocInst::AllocForParam = true;
     int i = 0;
     for (auto param : node->getParams()) {
         param->accept(this);
@@ -85,6 +89,7 @@ void IRBuilder::visit(FunctionDef *node) {
         auto arg = _currentFunction->getParams()[i++];
         createStore(arg, _var2addr[var]);
     }
+    AllocInst::AllocForParam = false;
 
     auto entry = new BasicBlock(_currentFunction, "entry");
     createJump(entry);
