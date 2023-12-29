@@ -68,7 +68,20 @@ public:
 
     virtual int getClassId() override { return ID_INDEXED_REF; }
 
-    virtual bool isConst() { return _var->isConst(); }
+    virtual bool isConst() {
+        if (_var->isConst()) {
+            if (_dimensions.size() != static_cast<ArrayType*>(_var->getDataType())->getDimensions().size()) {
+                return false;
+            }
+            for (auto dim : _dimensions) {
+                if (!dim->isConst()) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
 
     Variable* getVariable() { return _var; }
     const std::vector<Expression*>& getDimensions() { return _dimensions; }
@@ -90,7 +103,14 @@ public:
 
     virtual int getClassId() override { return ID_NESTED_EXPRESSION; }
 
-    virtual bool isConst();
+    virtual bool isConst() {
+        for (auto expr : _elements) {
+            if (!expr->isConst()) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     const std::vector<Expression*>& getElements() { return _elements; }
 

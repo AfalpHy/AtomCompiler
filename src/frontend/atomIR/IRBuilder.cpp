@@ -189,6 +189,14 @@ void IRBuilder::visit(VarRef *node) {
 }
 
 void IRBuilder::visit(IndexedRef *node) {
+    if (node->isConst()) {
+        if (ExpressionHandle::isIntExpr(node)) {
+            _value = ConstantInt::get(ExpressionHandle::evaluateConstExpr(node));
+        } else {
+            _value = ConstantFloat::get(ExpressionHandle::evaluateConstExpr(node));
+        }
+        return;
+    }
     auto addr = getIndexedRefAddress(node);
     Variable *var = node->getVariable();
     ATC::ArrayType *arrayType;
@@ -270,24 +278,21 @@ void IRBuilder::visit(NestedExpression *node) {
                 break;
             }
         }
-        if (index != targetIndex) {
-            if (!element.empty()) {
-                if (zeroNum) {
-                    arrayValue->addElement({zeroNum, {}});
-                    zeroNum = 0;
-                }
-                arrayValue->addElement({element.size(), element});
-                element.clear();
+
+        if (!element.empty()) {
+            if (zeroNum) {
+                arrayValue->addElement({zeroNum, {}});
+                zeroNum = 0;
             }
-            zeroNum += targetIndex - index;
+            arrayValue->addElement({element.size(), element});
+            element.clear();
         }
+        zeroNum += targetIndex - index;
+
         index = targetIndex;
     }
     deep--;
     if (deep == 0) {
-        if (zeroNum) {
-            arrayValue->addElement({zeroNum, {}});
-        }
         _value = arrayValue;
     }
 }
