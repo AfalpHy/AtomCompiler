@@ -9,32 +9,30 @@ namespace ATC {
 namespace AtomIR {
 
 Type* Type::getInt32Ty() {
-    static Type* ret = new Type(INT32_TY);
+    static Type* ret = new Type(4);
     return ret;
 }
 
 Type* Type::getFloatTy() {
-    static Type* ret = new Type(FLOAT_TY);
+    static Type* ret = new Type(4);
     return ret;
 }
 
 Type* Type::getVoidTy() {
-    static Type* ret = new Type(VOID_TY);
+    static Type* ret = new Type();
     return ret;
 }
 
 std::string Type::toString() {
-    switch (_type) {
-        case INT32_TY:
-            return "i32";
-        case FLOAT_TY:
-            return "float";
-        case VOID_TY:
-            return "void";
-        default:
-            assert(false && "should not reach here");
-            break;
+    if (this == getInt32Ty()) {
+        return "i32";
+    } else if (this == getFloatTy()) {
+        return "float";
+    } else if (this == getVoidTy()) {
+        return "void";
     }
+    assert(false && "should not reach here");
+    return "";
 }
 
 PointerType* Type::getPointerTy() { return PointerType::get(this); }

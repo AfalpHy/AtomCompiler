@@ -114,7 +114,7 @@ void IRBuilder::visit(Variable *node) {
                 arrayValue->addElement({totalSize, {}});
                 _value = arrayValue;
             } else {
-                if (basicType == Type::getInt32Ty()) {
+                if (basicType == _int32Ty) {
                     _value = ConstantInt::get(0);
                 } else {
                     _value = ConstantFloat::get(0);
@@ -703,11 +703,11 @@ void IRBuilder::createCondJump(int type, BasicBlock *trueBB, BasicBlock *falseBB
 Type *IRBuilder::convertToAtomType(int basicType) {
     switch (basicType) {
         case BasicType::INT:
-            return Type::getInt32Ty();
+            return _int32Ty;
         case BasicType::FLOAT:
-            return Type::getFloatTy();
+            return _floatTy;
         case BasicType::VOID:
-            return Type::getVoidTy();
+            return _voidTy;
         default:
             assert(false && "should not reach here");
     }

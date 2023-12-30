@@ -62,15 +62,11 @@ private:
 
 class StoreInst : public Instruction {
 public:
-    StoreInst(Value* value, Value* dest) : _value(value), _dest(dest) {
-        _intInst = value->getType()->getTypeEnum() == INT32_TY;
-    }
+    StoreInst(Value* value, Value* dest) : _value(value), _dest(dest) {}
 
     virtual int getClassId() override { return ID_STORE_INST; }
 
     virtual std::string toString() override;
-
-    bool isIntInst() { return _intInst; }
 
     Value* getValue() { return _value; }
 
@@ -79,7 +75,6 @@ public:
 private:
     Value* _value;
     Value* _dest;
-    bool _intInst;
 };
 
 class FunctionCallInst : public Instruction {
@@ -189,7 +184,7 @@ public:
 
     Value* getOperand2() { return _operand2; }
 
-    bool isIntInst() { return _intInst; }
+    bool isIntInst() { return _operand1->getType() == Type::getInt32Ty(); }
 
     int getInstType() { return _type; }
 
@@ -213,7 +208,6 @@ private:
     Value* _operand1;
     Value* _operand2;
     Value* _result;
-    bool _intInst;
     int _type;
 };
 
@@ -247,7 +241,7 @@ public:
 
     Value* getOperand2() { return _operand2; }
 
-    bool isIntInst() { return _intInst; }
+    bool isIntInst() { return _operand1->getType() == Type::getInt32Ty(); }
 
     int getInstType() { return _type; }
 
@@ -258,7 +252,6 @@ private:
     BasicBlock* _falseBB;
     Value* _operand1;
     Value* _operand2;
-    bool _intInst;
     int _type;
 };
 

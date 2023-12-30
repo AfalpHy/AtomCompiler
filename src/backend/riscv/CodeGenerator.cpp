@@ -145,7 +145,7 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
     int intOrder = 0;
     int floatOrder = 0;
     for (auto param : function->getParams()) {
-        if (param->getType()->getTypeEnum() == AtomIR::INT32_TY) {
+        if (param->getType() == AtomIR::Type::getInt32Ty()) {
             if (intOrder < 8) {
                 _value2reg[param] = Register::IntArgReg[intOrder++];
             } else {
@@ -246,7 +246,7 @@ void CodeGenerator::emitAllocInst(AtomIR::AllocInst* inst) {
     _value2reg[inst->getResult()] = Register::S0;
 
     auto type = inst->getResult()->getType()->getBaseType();
-    bool isInt = type->getTypeEnum() != AtomIR::FLOAT_TY;
+    bool isInt = type->isPointerType() || type == AtomIR::Type::getInt32Ty();
     if (inst->isAllocForParam()) {
         int intNum = inst->getAllocatedIntParamNum();
         int floatNum = inst->getAllocatedFloatParamNum();
@@ -277,8 +277,11 @@ void CodeGenerator::emitStoreInst(AtomIR::StoreInst* inst) {
     }
 
     int instType;
-    if (inst->isIntInst()) {
+    auto valueTy = value->getType();
+    if (valueTy == AtomIR::Type::getInt32Ty()) {
         instType = StoreInst::INST_SW;
+    } else if (valueTy->isPointerType()) {
+        instType = StoreInst::INST_SD;
     } else {
         instType = StoreInst::INST_FSW;
     }
@@ -291,12 +294,14 @@ void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
     int stackOffset = 0;
     for (auto param : inst->getParams()) {
         auto paramReg = getRegFromValue(param);
-        if (param->getType()->isPointerType() || param->getType()->getTypeEnum() == AtomIR::INT32_TY) {
+        if (param->getType()->isPointerType() || param->getType() == AtomIR::Type::getInt32Ty()) {
             if (intOrder < 8) {
                 _currentBasicBlock->addInstruction(
                     new UnaryInst(UnaryInst::INST_MV, Register::IntArgReg[intOrder++], paramReg));
             } else {
-                auto saveParam = new StoreInst(StoreInst::INST_SW, paramReg, Register::Sp, stackOffset);
+                auto saveParam =
+                    new StoreInst(param->getType()->isPointerType() ? StoreInst::INST_SD : StoreInst::INST_SW, paramReg,
+                                  Register::Sp, stackOffset);
                 auto& mutableInstList = _currentBasicBlock->getMutableInstructionList();
                 auto begin = mutableInstList.begin();
                 auto end = mutableInstList.end();
@@ -338,7 +343,7 @@ void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
     _currentBasicBlock->addInstruction(call);
     if (inst->getResult()) {
         Instruction* mv;
-        if (inst->getResult()->getType()->getTypeEnum() == AtomIR::INT32_TY) {
+        if (inst->getResult()->getType() == AtomIR::Type::getInt32Ty()) {
             mv = new UnaryInst(UnaryInst::INST_MV, Register::IntArgReg[0]);
         } else {
             mv = new UnaryInst(UnaryInst::INST_FMV_S, Register::FloatArgReg[0]);
@@ -384,7 +389,7 @@ void CodeGenerator::emitBitCastInst(AtomIR::BitCastInst* inst) {
 
 void CodeGenerator::emitRetInst(AtomIR::ReturnInst* inst) {
     if (inst->getResult()) {
-        if (inst->getResult()->getType()->getTypeEnum() == AtomIR::INT32_TY) {
+        if (inst->getResult()->getType() == AtomIR::Type::getInt32Ty()) {
             _currentBasicBlock->addInstruction(
                 new UnaryInst(UnaryInst::INST_MV, Register::IntArgReg[0], _value2reg[inst->getResult()]));
         } else {

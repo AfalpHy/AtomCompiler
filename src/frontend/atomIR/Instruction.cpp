@@ -12,7 +12,7 @@ int AllocInst::AllocatedFloatParamNum = 0;
 
 AllocInst::AllocInst(Type* allocType, const std::string& resultName) : _allocForParam(AllocForParam) {
     if (AllocForParam) {
-        if (allocType->isPointerType() || allocType->getTypeEnum() == INT32_TY) {
+        if (allocType->isPointerType() || allocType == Type::getInt32Ty()) {
             _allocatedIntParamNum = ++AllocatedIntParamNum;
             _allocatedFloatParamNum = AllocatedFloatParamNum;
         } else {
@@ -31,7 +31,7 @@ FunctionCallInst::FunctionCallInst(const FunctionType& functionType, const std::
     for (int i = 0; i < params.size(); i++) {
         assert(functionType._params[i] == params[i]->getType());
     }
-    if (functionType._ret->getTypeEnum() == VOID_TY) {
+    if (functionType._ret == Type::getVoidTy()) {
         _result = nullptr;
     } else {
         _result = new Value(functionType._ret, resultName);
@@ -82,7 +82,6 @@ UnaryInst::UnaryInst(int type, Value* operand, const std::string& resultName) : 
 BinaryInst::BinaryInst(int type, Value* operand1, Value* operand2, const std::string& resultName)
     : _type(type), _operand1(operand1), _operand2(operand2) {
     assert(_operand1->getType() == _operand2->getType());
-    _intInst = operand1->getType()->getTypeEnum() == INT32_TY;
     switch (type) {
         case INST_ADD:
         case INST_SUB:
@@ -111,7 +110,6 @@ BinaryInst::BinaryInst(int type, Value* operand1, Value* operand2, const std::st
 CondJumpInst::CondJumpInst(int type, BasicBlock* trueBB, BasicBlock* falseBB, Value* operand1, Value* operand2)
     : _type(type), _trueBB(trueBB), _falseBB(falseBB), _operand1(operand1), _operand2(operand2) {
     assert(operand1->getType() == operand2->getType());
-    _intInst = operand1->getType()->getTypeEnum() == INT32_TY;
 }
 
 std::string AllocInst::toString() {

@@ -43,7 +43,7 @@ std::string ArrayValue::toString() {
     for (auto& item : _elements) {
         if (item.second.empty()) {
             str.append(std::to_string(item.first).append(" x ")).append(baseType->toString());
-            if (baseType->getTypeEnum() == INT32_TY) {
+            if (baseType == Type::getInt32Ty()) {
                 str.append(" 0, ");
             } else {
                 str.append(" 0.000000, ");
