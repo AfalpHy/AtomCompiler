@@ -12,6 +12,8 @@ void BasicBlock::addInstruction(Instruction *inst) {
     }
     _instructions.push_back(inst);
 }
+
 void BasicBlock::dump() { std::cout << toString(); }
+
 }  // namespace RISCV
 }  // namespace ATC

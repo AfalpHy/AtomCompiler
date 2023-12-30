@@ -132,7 +132,7 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
     _maxPassParamsStackOffset = 0;
     Function::AllRegInFunction.clear();
 
-    _currentFunction = new Function();
+    _currentFunction = new Function(function->getName());
 
     if (function->hasFunctionCall()) {
         // save ra and s0
@@ -195,15 +195,7 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
     retBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::Sp, Register::Sp, -_offset));
     retBB->addInstruction(new ReturnInst());
 
-    _contend << "\t.globl\t" << function->getName() << endl;
-    _contend << "\t.p2align\t1" << endl;
-    _contend << "\t.type\t" << function->getName() << ",@function" << endl;
-    _contend << function->getName() << ":" << endl;
-    // append completed code into content
-    for (auto bb : _currentFunction->getBasicBlocks()) {
-        _contend << bb->toString();
-    }
-    _contend << "\t.size\t" << function->getName() << ", .-" << function->getName() << endl << endl;
+    _contend << _currentFunction->toString();
 }
 
 void CodeGenerator::emitBasicBlock(AtomIR::BasicBlock* basicBlock) {
@@ -309,7 +301,7 @@ void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
                     new UnaryInst(UnaryInst::INST_MV, Register::IntArgReg[intOrder++], paramReg));
             } else {
                 _currentBasicBlock->addInstruction(
-                    new StoreInst(StoreInst::INST_SD, paramReg, Register::Sp, stackOffset));
+                    new StoreInst(StoreInst::INST_SW, paramReg, Register::Sp, stackOffset));
                 stackOffset += 8;
                 _maxPassParamsStackOffset = std::max(_maxPassParamsStackOffset, stackOffset);
             }

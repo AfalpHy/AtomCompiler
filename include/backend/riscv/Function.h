@@ -10,6 +10,8 @@ namespace RISCV {
 
 class Function {
 public:
+    Function(const std::string& name) : _name(name) {}
+
     void insertFront(BasicBlock* bb) { _basicBlocks.push_front(bb); }
 
     void addBasicBlock(BasicBlock* bb) { _basicBlocks.push_back(bb); }
@@ -20,10 +22,13 @@ public:
 
     static std::vector<Register*> CallerSavedRegs;
 
+    std::string toString();
+     
     // for debug
     void dump();
 
 private:
+    std::string _name;
     std::list<BasicBlock*> _basicBlocks;
 };
 
