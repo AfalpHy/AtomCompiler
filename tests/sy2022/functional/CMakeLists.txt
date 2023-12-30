@@ -12,8 +12,8 @@ foreach(sy_path ${sy_files})
       NAME ${test}
       COMMAND
         ${CMAKE_BINARY_DIR}/bin/atc ${sy_path} --emit-llvm --other-src
-        ${sylib_source} -R --R-input ${in_path} --check --compare-file ${out_path}
-        --compare-result ../compare_result.txt)
+        ${sylib_source} -R --R-input ${in_path} --check --compare-file
+        ${out_path} --compare-result ../compare_result.txt)
   else()
     add_test(
       NAME ${test}
@@ -22,6 +22,8 @@ foreach(sy_path ${sy_files})
         ${sylib_source} -R --check --compare-file ${out_path} --compare-result
         ../compare_result.txt)
   endif()
+
+  add_test(NAME ${test}_atom COMMAND ${CMAKE_BINARY_DIR}/bin/atc ${sy_path})
 
   file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${test}")
 
