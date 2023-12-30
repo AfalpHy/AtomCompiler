@@ -27,6 +27,9 @@ public:
     const std::set<Register *> &getAlives() { return _alives; }
 
     std::string toString() {
+        if (_instructions.empty()) {
+            return "";
+        }
         std::string str;
         if (!_name.empty()) {
             str.append(_name + ":\n");

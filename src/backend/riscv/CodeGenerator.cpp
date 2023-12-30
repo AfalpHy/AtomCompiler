@@ -296,23 +296,38 @@ void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
                 _currentBasicBlock->addInstruction(
                     new UnaryInst(UnaryInst::INST_MV, Register::IntArgReg[intOrder++], paramReg));
             } else {
-                _currentBasicBlock->addInstruction(
-                    new StoreInst(StoreInst::INST_SW, paramReg, Register::Sp, stackOffset));
+                auto saveParam = new StoreInst(StoreInst::INST_SW, paramReg, Register::Sp, stackOffset);
+                auto& mutableInstList = _currentBasicBlock->getMutableInstructionList();
+                auto begin = mutableInstList.begin();
+                auto end = mutableInstList.end();
+                for (; begin != end; begin++) {
+                    if (*begin == paramReg->getDefined()) {
+                        mutableInstList.insert(++begin, saveParam);
+                        break;
+                    }
+                }
                 stackOffset += 8;
-                _maxPassParamsStackOffset = std::max(_maxPassParamsStackOffset, stackOffset);
             }
         } else {
             if (floatOrder < 8) {
                 _currentBasicBlock->addInstruction(
                     new UnaryInst(UnaryInst::INST_FMV_S, Register::FloatArgReg[floatOrder++], paramReg));
             } else {
-                _currentBasicBlock->addInstruction(
-                    new StoreInst(StoreInst::INST_FSW, paramReg, Register::Sp, stackOffset));
+                auto saveParam = new StoreInst(StoreInst::INST_FSW, paramReg, Register::Sp, stackOffset);
+                auto& mutableInstList = _currentBasicBlock->getMutableInstructionList();
+                auto begin = mutableInstList.begin();
+                auto end = mutableInstList.end();
+                for (; begin != end; begin++) {
+                    if (*begin == paramReg->getDefined()) {
+                        mutableInstList.insert(++begin, saveParam);
+                        break;
+                    }
+                }
                 stackOffset += 8;
-                _maxPassParamsStackOffset = std::max(_maxPassParamsStackOffset, stackOffset);
             }
         }
     }
+    _maxPassParamsStackOffset = std::max(_maxPassParamsStackOffset, stackOffset);
     auto call = new FunctionCallInst(inst->getFuncName());
     for (int i = 0; i < intOrder; i++) {
         call->addUsedReg(Register::IntArgReg[i]);
