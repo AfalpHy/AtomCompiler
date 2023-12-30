@@ -65,7 +65,7 @@ std::string UnaryInst::toString() {
         case INST_FCVT_S_W:
             return "fcvt.s.w\t" + _dest->getName() + ", " + _src1->getName();
         case INST_FCVT_W_S:
-            return "fcvt.w.s\t" + _dest->getName() + ", " + _src1->getName();
+            return "fcvt.w.s\t" + _dest->getName() + ", " + _src1->getName() + ", rtz";
         case INST_SEQZ:
             return "seqz\t" + _dest->getName() + ", " + _src1->getName();
         case INST_SNEZ:

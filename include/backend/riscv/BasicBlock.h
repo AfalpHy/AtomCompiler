@@ -7,11 +7,11 @@
 namespace ATC {
 namespace RISCV {
 
+class Function;
+
 class BasicBlock {
 public:
-    BasicBlock() : _name(".LBB" + std::to_string(Index++)) {}
-
-    BasicBlock(const std::string &name) : _name(name) {}
+    BasicBlock(Function *function, const std::string &name = "");
 
     const std::string &getName() { return _name; }
 
