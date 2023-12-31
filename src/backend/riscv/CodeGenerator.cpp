@@ -52,7 +52,7 @@ CodeGenerator::CodeGenerator() {
         Register::IntArgReg.push_back(argReg);
         Function::CallerSavedRegs.push_back(argReg);
 
-        argReg = new Register(nullptr, false);
+        argReg = new Register(false);
         argReg->setName("fa" + std::to_string(i));
         argReg->setIsFixed(true);
         Register::FloatArgReg.push_back(argReg);
@@ -66,7 +66,7 @@ CodeGenerator::CodeGenerator() {
         Function::CallerSavedRegs.push_back(tmpReg);
     }
     for (int i = 0; i < 12; i++) {
-        auto tmpReg = new Register(nullptr, false);
+        auto tmpReg = new Register(false);
         tmpReg->setName("ft" + std::to_string(i));
         tmpReg->setIsFixed(true);
         Function::CallerSavedRegs.push_back(tmpReg);
@@ -306,7 +306,7 @@ void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
                 auto begin = mutableInstList.begin();
                 auto end = mutableInstList.end();
                 for (; begin != end; begin++) {
-                    if (*begin == paramReg->getDefined()) {
+                    if ((*begin)->getDest() == paramReg) {
                         mutableInstList.insert(++begin, saveParam);
                         break;
                     }
@@ -323,7 +323,7 @@ void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
                 auto begin = mutableInstList.begin();
                 auto end = mutableInstList.end();
                 for (; begin != end; begin++) {
-                    if (*begin == paramReg->getDefined()) {
+                    if ((*begin)->getDest() == paramReg) {
                         mutableInstList.insert(++begin, saveParam);
                         break;
                     }
