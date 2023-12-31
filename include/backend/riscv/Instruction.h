@@ -26,6 +26,8 @@ public:
 
     virtual std::string toString() = 0;
 
+    void setImm(int imm) { _imm = imm; }
+
     int getInstType() { return _type; }
 
     Register* getDest() { return _dest; }

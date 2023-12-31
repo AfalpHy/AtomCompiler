@@ -1,12 +1,11 @@
-#include <iostream>
+#include "riscv/BasicBlock.h"
 
-#include "riscv/Function.h"
+#include <iostream>
 namespace ATC {
 
 namespace RISCV {
 
-BasicBlock::BasicBlock(Function *function, const std::string &name) {
-    function->addBasicBlock(this);
+BasicBlock::BasicBlock(const std::string &name) {
     if (name.empty()) {
         _name = ".LBB" + std::to_string(Index++);
     } else {

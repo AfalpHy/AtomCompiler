@@ -38,8 +38,12 @@ void RegAllocator::buildInterference() {
                         if (reg == src1 || reg->isIntReg() != src1->isIntReg()) {
                             continue;
                         }
-                        src1->addInterference(reg);
-                        reg->addInterference(src1);
+                        if (!src1->isFixed()) {
+                            src1->addInterference(reg);
+                        }
+                        if (!reg->isFixed()) {
+                            reg->addInterference(src1);
+                        }
                     }
                     alives.insert(src1);
                 }
@@ -49,8 +53,12 @@ void RegAllocator::buildInterference() {
                         if (reg == src2 || reg->isIntReg() != src2->isIntReg()) {
                             continue;
                         }
-                        src2->addInterference(reg);
-                        reg->addInterference(src2);
+                        if (!src2->isFixed()) {
+                            src2->addInterference(reg);
+                        }
+                        if (!reg->isFixed()) {
+                            reg->addInterference(src2);
+                        }
                     }
                     alives.insert(src2);
                 }
@@ -58,7 +66,7 @@ void RegAllocator::buildInterference() {
                 if (inst->getClassId() == ID_FUNCTION_CALL_INST) {
                     for (auto saved : Function::CallerSavedRegs) {
                         for (auto reg : alives) {
-                            if (reg == saved || reg->isIntReg() != saved->isIntReg()) {
+                            if (reg == saved || reg->isIntReg() != saved->isIntReg() || reg->isFixed()) {
                                 continue;
                             }
                             reg->addInterference(saved);

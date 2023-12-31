@@ -160,15 +160,17 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
         }
     }
     // prepare the BasicBlocks
-    auto entryBB = new BasicBlock(_currentFunction);
+    auto entryBB = new BasicBlock();
     for (auto bb : function->getBasicBlocks()) {
-        _atomBB2asmBB[bb] = new BasicBlock(_currentFunction);
+        _atomBB2asmBB[bb] = new BasicBlock();
     }
-    retBB = new BasicBlock(_currentFunction, "." + function->getName() + "_ret");
+    retBB = new BasicBlock("." + function->getName() + "_ret");
 
+    _currentFunction->addBasicBlock(entryBB);
     for (auto bb : function->getBasicBlocks()) {
         emitBasicBlock(bb);
     }
+    _currentFunction->addBasicBlock(retBB);
 
     RegAllocator regAllocator(_currentFunction, _offset, true);
     regAllocator.run();
@@ -197,6 +199,7 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
 
 void CodeGenerator::emitBasicBlock(AtomIR::BasicBlock* basicBlock) {
     _currentBasicBlock = _atomBB2asmBB[basicBlock];
+    _currentFunction->addBasicBlock(_currentBasicBlock);
     for (auto inst : basicBlock->getInstructionList()) {
         emitInstruction(inst);
     }
@@ -412,29 +415,33 @@ void CodeGenerator::emitUnaryInst(AtomIR::UnaryInst* inst) {
             break;
         }
         case AtomIR::UnaryInst::INST_ITOF: {
-            // instruction select off(move to optimize)
-            // if (src1->getDefined() && src1->getDefined()->getClassId() == ID_BINARY_INST &&
-            //     src1->getDefined()->getInstType() == BinaryInst::INST_FSEQ_S) {
-            //     auto oneBB = new BasicBlock(_currentFunction);
-            //     auto zeroBB = new BasicBlock(_currentFunction);
-            //     auto afterBB = new BasicBlock(_currentFunction);
+            for (auto preInst : _currentBasicBlock->getInstructionList()) {
+                if (preInst->getDest() == src1 && preInst->getClassId() == ID_BINARY_INST &&
+                    preInst->getInstType() == BinaryInst::INST_FSEQ_S) {
+                    auto oneBB = new BasicBlock();
+                    auto zeroBB = new BasicBlock();
+                    auto afterBB = new BasicBlock();
+                    _currentFunction->addBasicBlock(oneBB);
+                    _currentFunction->addBasicBlock(zeroBB);
+                    _currentFunction->addBasicBlock(afterBB);
 
-            //     auto beq = new CondJumpInst(CondJumpInst::INST_BEQ, src1, Register::Zero, zeroBB);
-            //     _currentBasicBlock->addInstruction(beq);
-            //     _currentBasicBlock->addInstruction(new JumpInst(oneBB));
+                    auto beq = new CondJumpInst(CondJumpInst::INST_BEQ, src1, Register::Zero, zeroBB);
+                    _currentBasicBlock->addInstruction(beq);
+                    _currentBasicBlock->addInstruction(new JumpInst(oneBB));
 
-            //     _currentBasicBlock = oneBB;
-            //     Register* dest = loadConstFloat(1);
-            //     _currentBasicBlock->addInstruction(new JumpInst(afterBB));
+                    _currentBasicBlock = oneBB;
+                    Register* dest = loadConstFloat(1);
+                    _currentBasicBlock->addInstruction(new JumpInst(afterBB));
 
-            //     _currentBasicBlock = zeroBB;
-            //     _currentBasicBlock->addInstruction(new UnaryInst(UnaryInst::INST_FMV_W_X, dest, Register::Zero));
-            //     _currentBasicBlock->addInstruction(new JumpInst(afterBB));
-            //     _currentBasicBlock = afterBB;
+                    _currentBasicBlock = zeroBB;
+                    _currentBasicBlock->addInstruction(new UnaryInst(UnaryInst::INST_FMV_W_X, dest, Register::Zero));
+                    _currentBasicBlock->addInstruction(new JumpInst(afterBB));
+                    _currentBasicBlock = afterBB;
 
-            //     _value2reg[inst->getResult()] = dest;
-            //     return;
-            // }
+                    _value2reg[inst->getResult()] = dest;
+                    return;
+                }
+            }
             unaryInst = new UnaryInst(UnaryInst::INST_FCVT_S_W, src1);
             break;
         }

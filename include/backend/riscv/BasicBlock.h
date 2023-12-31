@@ -11,10 +11,11 @@ class Function;
 
 class BasicBlock {
 public:
-    BasicBlock(Function *function, const std::string &name = "");
+    BasicBlock(const std::string &name = "");
 
     const std::string &getName() { return _name; }
 
+    void setIsEntry() { _entry = true; }
     void addInstruction(Instruction *inst);
     void addPredecessor(BasicBlock *bb) { _predecessors.push_back(bb); }
     void addSuccessor(BasicBlock *bb) { _successors.push_back(bb); }
@@ -27,11 +28,11 @@ public:
     const std::set<Register *> &getAlives() { return _alives; }
 
     std::string toString() {
-        if (_instructions.empty()) {
-            return "";
-        }
         std::string str;
-        if (!_name.empty()) {
+        if (!_entry) {
+            if (!_predecessors.empty()) {
+                return "";
+            }
             str.append(_name + ":\n");
         }
         for (auto inst : _instructions) {
@@ -47,6 +48,7 @@ public:
 
 private:
     static int Index;
+    bool _entry = false;
     std::string _name;
     std::list<Instruction *> _instructions;
     std::vector<BasicBlock *> _predecessors;
