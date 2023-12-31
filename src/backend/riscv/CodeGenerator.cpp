@@ -161,6 +161,7 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
     }
     // prepare the BasicBlocks
     auto entryBB = new BasicBlock();
+    entryBB->setIsEntry();
     for (auto bb : function->getBasicBlocks()) {
         _atomBB2asmBB[bb] = new BasicBlock();
     }

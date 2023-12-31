@@ -599,7 +599,7 @@ void IRBuilder::visit(ContinueStatement *node) { createJump(_condBB); }
 void IRBuilder::visit(ReturnStatement *node) {
     if (node->getExpr()) {
         node->getExpr()->accept(this);
-        createRet(_value);
+        createRet(castToDestTyIfNeed(_value, _currentFunction->getFunctionType()._ret));
     } else {
         createRet(nullptr);
     }
