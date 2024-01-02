@@ -471,28 +471,60 @@ void CodeGenerator::emitCondJumpInst(AtomIR::CondJumpInst* inst) {
     Register* src2 = getRegFromValue(inst->getOperand2());
 
     int type;
-    switch (inst->getInstType()) {
-        case AtomIR::CondJumpInst::INST_JEQ:
-            type = CondJumpInst::INST_BEQ;
-            break;
-        case AtomIR::CondJumpInst::INST_JNE:
-            type = CondJumpInst::INST_BNE;
-            break;
-        case AtomIR::CondJumpInst::INST_JLT:
-            type = CondJumpInst::INST_BLT;
-            break;
-        case AtomIR::CondJumpInst::INST_JLE:
-            type = CondJumpInst::INST_BGE;
-            std::swap(src1, src2);
-            break;
-        case AtomIR::CondJumpInst::INST_JGT:
-            type = CondJumpInst::INST_BLT;
-            std::swap(src1, src2);
-            break;
-        case AtomIR::CondJumpInst::INST_JGE:
-            type = CondJumpInst::INST_BGE;
-        default:
-            break;
+    if (inst->isIntInst()) {
+        switch (inst->getInstType()) {
+            case AtomIR::CondJumpInst::INST_JEQ:
+                type = CondJumpInst::INST_BEQ;
+                break;
+            case AtomIR::CondJumpInst::INST_JNE:
+                type = CondJumpInst::INST_BNE;
+                break;
+            case AtomIR::CondJumpInst::INST_JLT:
+                type = CondJumpInst::INST_BLT;
+                break;
+            case AtomIR::CondJumpInst::INST_JLE:
+                type = CondJumpInst::INST_BGE;
+                std::swap(src1, src2);
+                break;
+            case AtomIR::CondJumpInst::INST_JGT:
+                type = CondJumpInst::INST_BLT;
+                std::swap(src1, src2);
+                break;
+            case AtomIR::CondJumpInst::INST_JGE:
+                type = CondJumpInst::INST_BGE;
+            default:
+                break;
+        }
+    } else {
+        auto intZero = loadConstInt(0);
+
+        Instruction* cmpInst;
+        type = CondJumpInst::INST_BEQ;
+        switch (inst->getInstType()) {
+            case AtomIR::CondJumpInst::INST_JEQ:
+                cmpInst = new BinaryInst(BinaryInst::INST_FSEQ_S, src1, src2);
+                break;
+            case AtomIR::CondJumpInst::INST_JNE:
+                cmpInst = new BinaryInst(BinaryInst::INST_FSEQ_S, src1, src2);
+                type = CondJumpInst::INST_BNE;
+                break;
+            case AtomIR::CondJumpInst::INST_JLT:
+                cmpInst = new BinaryInst(BinaryInst::INST_FSLT_S, src1, src2);
+                break;
+            case AtomIR::CondJumpInst::INST_JLE:
+                cmpInst = new BinaryInst(BinaryInst::INST_FSLE_S, src1, src2);
+                break;
+            case AtomIR::CondJumpInst::INST_JGT:
+                cmpInst = new BinaryInst(BinaryInst::INST_FSLT_S, src2, src1);
+                break;
+            case AtomIR::CondJumpInst::INST_JGE:
+                cmpInst = new BinaryInst(BinaryInst::INST_FSLE_S, src2, src1);
+            default:
+                break;
+        }
+        _currentBasicBlock->addInstruction(cmpInst);
+        src1 = cmpInst->getDest();
+        src2 = intZero;
     }
     _currentBasicBlock->addInstruction(new CondJumpInst(type, src1, src2, _atomBB2asmBB[inst->getTureBB()]));
     _currentBasicBlock->addInstruction(new JumpInst(_atomBB2asmBB[inst->getFalseBB()]));
