@@ -59,13 +59,14 @@ int main(int argc, const char *argv[]) {
         }
     }
 
+    std::filesystem::path filePath = std::string(SrcPath);
+    string filename = filePath.stem();
     if (EmitLLVM) {
         LLVMIR::IRBuilder irBuilder;
         for (auto compUnit : CompUnit::AllCompUnits) {
             compUnit->accept(&irBuilder);
         }
-        std::filesystem::path filePath = std::string(SrcPath);
-        string filename = filePath.stem();
+
         string llFile = filename + ".ll";
         string outFile = filename + ".out";
         irBuilder.dumpLL(llFile);
@@ -97,7 +98,14 @@ int main(int argc, const char *argv[]) {
         for (auto compUnit : CompUnit::AllCompUnits) {
             compUnit->accept(&irBuilder);
             codeGenerator.emitModule(irBuilder.getCurrentModule());
-            codeGenerator.dump();
+            if (Check) {
+                ofstream asmfile(filename + ".s", ios::trunc);
+                codeGenerator.dump(asmfile);
+                string cmd = "clang -target riscv64-linux-gnu -c " + filename + ".s";
+                return WEXITSTATUS(system(cmd.c_str()));
+            } else {
+                codeGenerator.dump();
+            }
         }
     }
 

@@ -58,7 +58,7 @@ IRBuilder::IRBuilder() {
     _funcName2funcType["_sysy_stoptime"] = funcTy;
 }
 
-IRBuilder::~IRBuilder() { _currentModule->dump(); }
+IRBuilder::~IRBuilder() {}
 
 void IRBuilder::visit(CompUnit *node) {
     _currentModule = new Module(node->getName());

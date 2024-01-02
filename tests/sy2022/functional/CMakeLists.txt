@@ -23,10 +23,18 @@ foreach(sy_path ${sy_files})
         ../compare_result.txt)
   endif()
 
-  add_test(NAME ${test}_atom COMMAND ${CMAKE_BINARY_DIR}/bin/atc ${sy_path})
-
   file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${test}")
 
   set_tests_properties(${test} PROPERTIES WORKING_DIRECTORY
                                           ${CMAKE_CURRENT_BINARY_DIR}/${test})
+
+  add_test(NAME ${test}_atom COMMAND ${CMAKE_BINARY_DIR}/bin/atc ${sy_path}
+                                     --check)
+
+  file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${test}_atom")
+
+  set_tests_properties(
+    ${test}_atom PROPERTIES WORKING_DIRECTORY
+                            ${CMAKE_CURRENT_BINARY_DIR}/${test}_atom)
+
 endforeach()
