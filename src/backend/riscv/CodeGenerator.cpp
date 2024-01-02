@@ -392,13 +392,13 @@ void CodeGenerator::emitBitCastInst(AtomIR::BitCastInst* inst) {
 }
 
 void CodeGenerator::emitRetInst(AtomIR::ReturnInst* inst) {
-    if (inst->getResult()) {
-        if (inst->getResult()->getType() == AtomIR::Type::getInt32Ty()) {
-            _currentBasicBlock->addInstruction(
-                new UnaryInst(UnaryInst::INST_MV, Register::IntArgReg[0], _value2reg[inst->getResult()]));
+    if (inst->getRetValue()) {
+        auto retValue = getRegFromValue(inst->getRetValue());
+        if (inst->getRetValue()->getType() == AtomIR::Type::getInt32Ty()) {
+            _currentBasicBlock->addInstruction(new UnaryInst(UnaryInst::INST_MV, Register::IntArgReg[0], retValue));
         } else {
             _currentBasicBlock->addInstruction(
-                new UnaryInst(UnaryInst::INST_FMV_S, Register::FloatArgReg[0], _value2reg[inst->getResult()]));
+                new UnaryInst(UnaryInst::INST_FMV_S, Register::FloatArgReg[0], retValue));
         }
     }
     _currentBasicBlock->addInstruction(new JumpInst(retBB));

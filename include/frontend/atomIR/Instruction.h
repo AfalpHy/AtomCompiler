@@ -144,6 +144,8 @@ public:
 
     virtual std::string toString() override;
 
+    Value* getRetValue() { return _retValue; }
+
 private:
     Value* _retValue;
 };
