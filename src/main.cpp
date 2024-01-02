@@ -85,10 +85,9 @@ int main(int argc, const char *argv[]) {
                 cmd.append(" ").append(to_string(ret)).append(" >> ").append(outFile);
                 system(cmd.c_str());
                 cmd = "diff";
-                cmd.append(" ").append(outFile).append(" ").append(CompareFile).append(" >> ").append(CompareResult);
-                system(cmd.c_str());
-                cmd = "echo";
-                cmd.append(" \"").append(filePath).append("\"").append(" >> ").append(CompareResult);
+                cmd.append(" ").append(outFile).append(" ").append(CompareFile);
+                ret = system(cmd.c_str());
+                return WEXITSTATUS(ret);
             }
             system(cmd.c_str());
         }
