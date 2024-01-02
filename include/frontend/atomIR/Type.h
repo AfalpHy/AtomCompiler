@@ -16,6 +16,8 @@ public:
 
     PointerType* getPointerTy();
 
+    bool isIntType() { return this->isPointerType() || this == getInt32Ty(); }
+
     virtual std::string toString();
 
     virtual Type* getBaseType() { return nullptr; }

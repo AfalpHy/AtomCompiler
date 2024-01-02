@@ -30,7 +30,7 @@ public:
     std::string toString() {
         std::string str;
         if (!_entry) {
-            if (_predecessors.empty()) {
+            if (_predecessors.empty() && _successors.empty()) {
                 return "";
             }
             str.append(_name + ":\n");

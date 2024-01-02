@@ -145,7 +145,7 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
     int intOrder = 0;
     int floatOrder = 0;
     for (auto param : function->getParams()) {
-        if (param->getType() == AtomIR::Type::getInt32Ty()) {
+        if (param->getType()->isIntType()) {
             if (intOrder < 8) {
                 _value2reg[param] = Register::IntArgReg[intOrder++];
             } else {
@@ -250,14 +250,13 @@ void CodeGenerator::emitAllocInst(AtomIR::AllocInst* inst) {
     _value2reg[inst->getResult()] = Register::S0;
 
     auto type = inst->getResult()->getType()->getBaseType();
-    bool isInt = type->isPointerType() || type == AtomIR::Type::getInt32Ty();
     if (inst->isAllocForParam()) {
         int intNum = inst->getAllocatedIntParamNum();
         int floatNum = inst->getAllocatedFloatParamNum();
-        if (isInt && intNum > 8) {
+        if (type->isIntType() && intNum > 8) {
             _value2offset[inst->getResult()] = (intNum - 8 + (floatNum > 8 ? floatNum - 8 : 0) - 1) * 8;
             return;
-        } else if (!isInt && floatNum > 8) {
+        } else if (!type->isIntType() && floatNum > 8) {
             _value2offset[inst->getResult()] = (floatNum - 8 + (intNum > 8 ? intNum - 8 : 0) - 1) * 8;
             return;
         }
@@ -298,7 +297,7 @@ void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
     int stackOffset = 0;
     for (auto param : inst->getParams()) {
         auto paramReg = getRegFromValue(param);
-        if (param->getType()->isPointerType() || param->getType() == AtomIR::Type::getInt32Ty()) {
+        if (param->getType()->isIntType()) {
             if (intOrder < 8) {
                 _currentBasicBlock->addInstruction(
                     new UnaryInst(UnaryInst::INST_MV, Register::IntArgReg[intOrder++], paramReg));
@@ -410,9 +409,8 @@ void CodeGenerator::emitUnaryInst(AtomIR::UnaryInst* inst) {
     switch (inst->getInstType()) {
         case AtomIR::UnaryInst::INST_LOAD: {
             int offset = inst->getOperand()->isGlobal() ? 0 : _value2offset[inst->getOperand()];
-            unaryInst = new LoadInst(
-                inst->getResult()->getType() == AtomIR::Type::getInt32Ty() ? LoadInst::INST_LW : LoadInst::INST_FLW,
-                src1, offset);
+            unaryInst = new LoadInst(inst->getResult()->getType()->isIntType() ? LoadInst::INST_LW : LoadInst::INST_FLW,
+                                     src1, offset);
             break;
         }
         case AtomIR::UnaryInst::INST_ITOF: {

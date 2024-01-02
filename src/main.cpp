@@ -99,6 +99,7 @@ int main(int argc, const char *argv[]) {
             compUnit->accept(&irBuilder);
             codeGenerator.emitModule(irBuilder.getCurrentModule());
             if (Check) {
+                irBuilder.getCurrentModule()->dump();
                 ofstream asmfile(filename + ".s", ios::trunc);
                 codeGenerator.dump(asmfile);
                 string cmd = "clang -target riscv64-linux-gnu -c " + filename + ".s";
