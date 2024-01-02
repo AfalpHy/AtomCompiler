@@ -96,6 +96,17 @@ void IRBuilder::visit(FunctionDef *node) {
     _currentBasicBlock = entry;
 
     node->getBlock()->accept(this);
+
+    // if the function didn't execute return before, than return the default value
+    if (!_currentBasicBlock->isHasBr()) {
+        if (node->getRetType()->getBasicType() == BasicType::INT) {
+            createRet(_int32Zero);
+        } else if (node->getRetType()->getBasicType() == BasicType::FLOAT) {
+            createRet(_floatZero);
+        } else {
+            createRet(nullptr);
+        }
+    }
 }
 
 void IRBuilder::visit(Variable *node) {
