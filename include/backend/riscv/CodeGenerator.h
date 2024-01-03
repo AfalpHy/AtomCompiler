@@ -61,6 +61,8 @@ private:
 
     Register *getRegFromValue(AtomIR::Value *);
 
+    Register *processIfImmOutOfRange(Register *src, int &offset);
+
 private:
     Function *_currentFunction;
     BasicBlock *_currentBasicBlock;

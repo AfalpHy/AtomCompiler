@@ -10,6 +10,8 @@ std::string ImmInst::toString() {
     switch (_type) {
         case INST_LI:
             return "li\t" + _dest->getName() + ", " + std::to_string(_imm);
+        case INST_LUI:
+            return "lui\t" + _dest->getName() + ", " + std::to_string(_imm);
         default:
             assert(0 && "unsupported");
             break;

@@ -23,7 +23,7 @@ public:
     static std::vector<Register*> CallerSavedRegs;
 
     std::string toString();
-     
+
     // for debug
     void dump();
 

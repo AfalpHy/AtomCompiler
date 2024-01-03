@@ -181,18 +181,47 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
     if (_offset % 16 != 0) {
         _offset = (_offset - 15) / 16 * 16;
     }
-    entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::Sp, Register::Sp, _offset));
-    if (function->hasFunctionCall()) {
-        entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::Ra, Register::Sp, -_offset - 8));
-        entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::S0, Register::Sp, -_offset - 16));
-        retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::Ra, Register::Sp, -_offset - 8));
-        retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::S0, Register::Sp, -_offset - 16));
+    if (_offset >= -2048) {
+        entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::Sp, Register::Sp, _offset));
+        if (function->hasFunctionCall()) {
+            entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::Ra, Register::Sp, -_offset - 8));
+            entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::S0, Register::Sp, -_offset - 16));
+            retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::Ra, Register::Sp, -_offset - 8));
+            retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::S0, Register::Sp, -_offset - 16));
+        } else {
+            entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::S0, Register::Sp, -_offset - 8));
+            retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::S0, Register::Sp, -_offset - 8));
+        }
+        entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::S0, Register::Sp, -_offset));
+        retBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::Sp, Register::Sp, -_offset));
     } else {
-        entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::S0, Register::Sp, -_offset - 8));
-        retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::S0, Register::Sp, -_offset - 8));
+        // 2032 avoid to ues the num 2048
+        entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::Sp, Register::Sp, -2032));
+        _currentBasicBlock = retBB;
+        auto tmpImm = loadConstInt(_offset + 2032);
+        tmpImm->setName("t0");
+        tmpImm->setIsFixed(true);
+        _currentBasicBlock->addInstruction(new BinaryInst(BinaryInst::INST_ADD, Register::Sp, Register::Sp, tmpImm));
+        if (function->hasFunctionCall()) {
+            entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::Ra, Register::Sp, 2024));
+            entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::S0, Register::Sp, 2016));
+
+            retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::Ra, Register::Sp, 2024));
+            retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::S0, Register::Sp, 2016));
+        } else {
+            entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::S0, Register::Sp, -2032));
+            retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::S0, Register::Sp, 2024));
+        }
+        entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::S0, Register::Sp, 2032));
+
+        _currentBasicBlock = entryBB;
+        tmpImm = loadConstInt(_offset + 2032);
+        tmpImm->setName("t0");
+        tmpImm->setIsFixed(true);
+        _currentBasicBlock->addInstruction(new BinaryInst(BinaryInst::INST_SUB, Register::Sp, Register::Sp, tmpImm));
+        retBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::Sp, Register::Sp, 2032));
     }
-    entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::S0, Register::Sp, -_offset));
-    retBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::Sp, Register::Sp, -_offset));
+
     retBB->addInstruction(new ReturnInst());
 
     _contend << _currentFunction->toString();
@@ -274,10 +303,7 @@ void CodeGenerator::emitStoreInst(AtomIR::StoreInst* inst) {
     auto dest = inst->getDest();
     Register* src1 = getRegFromValue(value);
     Register* src2 = getRegFromValue(dest);
-    int offset = 0;
-    if (src2 == Register::S0) {
-        offset = _value2offset[dest];
-    }
+    int offset = _value2offset[dest];
 
     int instType;
     auto valueTy = value->getType();
@@ -288,6 +314,8 @@ void CodeGenerator::emitStoreInst(AtomIR::StoreInst* inst) {
     } else {
         instType = StoreInst::INST_FSW;
     }
+
+    src2 = processIfImmOutOfRange(src2, offset);
     _currentBasicBlock->addInstruction(new StoreInst(instType, src1, src2, offset));
 }
 
@@ -302,15 +330,35 @@ void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
                 _currentBasicBlock->addInstruction(
                     new UnaryInst(UnaryInst::INST_MV, Register::IntArgReg[intOrder++], paramReg));
             } else {
-                auto saveParam =
-                    new StoreInst(param->getType()->isPointerType() ? StoreInst::INST_SD : StoreInst::INST_SW, paramReg,
-                                  Register::Sp, stackOffset);
                 auto& mutableInstList = _currentBasicBlock->getMutableInstructionList();
                 auto begin = mutableInstList.begin();
                 auto end = mutableInstList.end();
                 for (; begin != end; begin++) {
                     if ((*begin)->getDest() == paramReg) {
-                        mutableInstList.insert(++begin, saveParam);
+                        ++begin;
+                        if (stackOffset > 2047) {
+                            auto hi20 = stackOffset >> 12;
+                            auto lo12 = stackOffset & 0xfff;
+                            if (lo12 > 2047) {
+                                lo12 -= 4096;
+                                hi20 += 1;
+                            }
+                            auto lui = new ImmInst(ImmInst::INST_LUI, hi20);
+                            mutableInstList.insert(begin, lui);
+
+                            auto addw = new BinaryInst(BinaryInst::INST_ADDW, Register::Sp, lui->getDest());
+                            mutableInstList.insert(begin, addw);
+
+                            auto saveParam = new StoreInst(
+                                param->getType()->isPointerType() ? StoreInst::INST_SD : StoreInst::INST_SW, paramReg,
+                                addw->getDest(), lo12);
+                            mutableInstList.insert(begin, saveParam);
+                        } else {
+                            auto saveParam = new StoreInst(
+                                param->getType()->isPointerType() ? StoreInst::INST_SD : StoreInst::INST_SW, paramReg,
+                                Register::Sp, stackOffset);
+                            mutableInstList.insert(begin, saveParam);
+                        }
                         break;
                     }
                 }
@@ -321,13 +369,31 @@ void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
                 _currentBasicBlock->addInstruction(
                     new UnaryInst(UnaryInst::INST_FMV_S, Register::FloatArgReg[floatOrder++], paramReg));
             } else {
-                auto saveParam = new StoreInst(StoreInst::INST_FSW, paramReg, Register::Sp, stackOffset);
                 auto& mutableInstList = _currentBasicBlock->getMutableInstructionList();
                 auto begin = mutableInstList.begin();
                 auto end = mutableInstList.end();
                 for (; begin != end; begin++) {
                     if ((*begin)->getDest() == paramReg) {
-                        mutableInstList.insert(++begin, saveParam);
+                        ++begin;
+                        if (stackOffset > 2047) {
+                            auto hi20 = stackOffset >> 12;
+                            auto lo12 = stackOffset & 0xfff;
+                            if (lo12 > 2047) {
+                                lo12 -= 4096;
+                                hi20 += 1;
+                            }
+                            auto lui = new ImmInst(ImmInst::INST_LUI, hi20);
+                            mutableInstList.insert(begin, lui);
+
+                            auto addw = new BinaryInst(BinaryInst::INST_ADDW, Register::Sp, lui->getDest());
+                            mutableInstList.insert(begin, addw);
+
+                            auto saveParam = new StoreInst(StoreInst::INST_FSW, paramReg, addw->getDest(), lo12);
+                            mutableInstList.insert(begin, saveParam);
+                        } else {
+                            auto saveParam = new StoreInst(StoreInst::INST_FSW, paramReg, Register::Sp, stackOffset);
+                            mutableInstList.insert(begin, saveParam);
+                        }
                         break;
                     }
                 }
@@ -368,7 +434,9 @@ void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
 void CodeGenerator::emitGEPInst(AtomIR::GetElementPtrInst* inst) {
     Register* ptr = getRegFromValue(inst->getPtr());
     if (ptr == Register::S0) {
-        auto getPtr = new BinaryInst(BinaryInst::INST_ADDI, Register::S0, _value2offset[inst->getPtr()]);
+        int offset = _value2offset[inst->getPtr()];
+        auto tmp = processIfImmOutOfRange(ptr, offset);
+        auto getPtr = new BinaryInst(BinaryInst::INST_ADDI, tmp, offset);
         ptr = getPtr->getDest();
         _currentBasicBlock->addInstruction(getPtr);
     }
@@ -396,9 +464,11 @@ void CodeGenerator::emitGEPInst(AtomIR::GetElementPtrInst* inst) {
 void CodeGenerator::emitBitCastInst(AtomIR::BitCastInst* inst) {
     Register* ptr = getRegFromValue(inst->getPtr());
     if (ptr == Register::S0) {
-        auto getPtr = new BinaryInst(BinaryInst::INST_ADDI, Register::S0, _value2offset[inst->getPtr()]);
-        _value2reg[inst->getResult()] = getPtr->getDest();
+        int offset = _value2offset[inst->getPtr()];
+        auto tmp = processIfImmOutOfRange(Register::S0, offset);
+        auto getPtr = new BinaryInst(BinaryInst::INST_ADDI, tmp, offset);
         _currentBasicBlock->addInstruction(getPtr);
+        _value2reg[inst->getResult()] = getPtr->getDest();
     } else {
         _value2reg[inst->getResult()] = ptr;
     }
@@ -423,6 +493,7 @@ void CodeGenerator::emitUnaryInst(AtomIR::UnaryInst* inst) {
     switch (inst->getInstType()) {
         case AtomIR::UnaryInst::INST_LOAD: {
             int offset = inst->getOperand()->isGlobal() ? 0 : _value2offset[inst->getOperand()];
+            src1 = processIfImmOutOfRange(src1, offset);
             unaryInst = new LoadInst(inst->getResult()->getType()->isIntType() ? LoadInst::INST_LW : LoadInst::INST_FLW,
                                      src1, offset);
             break;
@@ -642,6 +713,7 @@ Register* CodeGenerator::emitIntBinaryInst(int instType, AtomIR::Value* operand1
             if (src2) {
                 binaryInst = new BinaryInst(BinaryInst::INST_ADDW, src1, src2);
             } else {
+                src1 = processIfImmOutOfRange(src1, imm);
                 binaryInst = new BinaryInst(BinaryInst::INST_ADDIW, src1, imm);
             }
             break;
@@ -649,6 +721,7 @@ Register* CodeGenerator::emitIntBinaryInst(int instType, AtomIR::Value* operand1
             if (src2) {
                 binaryInst = new BinaryInst(BinaryInst::INST_SUBW, src1, src2);
             } else {
+                src1 = processIfImmOutOfRange(src1, imm);
                 binaryInst = new BinaryInst(BinaryInst::INST_ADDIW, src1, imm);
             }
             break;
@@ -676,6 +749,7 @@ Register* CodeGenerator::emitIntBinaryInst(int instType, AtomIR::Value* operand1
             if (src2) {
                 binaryInst = new BinaryInst(BinaryInst::INST_XOR, src1, src2);
             } else {
+                src1 = processIfImmOutOfRange(src1, imm);
                 binaryInst = new BinaryInst(BinaryInst::INST_ADDI, src1, imm);
             }
             break;
@@ -791,6 +865,24 @@ Register* CodeGenerator::getRegFromValue(AtomIR::Value* value) {
     }
 
     return _value2reg[value];
+}
+
+Register* CodeGenerator::processIfImmOutOfRange(Register* src, int& offset) {
+    if (offset < -2048 || offset > 2047) {
+        int hi20 = (unsigned)offset >> 12;
+        int lo12 = offset & 0xfff;
+        if (lo12 > 2047) {
+            lo12 -= 4096;
+            hi20 += 1;
+        }
+        auto lui = new ImmInst(ImmInst::INST_LUI, hi20);
+        _currentBasicBlock->addInstruction(lui);
+        auto addw = new BinaryInst(BinaryInst::INST_ADDW, src, lui->getDest());
+        _currentBasicBlock->addInstruction(addw);
+        offset = lo12;
+        return addw->getDest();
+    }
+    return src;
 }
 
 }  // namespace RISCV

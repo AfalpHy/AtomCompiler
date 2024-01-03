@@ -193,6 +193,13 @@ public:
         }
     }
 
+    BinaryInst(int type, Register* dest, Register* src1, Register* src2) {
+        _type = type;
+        _dest = dest;
+        _src1 = src1;
+        _src2 = src2;
+    }
+
     BinaryInst(int type, Register* src1, int imm) {
         _type = type;
         _src1 = src1;
