@@ -122,7 +122,7 @@ public:
 
 class FunctionCallInst : public Instruction {
 public:
-    FunctionCallInst(const std::string& funcName) : _funcName(funcName) {}
+    FunctionCallInst(const std::string& funcName, Register* dest) : _funcName(funcName) { _dest = dest; }
 
     virtual int getClassId() override { return ID_FUNCTION_CALL_INST; }
 

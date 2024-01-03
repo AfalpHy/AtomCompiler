@@ -527,15 +527,17 @@ void IRBuilder::visit(Block *node) {
 }
 
 void IRBuilder::visit(AssignStatement *node) {
+    node->getRval()->accept(this);
+    auto rVal = _value;
     Value *addr = nullptr;
     if (node->getLval()->getClassId() == ID_VAR_REF) {
         addr = _var2addr[static_cast<VarRef *>(node->getLval())->getVariable()];
     } else {
         addr = getIndexedRefAddress((IndexedRef *)node->getLval());
     }
-    node->getRval()->accept(this);
-    _value = castToDestTyIfNeed(_value, static_cast<PointerType *>(addr->getType())->getBaseType());
-    _currentBasicBlock->addInstruction(new StoreInst(_value, addr));
+
+    rVal = castToDestTyIfNeed(rVal, static_cast<PointerType *>(addr->getType())->getBaseType());
+    _currentBasicBlock->addInstruction(new StoreInst(rVal, addr));
 }
 
 void IRBuilder::visit(IfStatement *node) {

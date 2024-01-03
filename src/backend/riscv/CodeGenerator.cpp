@@ -275,7 +275,7 @@ void CodeGenerator::emitStoreInst(AtomIR::StoreInst* inst) {
     Register* src1 = getRegFromValue(value);
     Register* src2 = getRegFromValue(dest);
     int offset = 0;
-    if (!dest->isGlobal()) {
+    if (src2 == Register::S0) {
         offset = _value2offset[dest];
     }
 
@@ -336,7 +336,16 @@ void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
         }
     }
     _maxPassParamsStackOffset = std::max(_maxPassParamsStackOffset, stackOffset);
-    auto call = new FunctionCallInst(inst->getFuncName());
+    Register* dest = nullptr;
+    if (inst->getResult()) {
+        if (inst->getResult()->getType()->isIntType()) {
+            dest = Register::IntArgReg[0];
+        } else {
+            dest = Register::FloatArgReg[0];
+        }
+    }
+    auto call = new FunctionCallInst(inst->getFuncName(), dest);
+
     for (int i = 0; i < intOrder; i++) {
         call->addUsedReg(Register::IntArgReg[i]);
     }
@@ -358,6 +367,11 @@ void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
 
 void CodeGenerator::emitGEPInst(AtomIR::GetElementPtrInst* inst) {
     Register* ptr = getRegFromValue(inst->getPtr());
+    if (ptr == Register::S0) {
+        auto getPtr = new BinaryInst(BinaryInst::INST_ADDI, Register::S0, _value2offset[inst->getPtr()]);
+        ptr = getPtr->getDest();
+        _currentBasicBlock->addInstruction(getPtr);
+    }
     auto& indexes = inst->getIndexes();
     if (indexes.size() == 1) {
         int offset = inst->getPtr()->getType()->getBaseType()->getByteLen();

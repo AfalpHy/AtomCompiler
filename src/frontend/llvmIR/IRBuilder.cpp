@@ -481,15 +481,16 @@ void IRBuilder::visit(Block *node) {
 }
 
 void IRBuilder::visit(AssignStatement *node) {
+    node->getRval()->accept(this);
+    auto rVal = _value;
     llvm::Value *addr = nullptr;
     if (node->getLval()->getClassId() == ID_VAR_REF) {
         addr = _var2addr[static_cast<VarRef *>(node->getLval())->getVariable()];
     } else {
         addr = getIndexedRefAddress((IndexedRef *)node->getLval());
     }
-    node->getRval()->accept(this);
-    _value = castToDestTyIfNeed(_value, addr->getType()->getPointerElementType());
-    _theIRBuilder->CreateStore(_value, addr);
+    rVal = castToDestTyIfNeed(rVal, addr->getType()->getPointerElementType());
+    _theIRBuilder->CreateStore(rVal, addr);
 }
 
 void IRBuilder::visit(IfStatement *node) {
