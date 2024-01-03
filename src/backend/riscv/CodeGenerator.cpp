@@ -443,8 +443,18 @@ void CodeGenerator::emitGEPInst(AtomIR::GetElementPtrInst* inst) {
     auto& indexes = inst->getIndexes();
     if (indexes.size() == 1) {
         int offset = inst->getPtr()->getType()->getBaseType()->getByteLen();
-        _value2reg[inst->getResult()] = ptr;
-        _value2offset[inst->getResult()] = offset;
+        if (indexes[0]->isConst()) {
+            _value2reg[inst->getResult()] = ptr;
+            _value2offset[inst->getResult()] = static_cast<AtomIR::ConstantInt*>(indexes[0])->getConstValue() * offset;
+        } else {
+            auto li = new ImmInst(ImmInst::INST_LI, offset);
+            _currentBasicBlock->addInstruction(li);
+            auto mul = new BinaryInst(BinaryInst::INST_MUL, _value2reg[indexes[0]], li->getDest());
+            _currentBasicBlock->addInstruction(mul);
+            auto add = new BinaryInst(BinaryInst::INST_ADD, ptr, mul->getDest());
+            _currentBasicBlock->addInstruction(add);
+            _value2reg[inst->getResult()] = add->getDest();
+        }
     } else {
         if (indexes[1]->isConst()) {
             _value2reg[inst->getResult()] = ptr;
