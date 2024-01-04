@@ -7,7 +7,7 @@ namespace RISCV {
 
 BasicBlock::BasicBlock(const std::string &name) {
     if (name.empty()) {
-        _name = ".LBB" + std::to_string(Index++);
+        _name = ".LBB_Atom" + std::to_string(Index++);
     } else {
         _name = name;
     }

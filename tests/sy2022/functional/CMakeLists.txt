@@ -29,7 +29,7 @@ foreach(sy_path ${sy_files})
                                           ${CMAKE_CURRENT_BINARY_DIR}/${test})
 
   add_test(NAME ${test}_atom COMMAND ${CMAKE_BINARY_DIR}/bin/atc ${sy_path}
-                                     --check)
+                                     --other-src ${sylib_source} --check)
 
   file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${test}_atom")
 

@@ -102,7 +102,7 @@ int main(int argc, const char *argv[]) {
                 irBuilder.getCurrentModule()->dump();
                 ofstream asmfile(filename + ".s", ios::trunc);
                 codeGenerator.dump(asmfile);
-                string cmd = "clang -target riscv64-linux-gnu -c " + filename + ".s";
+                string cmd = "clang -target riscv64-linux-gnu -static " + filename + ".s " + OtherSrc;
                 return WEXITSTATUS(system(cmd.c_str()));
             } else {
                 codeGenerator.dump();
