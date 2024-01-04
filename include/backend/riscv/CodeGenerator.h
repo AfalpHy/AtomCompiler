@@ -66,7 +66,8 @@ private:
 private:
     Function *_currentFunction;
     BasicBlock *_currentBasicBlock;
-    BasicBlock *retBB;
+    BasicBlock *_entryBB;
+    BasicBlock *_retBB;
 
     int _offset = 0;                                         // record current offset of sp
     std::unordered_map<AtomIR::Value *, int> _value2offset;  // offset of sp

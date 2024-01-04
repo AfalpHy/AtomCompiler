@@ -17,6 +17,7 @@ int BasicBlock::Index = 0;
 int Register::Index = 0;
 
 std::vector<Register*> Function::CallerSavedRegs;
+std::vector<Register*> Function::CalleeSavedRegs;
 
 // common regs
 Register* Register::Ra = nullptr;
@@ -69,6 +70,19 @@ CodeGenerator::CodeGenerator() {
         tmpReg->setName("ft" + std::to_string(i));
         tmpReg->setIsFixed(true);
         Function::CallerSavedRegs.push_back(tmpReg);
+    }
+
+    for (int i = 0; i < 12; i++) {
+        auto tmpReg = new Register();
+        tmpReg->setName("s" + std::to_string(i));
+        tmpReg->setIsFixed(true);
+        Function::CalleeSavedRegs.push_back(tmpReg);
+    }
+    for (int i = 0; i < 12; i++) {
+        auto tmpReg = new Register(false);
+        tmpReg->setName("fs" + std::to_string(i));
+        tmpReg->setIsFixed(true);
+        Function::CalleeSavedRegs.push_back(tmpReg);
     }
 }
 
@@ -125,54 +139,65 @@ void CodeGenerator::emitGlobalVariable(AtomIR::GloabalVariable* var) {
 }
 
 void CodeGenerator::emitFunction(AtomIR::Function* function) {
-    // reset
-    _offset = 0;
-    _paramInStack.clear();
-    _maxPassParamsStackOffset = 0;
-
     _currentFunction = new Function(function->getName());
 
-    if (function->hasFunctionCall()) {
-        // save ra and s0
-        _offset = -16;
-    } else {
-        // save s0
-        _offset = -8;
-    }
+    std::set<Register*> tmpNeedPushRegs;
 
-    int intOrder = 0;
-    int floatOrder = 0;
-    for (auto param : function->getParams()) {
-        if (param->getType()->isIntType()) {
-            if (intOrder < 8) {
-                _value2reg[param] = Register::IntArgReg[intOrder++];
-            } else {
-                _paramInStack.insert(param);
-            }
+    do {
+        tmpNeedPushRegs = _currentFunction->getNeedPushRegs();
+
+        // reset
+        _offset = 0;
+        _value2reg.clear();
+        _value2offset.clear();
+        _paramInStack.clear();
+        _atomBB2asmBB.clear();
+        _maxPassParamsStackOffset = 0;
+        _currentFunction->getMutableBasicBlocks().clear();
+
+        if (function->hasFunctionCall()) {
+            // save ra and s0
+            _offset = -16;
         } else {
-            if (floatOrder < 8) {
-                _value2reg[param] = Register::FloatArgReg[floatOrder++];
+            // save s0
+            _offset = -8;
+        }
+        _offset -= tmpNeedPushRegs.size() * 8;
+
+        int intOrder = 0;
+        int floatOrder = 0;
+        for (auto param : function->getParams()) {
+            if (param->getType()->isIntType()) {
+                if (intOrder < 8) {
+                    _value2reg[param] = Register::IntArgReg[intOrder++];
+                } else {
+                    _paramInStack.insert(param);
+                }
             } else {
-                _paramInStack.insert(param);
+                if (floatOrder < 8) {
+                    _value2reg[param] = Register::FloatArgReg[floatOrder++];
+                } else {
+                    _paramInStack.insert(param);
+                }
             }
         }
-    }
-    // prepare the BasicBlocks
-    auto entryBB = new BasicBlock();
-    entryBB->setIsEntry();
-    for (auto bb : function->getBasicBlocks()) {
-        _atomBB2asmBB[bb] = new BasicBlock();
-    }
-    retBB = new BasicBlock("." + function->getName() + "_ret");
+        // prepare the BasicBlocks
+        _entryBB = new BasicBlock();
+        _entryBB->setIsEntry();
+        for (auto bb : function->getBasicBlocks()) {
+            _atomBB2asmBB[bb] = new BasicBlock();
+        }
+        _retBB = new BasicBlock("." + function->getName() + "_ret");
 
-    _currentFunction->addBasicBlock(entryBB);
-    for (auto bb : function->getBasicBlocks()) {
-        emitBasicBlock(bb);
-    }
-    _currentFunction->addBasicBlock(retBB);
+        _currentFunction->addBasicBlock(_entryBB);
+        for (auto bb : function->getBasicBlocks()) {
+            emitBasicBlock(bb);
+        }
+        _currentFunction->addBasicBlock(_retBB);
 
-    RegAllocator regAllocator(_currentFunction, _offset, true);
-    regAllocator.run();
+        RegAllocator regAllocator(_currentFunction, _offset, true);
+        regAllocator.run();
+    } while (tmpNeedPushRegs != _currentFunction->getNeedPushRegs());
 
     _offset -= _maxPassParamsStackOffset;
     // The stack is aligned to 16 bytes
@@ -180,47 +205,74 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
         _offset = (_offset - 15) / 16 * 16;
     }
     if (_offset >= -2048) {
-        entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::Sp, Register::Sp, _offset));
+        _entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::Sp, Register::Sp, _offset));
+        int pushRegOffset;
         if (function->hasFunctionCall()) {
-            entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::Ra, Register::Sp, -_offset - 8));
-            entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::S0, Register::Sp, -_offset - 16));
-            retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::Ra, Register::Sp, -_offset - 8));
-            retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::S0, Register::Sp, -_offset - 16));
+            pushRegOffset = -_offset - 24;
+            _entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::Ra, Register::Sp, -_offset - 8));
+            _entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::S0, Register::Sp, -_offset - 16));
+            _retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::Ra, Register::Sp, -_offset - 8));
+            _retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::S0, Register::Sp, -_offset - 16));
         } else {
-            entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::S0, Register::Sp, -_offset - 8));
-            retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::S0, Register::Sp, -_offset - 8));
+            pushRegOffset = -_offset - 16;
+            _entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::S0, Register::Sp, -_offset - 8));
+            _retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::S0, Register::Sp, -_offset - 8));
         }
-        entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::S0, Register::Sp, -_offset));
-        retBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::Sp, Register::Sp, -_offset));
+        for (auto reg : _currentFunction->getNeedPushRegs()) {
+            if (reg->isIntReg()) {
+                _entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, reg, Register::Sp, pushRegOffset));
+                _retBB->addInstruction(new LoadInst(LoadInst::INST_LD, reg, Register::Sp, pushRegOffset));
+            } else {
+                _entryBB->addInstruction(new StoreInst(StoreInst::INST_FSD, reg, Register::Sp, pushRegOffset));
+                _retBB->addInstruction(new LoadInst(LoadInst::INST_FLD, reg, Register::Sp, pushRegOffset));
+            }
+            pushRegOffset -= 8;
+        }
+
+        _entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::S0, Register::Sp, -_offset));
+        _retBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::Sp, Register::Sp, -_offset));
     } else {
         // 2032 avoid to ues the num 2048
-        entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::Sp, Register::Sp, -2032));
-        _currentBasicBlock = retBB;
+        _entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::Sp, Register::Sp, -2032));
+        _currentBasicBlock = _retBB;
         auto tmpImm = loadConstInt(_offset + 2032);
         tmpImm->setName("t0");
         tmpImm->setIsFixed(true);
         _currentBasicBlock->addInstruction(new BinaryInst(BinaryInst::INST_ADD, Register::Sp, Register::Sp, tmpImm));
+        int pushRegOffset;
         if (function->hasFunctionCall()) {
-            entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::Ra, Register::Sp, 2024));
-            entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::S0, Register::Sp, 2016));
-
-            retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::Ra, Register::Sp, 2024));
-            retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::S0, Register::Sp, 2016));
+            pushRegOffset = 2008;
+            _entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::Ra, Register::Sp, 2024));
+            _entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::S0, Register::Sp, 2016));
+            _retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::Ra, Register::Sp, 2024));
+            _retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::S0, Register::Sp, 2016));
         } else {
-            entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::S0, Register::Sp, -2032));
-            retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::S0, Register::Sp, 2024));
+            pushRegOffset = 2016;
+            _entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::S0, Register::Sp, -2032));
+            _retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::S0, Register::Sp, 2024));
         }
-        entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::S0, Register::Sp, 2032));
+        for (auto reg : _currentFunction->getNeedPushRegs()) {
+            if (reg->isIntReg()) {
+                _entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, reg, Register::Sp, pushRegOffset));
+                _retBB->addInstruction(new LoadInst(LoadInst::INST_LD, reg, Register::Sp, pushRegOffset));
+            } else {
+                _entryBB->addInstruction(new StoreInst(StoreInst::INST_FSD, reg, Register::Sp, pushRegOffset));
+                _retBB->addInstruction(new LoadInst(LoadInst::INST_FLD, reg, Register::Sp, pushRegOffset));
+            }
+            pushRegOffset -= 8;
+        }
 
-        _currentBasicBlock = entryBB;
+        _entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::S0, Register::Sp, 2032));
+
+        _currentBasicBlock = _entryBB;
         tmpImm = loadConstInt(_offset + 2032);
         tmpImm->setName("t0");
         tmpImm->setIsFixed(true);
         _currentBasicBlock->addInstruction(new BinaryInst(BinaryInst::INST_SUB, Register::Sp, Register::Sp, tmpImm));
-        retBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::Sp, Register::Sp, 2032));
+        _retBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::Sp, Register::Sp, 2032));
     }
 
-    retBB->addInstruction(new ReturnInst());
+    _retBB->addInstruction(new ReturnInst());
 
     _contend << _currentFunction->toString();
 }
@@ -492,7 +544,7 @@ void CodeGenerator::emitRetInst(AtomIR::ReturnInst* inst) {
                 new UnaryInst(UnaryInst::INST_FMV_S, Register::FloatArgReg[0], retValue));
         }
     }
-    _currentBasicBlock->addInstruction(new JumpInst(retBB));
+    _currentBasicBlock->addInstruction(new JumpInst(_retBB));
 }
 
 void CodeGenerator::emitUnaryInst(AtomIR::UnaryInst* inst) {
