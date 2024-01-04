@@ -30,6 +30,9 @@ void RegAllocator::buildInterference() {
             for (auto rbegin = bb->getInstructionList().rbegin(); rbegin != bb->getInstructionList().rend(); rbegin++) {
                 auto inst = *rbegin;
                 if (Register* dest = inst->getDest()) {
+                    if (!dest->isFixed()) {
+                        _theFunction->addNeedAllocReg(dest);
+                    }
                     alives.erase(dest);
                 }
 
@@ -45,6 +48,9 @@ void RegAllocator::buildInterference() {
                             reg->addInterference(src1);
                         }
                     }
+                    if (!src1->isFixed()) {
+                        _theFunction->addNeedAllocReg(src1);
+                    }
                     alives.insert(src1);
                 }
 
@@ -59,6 +65,9 @@ void RegAllocator::buildInterference() {
                         if (!reg->isFixed()) {
                             reg->addInterference(src2);
                         }
+                    }
+                    if (!src2->isFixed()) {
+                        _theFunction->addNeedAllocReg(src2);
                     }
                     alives.insert(src2);
                 }
@@ -99,6 +108,11 @@ bool RegAllocator::coloring() {
         "ft0", "ft1", "ft2", "ft3", "ft4", "ft5", "ft6", "ft7", "ft8", "ft9", "ft10", "ft11",
         "fs0", "fs1", "fs2", "fs3", "fs4", "fs5", "fs6", "fs7", "fs8", "fs9", "fs10", "fs11"
     };
+
+    std::set<std::string> calleeSaveintPhyReg = {
+        "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", 
+        "fs0", "fs1", "fs2", "fs3", "fs4", "fs5", "fs6", "fs7", "fs8", "fs9", "fs10", "fs11"
+    };
     // clang-format on
 
     auto colorOneReg = [](Register* reg, const std::set<std::string>& phyRegs) {
@@ -118,10 +132,7 @@ bool RegAllocator::coloring() {
         return false;
     };
 
-    for (auto reg : Function::AllRegInFunction) {
-        if (reg->isFixed()) {
-            continue;
-        }
+    for (auto reg : _theFunction->getNeedAllocRegs()) {
         bool success;
         if (reg->isIntReg()) {
             success = colorOneReg(reg, intPhyReg);
@@ -169,12 +180,10 @@ void RegAllocator::reset() {
         bb->reset();
     }
 
-    for (auto reg : Function::AllRegInFunction) {
-        if (reg->isFixed()) {
-            continue;
-        }
+    for (auto reg : _theFunction->getNeedAllocRegs()) {
         reg->reset();
     }
+    _theFunction->getNeedAllocRegs().clear();
 }
 
 }  // namespace RISCV

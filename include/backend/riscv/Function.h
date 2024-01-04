@@ -16,9 +16,11 @@ public:
 
     void addBasicBlock(BasicBlock* bb) { _basicBlocks.push_back(bb); }
 
+    void addNeedAllocReg(Register* reg) { _needAllocRegs.insert(reg); }
+
     const std::list<BasicBlock*>& getBasicBlocks() { return _basicBlocks; }
 
-    static std::set<Register*> AllRegInFunction;
+    std::set<Register*>& getNeedAllocRegs() { return _needAllocRegs; }
 
     static std::vector<Register*> CallerSavedRegs;
 
@@ -30,6 +32,7 @@ public:
 private:
     std::string _name;
     std::list<BasicBlock*> _basicBlocks;
+    std::set<Register*> _needAllocRegs;
 };
 
 }  // namespace RISCV

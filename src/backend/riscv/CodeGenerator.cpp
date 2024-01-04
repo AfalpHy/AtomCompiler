@@ -16,7 +16,6 @@ using std::endl;
 int BasicBlock::Index = 0;
 int Register::Index = 0;
 
-std::set<Register*> Function::AllRegInFunction;
 std::vector<Register*> Function::CallerSavedRegs;
 
 // common regs
@@ -130,7 +129,6 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
     _offset = 0;
     _paramInStack.clear();
     _maxPassParamsStackOffset = 0;
-    Function::AllRegInFunction.clear();
 
     _currentFunction = new Function(function->getName());
 
