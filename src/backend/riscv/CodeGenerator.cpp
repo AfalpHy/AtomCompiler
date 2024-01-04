@@ -674,7 +674,7 @@ void CodeGenerator::emitCondJumpInst(AtomIR::CondJumpInst* inst) {
     /// FIXME:Temporarily reslove the problem of relocation failure, need to modify
     auto newBB = new BasicBlock();
     _currentFunction->addBasicBlock(newBB);
-    _currentBasicBlock->addInstruction(new JumpInst(_atomBB2asmBB[inst->getTureBB()]));
+    newBB->addInstruction(new JumpInst(_atomBB2asmBB[inst->getTureBB()]));
     _currentBasicBlock->addInstruction(new CondJumpInst(type, src1, src2, newBB));
     _currentBasicBlock->addInstruction(new JumpInst(_atomBB2asmBB[inst->getFalseBB()]));
 }
