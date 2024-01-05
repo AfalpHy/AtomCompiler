@@ -28,13 +28,28 @@ foreach(sy_path ${sy_files})
   set_tests_properties(${test} PROPERTIES WORKING_DIRECTORY
                                           ${CMAKE_CURRENT_BINARY_DIR}/${test})
 
-  add_test(NAME ${test}_atom COMMAND ${CMAKE_BINARY_DIR}/bin/atc ${sy_path}
-                                     --other-src ${sylib_source} --check)
+  if(TEST_RISCV STREQUAL "ON")
+    if(EXISTS ${in_path})
+      add_test(
+        NAME ${test}_atom
+        COMMAND
+          ${CMAKE_BINARY_DIR}/bin/atc ${sy_path} --other-src ${sylib_source} -R
+          --R-input ${in_path} --check --compare-file ${out_path}
+          --compare-result ../compare_result.txt)
+    else()
+      add_test(
+        NAME ${test}_atom
+        COMMAND
+          ${CMAKE_BINARY_DIR}/bin/atc ${sy_path} --other-src ${sylib_source} -R
+          --check --compare-file ${out_path} --compare-result
+          ../compare_result.txt)
+    endif()
 
-  file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${test}_atom")
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${test}_atom")
 
-  set_tests_properties(
-    ${test}_atom PROPERTIES WORKING_DIRECTORY
-                            ${CMAKE_CURRENT_BINARY_DIR}/${test}_atom)
+    set_tests_properties(
+      ${test}_atom PROPERTIES WORKING_DIRECTORY
+                              ${CMAKE_CURRENT_BINARY_DIR}/${test}_atom)
+  endif()
 
 endforeach()

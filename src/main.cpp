@@ -61,14 +61,13 @@ int main(int argc, const char *argv[]) {
 
     std::filesystem::path filePath = std::string(SrcPath);
     string filename = filePath.stem();
+    string outFile = filename + ".out";
     if (EmitLLVM) {
         LLVMIR::IRBuilder irBuilder;
         for (auto compUnit : CompUnit::AllCompUnits) {
             compUnit->accept(&irBuilder);
         }
-
         string llFile = filename + ".ll";
-        string outFile = filename + ".out";
         irBuilder.dumpLL(llFile);
         string cmd = "clang";
         cmd.append(" ").append(llFile).append(" ").append(OtherSrc);
@@ -98,14 +97,29 @@ int main(int argc, const char *argv[]) {
         for (auto compUnit : CompUnit::AllCompUnits) {
             compUnit->accept(&irBuilder);
             codeGenerator.emitModule(irBuilder.getCurrentModule());
-            if (Check) {
-                irBuilder.getCurrentModule()->dump();
-                ofstream asmfile(filename + ".s", ios::trunc);
-                codeGenerator.dump(asmfile);
-                string cmd = "clang -target riscv64-linux-gnu -static " + filename + ".s " + OtherSrc;
-                return WEXITSTATUS(system(cmd.c_str()));
-            } else {
-                codeGenerator.dump();
+            // irBuilder.getCurrentModule()->dump();
+            ofstream asmfile(filename + ".s", ios::trunc);
+            codeGenerator.dump(asmfile);
+            string cmd = "clang -target riscv64-linux-gnu -static " + filename + ".s " + OtherSrc;
+            system(cmd.c_str());
+            if (RunAfterCompiling) {
+                cmd = "./a.out";
+                if (!RunInput.empty()) {
+                    cmd.append(" < ").append(RunInput);
+                }
+                if (Check) {
+                    cmd.append(" > ").append(outFile);
+                    int ret = system(cmd.c_str());
+                    ret = WEXITSTATUS(ret);
+                    cmd = "echo";
+                    cmd.append(" ").append(to_string(ret)).append(" >> ").append(outFile);
+                    system(cmd.c_str());
+                    cmd = "diff";
+                    cmd.append(" ").append(outFile).append(" ").append(CompareFile);
+                    ret = system(cmd.c_str());
+                    return WEXITSTATUS(ret);
+                }
+                system(cmd.c_str());
             }
         }
     }
