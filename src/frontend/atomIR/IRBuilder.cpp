@@ -323,16 +323,12 @@ void IRBuilder::visit(UnaryExpression *node) {
             _value = createBinaryInst(BinaryInst::INST_SUB, _floatZero, _value);
         } else if (_value->getType() == _int32Ty) {
             _value = createBinaryInst(BinaryInst::INST_SUB, _int32Zero, _value);
-        } else {
-            _value = createBinaryInst(BinaryInst::INST_SUB, _int32Zero, castToDestTyIfNeed(_value, _int32Ty));
         }
     } else if (node->getOperator() == NOT) {
         if (_value->getType() == _floatTy) {
-            _value = createBinaryInst(BinaryInst::INST_NE, _floatZero, _value);
+            _value = createBinaryInst(BinaryInst::INST_EQ, _floatZero, _value);
         } else if (_value->getType() == _int32Ty) {
-            _value = createBinaryInst(BinaryInst::INST_NE, _int32Zero, _value);
-        } else {
-            _value = createBinaryInst(BinaryInst::INST_NE, _int32One, castToDestTyIfNeed(_value, _int32Ty));
+            _value = createBinaryInst(BinaryInst::INST_EQ, _int32Zero, _value);
         }
     }
 }
