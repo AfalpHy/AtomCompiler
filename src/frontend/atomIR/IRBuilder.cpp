@@ -145,9 +145,10 @@ void IRBuilder::visit(Variable *node) {
             initValue->accept(this);
             if (initValue->getClassId() == ID_NESTED_EXPRESSION) {
                 ATC::ArrayType *arrayType = static_cast<ATC::ArrayType *>(node->getDataType());
-                FunctionType *funcType = FunctionType::get(_voidTy, {_voidTy->getPointerTy(), _int32Ty}, false);
+                FunctionType *funcType =
+                    FunctionType::get(_voidTy, {_voidTy->getPointerTy(), _int32Ty, _int32Ty}, false);
                 createFunctionCall(*funcType, "memset",
-                                   {castToDestTyIfNeed(addr, _voidTy->getPointerTy()),
+                                   {castToDestTyIfNeed(addr, _voidTy->getPointerTy()), ConstantInt::get(0),
                                     ConstantInt::get(arrayType->getTotalSize() * 4)});
 
                 auto dimension = arrayType->getDimensions();
