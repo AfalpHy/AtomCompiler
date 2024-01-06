@@ -554,8 +554,14 @@ void CodeGenerator::emitUnaryInst(AtomIR::UnaryInst* inst) {
         case AtomIR::UnaryInst::INST_LOAD: {
             int offset = inst->getOperand()->isGlobal() ? 0 : _value2offset[inst->getOperand()];
             src1 = processIfImmOutOfRange(src1, offset);
-            unaryInst = new LoadInst(inst->getResult()->getType()->isIntType() ? LoadInst::INST_LW : LoadInst::INST_FLW,
-                                     src1, offset);
+            if (inst->getResult()->getType()->isPointerType()) {
+                unaryInst = new LoadInst(LoadInst::INST_LD, src1, offset);
+            } else {
+                unaryInst = new LoadInst(
+                    inst->getResult()->getType() == AtomIR::Type::getInt32Ty() ? LoadInst::INST_LW : LoadInst::INST_FLW,
+                    src1, offset);
+            }
+
             break;
         }
         case AtomIR::UnaryInst::INST_ITOF: {
