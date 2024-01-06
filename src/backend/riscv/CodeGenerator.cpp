@@ -911,9 +911,9 @@ Register* CodeGenerator::loadConstFloat(float value) {
 
 Register* CodeGenerator::loadConst(AtomIR::Constant* value) {
     if (value->isInt()) {
-        return loadConstInt(static_cast<AtomIR::ConstantInt*>(value)->getConstValue());
+        return loadConstInt(value->getConstValue());
     } else {
-        return loadConstFloat(static_cast<AtomIR::ConstantFloat*>(value)->getConstValue());
+        return loadConstFloat(value->getConstValue());
     }
 }
 

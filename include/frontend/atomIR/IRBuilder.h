@@ -74,6 +74,8 @@ private:
 
     void createCondJump(int type, BasicBlock *trueBB, BasicBlock *falseBB, Value *operand1, Value *operand2);
 
+    void createCondJumpForValue(BasicBlock *trueBB, BasicBlock *falseBB, Value *value);
+
     Type *convertToAtomType(int type);
 
     Type *convertToAtomType(DataType *dataType);

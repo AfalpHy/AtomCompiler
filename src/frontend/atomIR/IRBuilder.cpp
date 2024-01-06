@@ -365,15 +365,13 @@ void IRBuilder::visit(BinaryExpression *node) {
             auto tmpTrueBB = _trueBB;
             _trueBB = rhsCondBB;
             node->getLeft()->accept(this);
-            createCondJump(CondJumpInst::INST_JNE, rhsCondBB, _falseBB, _value,
-                           castToDestTyIfNeed(_int32Zero, _value->getType()));
+            createCondJumpForValue(rhsCondBB, _falseBB, _value);
             _trueBB = tmpTrueBB;
         } else {
             auto tmpFalseBB = _falseBB;
             _falseBB = rhsCondBB;
             node->getLeft()->accept(this);
-            createCondJump(CondJumpInst::INST_JNE, rhsCondBB, _falseBB, _value,
-                           castToDestTyIfNeed(_int32Zero, _value->getType()));
+            createCondJumpForValue(_trueBB, rhsCondBB, _value);
             _falseBB = tmpFalseBB;
         }
 
@@ -381,8 +379,7 @@ void IRBuilder::visit(BinaryExpression *node) {
         node->getRight()->accept(this);
 
         if (forValue) {
-            createCondJump(CondJumpInst::INST_JNE, _trueBB, _falseBB, _value,
-                           castToDestTyIfNeed(_int32Zero, _value->getType()));
+            createCondJumpForValue(_trueBB, _falseBB, _value);
 
             BasicBlock *afterCalcShortCircuitBB = new BasicBlock(_currentFunction, "afterCalcShortCircuitBB");
 
@@ -548,8 +545,7 @@ void IRBuilder::visit(IfStatement *node) {
 
         _falseBB = elseBB;
         node->getCond()->accept(this);
-        createCondJump(CondJumpInst::INST_JNE, _trueBB, _falseBB, _value,
-                       castToDestTyIfNeed(_int32Zero, _value->getType()));
+        createCondJumpForValue(_trueBB, _falseBB, _value);
 
         _currentBasicBlock = elseBB;
         node->getElseStmt()->accept(this);
@@ -557,8 +553,7 @@ void IRBuilder::visit(IfStatement *node) {
     } else {
         _falseBB = afterIfBB;
         node->getCond()->accept(this);
-        createCondJump(CondJumpInst::INST_JNE, _trueBB, _falseBB, _value,
-                       castToDestTyIfNeed(_int32Zero, _value->getType()));
+        createCondJumpForValue(_trueBB, _falseBB, _value);
     }
 
     _currentBasicBlock = ifBB;
@@ -583,8 +578,7 @@ void IRBuilder::visit(WhileStatement *node) {
     _trueBB = whileBB;
     _falseBB = afterWhileBB;
     node->getCond()->accept(this);
-    createCondJump(CondJumpInst::INST_JNE, _trueBB, _falseBB, _value,
-                   castToDestTyIfNeed(_int32Zero, _value->getType()));
+    createCondJumpForValue(_trueBB, _falseBB, _value);
 
     auto tmpCondBB = _condBB;
     auto tmpAfterBB = _afterBB;
@@ -708,6 +702,20 @@ void IRBuilder::createCondJump(int type, BasicBlock *trueBB, BasicBlock *falseBB
     trueBB->addPredecessor(_currentBasicBlock);
     falseBB->addPredecessor(_currentBasicBlock);
     _currentBasicBlock->setHasBr();
+}
+
+void IRBuilder::createCondJumpForValue(BasicBlock *trueBB, BasicBlock *falseBB, Value *value) {
+    if (value->isConst()) {
+        auto constValue = (Constant *)value;
+        if (constValue->getConstValue() == 0) {
+            createJump(_falseBB);
+        } else {
+            createJump(_trueBB);
+        }
+    } else {
+        createCondJump(CondJumpInst::INST_JNE, _trueBB, _falseBB, value,
+                       castToDestTyIfNeed(_int32Zero, value->getType()));
+    }
 }
 
 Type *IRBuilder::convertToAtomType(int basicType) {
