@@ -50,5 +50,19 @@ foreach(sy_path ${sy_files})
     set_tests_properties(
       ${test}_atom PROPERTIES WORKING_DIRECTORY
                               ${CMAKE_CURRENT_BINARY_DIR}/${test}_atom)
+  else()
+    if(EXISTS ${in_path})
+      add_test(NAME ${test}_atom COMMAND ${CMAKE_BINARY_DIR}/bin/atc ${sy_path}
+                                         --other-src ${sylib_source})
+    else()
+      add_test(NAME ${test}_atom COMMAND ${CMAKE_BINARY_DIR}/bin/atc ${sy_path}
+                                         --other-src ${sylib_source})
+    endif()
+
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${test}_atom")
+
+    set_tests_properties(
+      ${test}_atom PROPERTIES WORKING_DIRECTORY
+                              ${CMAKE_CURRENT_BINARY_DIR}/${test}_atom)
   endif()
 endforeach()

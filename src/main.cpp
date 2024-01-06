@@ -71,7 +71,7 @@ int main(int argc, const char *argv[]) {
         irBuilder.dumpLL(llFile);
         string cmd = "clang";
         cmd.append(" ").append(llFile).append(" ").append(OtherSrc);
-        system(cmd.c_str());
+        int compileRet = WEXITSTATUS(system(cmd.c_str()));
         if (RunAfterCompiling) {
             cmd = "./a.out";
             if (!RunInput.empty()) {
@@ -91,6 +91,7 @@ int main(int argc, const char *argv[]) {
             }
             system(cmd.c_str());
         }
+        return compileRet;
     } else {
         AtomIR::IRBuilder irBuilder;
         RISCV::CodeGenerator codeGenerator;
@@ -101,7 +102,7 @@ int main(int argc, const char *argv[]) {
             ofstream asmfile(filename + ".s", ios::trunc);
             codeGenerator.dump(asmfile);
             string cmd = "clang -target riscv64-linux-gnu -static " + filename + ".s " + OtherSrc;
-            system(cmd.c_str());
+            int compileRet = WEXITSTATUS(system(cmd.c_str()));
             if (RunAfterCompiling) {
                 cmd = "./a.out";
                 if (!RunInput.empty()) {
@@ -121,6 +122,7 @@ int main(int argc, const char *argv[]) {
                 }
                 system(cmd.c_str());
             }
+            return compileRet;
         }
     }
 
