@@ -396,12 +396,12 @@ void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
                             auto lui = new ImmInst(ImmInst::INST_LUI, hi20);
                             mutableInstList.insert(begin, lui);
 
-                            auto addw = new BinaryInst(BinaryInst::INST_ADDW, Register::Sp, lui->getDest());
-                            mutableInstList.insert(begin, addw);
+                            auto add = new BinaryInst(BinaryInst::INST_ADD, Register::Sp, lui->getDest());
+                            mutableInstList.insert(begin, add);
 
                             auto saveParam = new StoreInst(
                                 param->getType()->isPointerType() ? StoreInst::INST_SD : StoreInst::INST_SW, paramReg,
-                                addw->getDest(), lo12);
+                                add->getDest(), lo12);
                             mutableInstList.insert(begin, saveParam);
                         } else {
                             auto saveParam = new StoreInst(
@@ -435,10 +435,10 @@ void CodeGenerator::emitFunctionCallInst(AtomIR::FunctionCallInst* inst) {
                             auto lui = new ImmInst(ImmInst::INST_LUI, hi20);
                             mutableInstList.insert(begin, lui);
 
-                            auto addw = new BinaryInst(BinaryInst::INST_ADDW, Register::Sp, lui->getDest());
-                            mutableInstList.insert(begin, addw);
+                            auto add = new BinaryInst(BinaryInst::INST_ADD, Register::Sp, lui->getDest());
+                            mutableInstList.insert(begin, add);
 
-                            auto saveParam = new StoreInst(StoreInst::INST_FSW, paramReg, addw->getDest(), lo12);
+                            auto saveParam = new StoreInst(StoreInst::INST_FSW, paramReg, add->getDest(), lo12);
                             mutableInstList.insert(begin, saveParam);
                         } else {
                             auto saveParam = new StoreInst(StoreInst::INST_FSW, paramReg, Register::Sp, stackOffset);
@@ -947,10 +947,10 @@ Register* CodeGenerator::processIfImmOutOfRange(Register* src, int& offset) {
         }
         auto lui = new ImmInst(ImmInst::INST_LUI, hi20);
         _currentBasicBlock->addInstruction(lui);
-        auto addw = new BinaryInst(BinaryInst::INST_ADDW, src, lui->getDest());
-        _currentBasicBlock->addInstruction(addw);
+        auto add = new BinaryInst(BinaryInst::INST_ADD, src, lui->getDest());
+        _currentBasicBlock->addInstruction(add);
         offset = lo12;
-        return addw->getDest();
+        return add->getDest();
     }
     return src;
 }
