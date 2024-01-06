@@ -235,7 +235,7 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
         // 2032 avoid to ues the num 2048
         _entryBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::Sp, Register::Sp, -2032));
         _currentBasicBlock = _retBB;
-        auto tmpImm = loadConstInt(_offset + 2032);
+        auto tmpImm = loadConstInt(-_offset - 2032);
         tmpImm->setName("t0");
         tmpImm->setIsFixed(true);
         _currentBasicBlock->addInstruction(new BinaryInst(BinaryInst::INST_ADD, Register::Sp, Register::Sp, tmpImm));
@@ -268,7 +268,7 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
         tmpImm = loadConstInt(_offset + 2032);
         tmpImm->setName("t0");
         tmpImm->setIsFixed(true);
-        _currentBasicBlock->addInstruction(new BinaryInst(BinaryInst::INST_SUB, Register::Sp, Register::Sp, tmpImm));
+        _currentBasicBlock->addInstruction(new BinaryInst(BinaryInst::INST_ADD, Register::Sp, Register::Sp, tmpImm));
         _retBB->addInstruction(new BinaryInst(BinaryInst::INST_ADDI, Register::Sp, Register::Sp, 2032));
     }
 
