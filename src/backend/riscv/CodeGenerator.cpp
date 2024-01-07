@@ -104,10 +104,11 @@ void CodeGenerator::emitModule(AtomIR::Module* module) {
     }
 
     if (!_float2lable.empty()) {
-        _contend << "\t.section\t.rdata" << endl;
+        // "aw",@progbits is important, the program's result is wrong without it
+        _contend << "\t.section\t.sdata,\"aw\",@progbits" << endl;
+        _contend << "\t.p2align\t2" << endl;
     }
     for (auto& [value, lable] : _float2lable) {
-        _contend << "\t.p2align\t2" << endl;
         _contend << lable << ":" << endl;
         _contend << "\t.word\t" << std::to_string(*(int*)(&value)) << endl;
     }
