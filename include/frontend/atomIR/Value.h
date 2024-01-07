@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Type.h"
+#include <iostream>
 
+#include "Type.h"
 namespace ATC {
 namespace AtomIR {
 
@@ -32,7 +33,7 @@ public:
 
     virtual bool isGlobal() { return false; }
 
-    virtual void dump();
+    virtual void dump(std::ostream& os = std::cout);
 
 protected:
     Type* _type = nullptr;
@@ -117,7 +118,7 @@ public:
 
     virtual bool isGlobal() { return true; }
 
-    virtual void dump() override;
+    virtual void dump(std::ostream& os = std::cout) override;
 
 private:
     Value* _init = nullptr;

@@ -69,20 +69,20 @@ std::string ConstantFloat::getValueStr() { return std::to_string(_constValue); }
 
 std::string GloabalVariable::getValueStr() { return "@" + _name; }
 
-void Value::dump() {
+void Value::dump(std::ostream& os) {
     if (!_defined) {
-        std::cout << toString() << std::endl;
+        os << toString() << std::endl;
     } else {
-        std::cout << _defined->toString() << std::endl;
+        os << _defined->toString() << std::endl;
     }
 }
 
-void GloabalVariable::dump() {
+void GloabalVariable::dump(std::ostream& os) {
     std::string str = getValueStr();
     if (_init) {
         str.append(" = ").append(_init->toString());
     }
-    std::cout << str << std::endl;
+    os << str << std::endl;
 }
 
 }  // namespace AtomIR

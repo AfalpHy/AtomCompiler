@@ -52,6 +52,8 @@ public:
 public:
     Module *getCurrentModule() { return _currentModule; }
 
+    void dumpIR(std::string path);
+
 private:
     Value *createAlloc(Type *allocType, const std::string &resultName = "");
 

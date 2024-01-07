@@ -1,22 +1,19 @@
 #include "atomIR/Module.h"
 
-#include <iostream>
-
 namespace ATC {
 namespace AtomIR {
 
-void Module::addGlobalVariable(GloabalVariable* var) { _globalVariables.push_back(var); }
-
-void Module::dump() {
+void Module::dump(std::ostream& os) {
     for (auto item : _globalVariables) {
-        item->dump();
+        item->dump(os);
     }
 
-    std::cout << std::endl;
+    os << std::endl;
 
     for (auto item : _functions) {
-        item->dump();
+        item->dump(os);
     }
 }
+
 }  // namespace AtomIR
 }  // namespace ATC

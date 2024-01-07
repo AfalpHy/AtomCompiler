@@ -62,69 +62,60 @@ int main(int argc, const char *argv[]) {
     std::filesystem::path filePath = std::string(SrcPath);
     string filename = filePath.stem();
     string outFile = filename + ".out";
+    string cmd;
     if (EmitLLVM) {
         LLVMIR::IRBuilder irBuilder;
+        // only on module now
         for (auto compUnit : CompUnit::AllCompUnits) {
             compUnit->accept(&irBuilder);
         }
-        string llFile = filename + ".ll";
-        irBuilder.dumpLL(llFile);
-        string cmd = "clang";
-        cmd.append(" ").append(llFile).append(" ").append(OtherSrc);
-        int compileRet = WEXITSTATUS(system(cmd.c_str()));
-        if (RunAfterCompiling) {
-            cmd = "./a.out";
-            if (!RunInput.empty()) {
-                cmd.append(" < ").append(RunInput);
-            }
-            if (Check) {
-                cmd.append(" > ").append(outFile);
-                int ret = system(cmd.c_str());
-                ret = WEXITSTATUS(ret);
-                cmd = "echo";
-                cmd.append(" ").append(to_string(ret)).append(" >> ").append(outFile);
-                system(cmd.c_str());
-                cmd = "diff";
-                cmd.append(" ").append(outFile).append(" ").append(CompareFile);
-                ret = system(cmd.c_str());
-                return WEXITSTATUS(ret);
-            }
-            system(cmd.c_str());
+
+        if (DumpIR) {
+            irBuilder.dumpIR(filename + ".ll");
+            cmd = "clang " + filename + ".ll";
+        } else {
+            /// TODO:use llvm API to create the .o file
         }
-        return compileRet;
     } else {
         AtomIR::IRBuilder irBuilder;
         RISCV::CodeGenerator codeGenerator;
+        // only on module now
         for (auto compUnit : CompUnit::AllCompUnits) {
             compUnit->accept(&irBuilder);
             codeGenerator.emitModule(irBuilder.getCurrentModule());
-            // irBuilder.getCurrentModule()->dump();
-            ofstream asmfile(filename + ".s", ios::trunc);
-            codeGenerator.dump(asmfile);
-            string cmd = "clang -target riscv64-linux-gnu " + filename + ".s " + OtherSrc;
-            int compileRet = WEXITSTATUS(system(cmd.c_str()));
-            if (RunAfterCompiling) {
-                cmd = "./a.out";
-                if (!RunInput.empty()) {
-                    cmd.append(" < ").append(RunInput);
-                }
-                if (Check) {
-                    cmd.append(" > ").append(outFile);
-                    int ret = system(cmd.c_str());
-                    ret = WEXITSTATUS(ret);
-                    cmd = "echo";
-                    cmd.append(" ").append(to_string(ret)).append(" >> ").append(outFile);
-                    system(cmd.c_str());
-                    cmd = "diff";
-                    cmd.append(" ").append(outFile).append(" ").append(CompareFile);
-                    ret = system(cmd.c_str());
-                    return WEXITSTATUS(ret);
-                }
-                system(cmd.c_str());
-            }
-            return compileRet;
         }
+        if (DumpIR) {
+            irBuilder.dumpIR(filename + ".atom");
+        }
+        ofstream asmfile(filename + ".s", ios::trunc);
+        codeGenerator.dump(asmfile);
+        cmd = "clang -target riscv64-linux-gnu " + filename + ".s";
     }
-
+    if (Sy) {
+        cmd.append(" ").append(SySrc);
+    }
+    int ret = WEXITSTATUS(system(cmd.c_str()));
+    if (ret) {
+        return ret;
+    }
+    if (RunAfterCompiling) {
+        cmd = "./a.out";
+        if (!RunInput.empty()) {
+            cmd.append(" < ").append(RunInput);
+        }
+        if (Check) {
+            cmd.append(" > ").append(outFile);
+            ret = system(cmd.c_str());
+            ret = WEXITSTATUS(ret);
+            cmd = "echo";
+            cmd.append(" ").append(to_string(ret)).append(" >> ").append(outFile);
+            system(cmd.c_str());
+            cmd = "diff";
+            cmd.append(" ").append(outFile).append(" ").append(CompareFile);
+            ret = system(cmd.c_str());
+            return WEXITSTATUS(ret);
+        }
+        system(cmd.c_str());
+    }
     return 0;
 }

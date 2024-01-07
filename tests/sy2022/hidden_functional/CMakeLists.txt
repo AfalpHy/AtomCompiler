@@ -11,16 +11,15 @@ foreach(sy_path ${sy_files})
     add_test(
       NAME ${test}
       COMMAND
-        ${CMAKE_BINARY_DIR}/bin/atc ${sy_path} --emit-llvm --other-src
-        ${sylib_source} -R --R-input ${in_path} --check --compare-file
-        ${out_path} --compare-result ../compare_result.txt)
+        ${CMAKE_BINARY_DIR}/bin/atc ${sy_path} --sy --sy-src ${sylib_source}
+        --emit-llvm --dump-ir -R --R-input ${in_path} --check --compare-file
+        ${out_path})
   else()
     add_test(
       NAME ${test}
       COMMAND
-        ${CMAKE_BINARY_DIR}/bin/atc ${sy_path} --emit-llvm --other-src
-        ${sylib_source} -R --check --compare-file ${out_path} --compare-result
-        ../compare_result.txt)
+        ${CMAKE_BINARY_DIR}/bin/atc ${sy_path} --sy --sy-src ${sylib_source}
+        --emit-llvm --dump-ir -R --check --compare-file ${out_path})
   endif()
 
   file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${test}")
@@ -33,36 +32,30 @@ foreach(sy_path ${sy_files})
       add_test(
         NAME ${test}_atom
         COMMAND
-          ${CMAKE_BINARY_DIR}/bin/atc ${sy_path} --other-src ${sylib_source} -R
-          --R-input ${in_path} --check --compare-file ${out_path}
-          --compare-result ../compare_result.txt)
+          ${CMAKE_BINARY_DIR}/bin/atc ${sy_path} --sy --sy-src ${sylib_source}
+          --dump-ir -R --R-input ${in_path} --check --compare-file ${out_path})
     else()
       add_test(
         NAME ${test}_atom
-        COMMAND
-          ${CMAKE_BINARY_DIR}/bin/atc ${sy_path} --other-src ${sylib_source} -R
-          --check --compare-file ${out_path} --compare-result
-          ../compare_result.txt)
+        COMMAND ${CMAKE_BINARY_DIR}/bin/atc ${sy_path} --sy --sy-src
+                ${sylib_source} --dump-ir -R --check --compare-file ${out_path})
     endif()
-
-    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${test}_atom")
-
-    set_tests_properties(
-      ${test}_atom PROPERTIES WORKING_DIRECTORY
-                              ${CMAKE_CURRENT_BINARY_DIR}/${test}_atom)
   else()
     if(EXISTS ${in_path})
-      add_test(NAME ${test}_atom COMMAND ${CMAKE_BINARY_DIR}/bin/atc ${sy_path}
-                                         --other-src ${sylib_source})
+      add_test(NAME ${test}_atom
+               COMMAND ${CMAKE_BINARY_DIR}/bin/atc ${sy_path} --sy --sy-src
+                       ${sylib_source} --dump-ir)
     else()
-      add_test(NAME ${test}_atom COMMAND ${CMAKE_BINARY_DIR}/bin/atc ${sy_path}
-                                         --other-src ${sylib_source})
+      add_test(NAME ${test}_atom
+               COMMAND ${CMAKE_BINARY_DIR}/bin/atc ${sy_path} --sy --sy-src
+                       ${sylib_source} --dump-ir)
     endif()
 
-    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${test}_atom")
-
-    set_tests_properties(
-      ${test}_atom PROPERTIES WORKING_DIRECTORY
-                              ${CMAKE_CURRENT_BINARY_DIR}/${test}_atom)
   endif()
+
+  file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${test}_atom")
+
+  set_tests_properties(
+    ${test}_atom PROPERTIES WORKING_DIRECTORY
+                            ${CMAKE_CURRENT_BINARY_DIR}/${test}_atom)
 endforeach()

@@ -60,8 +60,8 @@ void Function::updateName() {
     }
 }
 
-void Function::dump() {
-    std::cout << "define " << _functionType._ret->toString() << " " << _name << "(";
+void Function::dump(std::ostream& os) {
+    os << "define " << _functionType._ret->toString() << " " << _name << "(";
     std::string paramsStr;
     for (auto param : _params) {
         paramsStr.append(param->toString() + ", ");
@@ -70,17 +70,17 @@ void Function::dump() {
         paramsStr.pop_back();
         paramsStr.pop_back();
     }
-    std::cout << paramsStr << ") {" << std::endl;
+    os << paramsStr << ") {" << std::endl;
     for (auto bb : _basicBlocks) {
-        std::cout << bb->getBBStr() << ":" << std::endl;
+        os << bb->getBBStr() << ":" << std::endl;
         for (auto inst : bb->getInstructionList()) {
-            std::cout << "  " << inst->toString() << std::endl;
+            os << "  " << inst->toString() << std::endl;
         }
         if (bb != _basicBlocks.back()) {
-            std::cout << std::endl;
+            os << std::endl;
         }
     }
-    std::cout << "}" << std::endl;
+    os << "}" << std::endl;
 }
 
 }  // namespace AtomIR

@@ -1,5 +1,6 @@
 #include "atomIR/IRBuilder.h"
 
+#include "../CmdOption.h"
 #include "AST/CompUnit.h"
 #include "AST/Decl.h"
 #include "AST/Expression.h"
@@ -22,40 +23,42 @@ IRBuilder::IRBuilder() {
     _int32One = ConstantInt::get(1);
     _floatOne = ConstantFloat::get(1);
 
-    auto funcTy = FunctionType::get(_int32Ty, {}, false);
-    _funcName2funcType["getint"] = funcTy;
-    _funcName2funcType["getch"] = funcTy;
+    if (Sy) {
+        auto funcTy = FunctionType::get(_int32Ty, {}, false);
+        _funcName2funcType["getint"] = funcTy;
+        _funcName2funcType["getch"] = funcTy;
 
-    funcTy = FunctionType::get(_floatTy, {}, false);
-    _funcName2funcType["getfloat"] = funcTy;
+        funcTy = FunctionType::get(_floatTy, {}, false);
+        _funcName2funcType["getfloat"] = funcTy;
 
-    funcTy = FunctionType::get(_int32Ty, {_int32PtrTy}, false);
-    _funcName2funcType["getarray"] = funcTy;
+        funcTy = FunctionType::get(_int32Ty, {_int32PtrTy}, false);
+        _funcName2funcType["getarray"] = funcTy;
 
-    funcTy = FunctionType::get(_int32Ty, {_floatPtrTy}, false);
-    _funcName2funcType["getfarray"] = funcTy;
+        funcTy = FunctionType::get(_int32Ty, {_floatPtrTy}, false);
+        _funcName2funcType["getfarray"] = funcTy;
 
-    funcTy = FunctionType::get(_voidTy, {_int32Ty, _int32PtrTy}, false);
-    _funcName2funcType["putarray"] = funcTy;
+        funcTy = FunctionType::get(_voidTy, {_int32Ty, _int32PtrTy}, false);
+        _funcName2funcType["putarray"] = funcTy;
 
-    funcTy = FunctionType::get(_voidTy, {_floatTy}, false);
-    _funcName2funcType["putfloat"] = funcTy;
+        funcTy = FunctionType::get(_voidTy, {_floatTy}, false);
+        _funcName2funcType["putfloat"] = funcTy;
 
-    funcTy = FunctionType::get(_voidTy, {_int32Ty, _floatPtrTy}, false);
-    _funcName2funcType["putfarray"] = funcTy;
+        funcTy = FunctionType::get(_voidTy, {_int32Ty, _floatPtrTy}, false);
+        _funcName2funcType["putfarray"] = funcTy;
 
-    funcTy = FunctionType::get(_voidTy, {_int32PtrTy}, true);
-    _funcName2funcType["putf"] = funcTy;
+        funcTy = FunctionType::get(_voidTy, {_int32PtrTy}, true);
+        _funcName2funcType["putf"] = funcTy;
 
-    funcTy = FunctionType::get(_voidTy, {}, false);
-    _funcName2funcType["before_main"] = funcTy;
-    _funcName2funcType["after_main"] = funcTy;
+        funcTy = FunctionType::get(_voidTy, {}, false);
+        _funcName2funcType["before_main"] = funcTy;
+        _funcName2funcType["after_main"] = funcTy;
 
-    funcTy = FunctionType::get(_voidTy, {_int32Ty}, false);
-    _funcName2funcType["putint"] = funcTy;
-    _funcName2funcType["putch"] = funcTy;
-    _funcName2funcType["_sysy_starttime"] = funcTy;
-    _funcName2funcType["_sysy_stoptime"] = funcTy;
+        funcTy = FunctionType::get(_voidTy, {_int32Ty}, false);
+        _funcName2funcType["putint"] = funcTy;
+        _funcName2funcType["putch"] = funcTy;
+        _funcName2funcType["_sysy_starttime"] = funcTy;
+        _funcName2funcType["_sysy_stoptime"] = funcTy;
+    }
 }
 
 IRBuilder::~IRBuilder() {}
@@ -801,6 +804,11 @@ Value *IRBuilder::getIndexedRefAddress(IndexedRef *indexedRef) {
         tmp = createBinaryInst(BinaryInst::INST_ADD, _value, tmp);
     }
     return createGEP(addr, {_int32Zero, tmp});
+}
+
+void IRBuilder::dumpIR(std::string path) {
+    std::ofstream out(path, std::ios::trunc);
+    _currentModule->dump(out);
 }
 
 }  // namespace AtomIR

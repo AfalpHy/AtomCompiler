@@ -1,5 +1,6 @@
 #include "llvmIR/IRBuilder.h"
 
+#include "../CmdOption.h"
 #include "AST/CompUnit.h"
 #include "AST/Decl.h"
 #include "AST/Expression.h"
@@ -31,40 +32,42 @@ IRBuilder::IRBuilder() {
     _module->setTargetTriple(llvm::sys::getProcessTriple());
     _module->setDataLayout(llvm::DataLayout(_module));
 
-    auto funcTy = llvm::FunctionType::get(_int32Ty, {}, false);
-    _funcName2funcType["getint"] = funcTy;
-    _funcName2funcType["getch"] = funcTy;
+    if (Sy) {
+        auto funcTy = llvm::FunctionType::get(_int32Ty, {}, false);
+        _funcName2funcType["getint"] = funcTy;
+        _funcName2funcType["getch"] = funcTy;
 
-    funcTy = llvm::FunctionType::get(_floatTy, {}, false);
-    _funcName2funcType["getfloat"] = funcTy;
+        funcTy = llvm::FunctionType::get(_floatTy, {}, false);
+        _funcName2funcType["getfloat"] = funcTy;
 
-    funcTy = llvm::FunctionType::get(_int32Ty, {_int32PtrTy}, false);
-    _funcName2funcType["getarray"] = funcTy;
+        funcTy = llvm::FunctionType::get(_int32Ty, {_int32PtrTy}, false);
+        _funcName2funcType["getarray"] = funcTy;
 
-    funcTy = llvm::FunctionType::get(_int32Ty, {_floatPtrTy}, false);
-    _funcName2funcType["getfarray"] = funcTy;
+        funcTy = llvm::FunctionType::get(_int32Ty, {_floatPtrTy}, false);
+        _funcName2funcType["getfarray"] = funcTy;
 
-    funcTy = llvm::FunctionType::get(_voidTy, {_int32Ty, _int32PtrTy}, false);
-    _funcName2funcType["putarray"] = funcTy;
+        funcTy = llvm::FunctionType::get(_voidTy, {_int32Ty, _int32PtrTy}, false);
+        _funcName2funcType["putarray"] = funcTy;
 
-    funcTy = llvm::FunctionType::get(_voidTy, {_floatTy}, false);
-    _funcName2funcType["putfloat"] = funcTy;
+        funcTy = llvm::FunctionType::get(_voidTy, {_floatTy}, false);
+        _funcName2funcType["putfloat"] = funcTy;
 
-    funcTy = llvm::FunctionType::get(_voidTy, {_int32Ty, _floatPtrTy}, false);
-    _funcName2funcType["putfarray"] = funcTy;
+        funcTy = llvm::FunctionType::get(_voidTy, {_int32Ty, _floatPtrTy}, false);
+        _funcName2funcType["putfarray"] = funcTy;
 
-    funcTy = llvm::FunctionType::get(_voidTy, {llvm::Type::getInt8PtrTy(_module->getContext())}, true);
-    _funcName2funcType["putf"] = funcTy;
+        funcTy = llvm::FunctionType::get(_voidTy, {llvm::Type::getInt8PtrTy(_module->getContext())}, true);
+        _funcName2funcType["putf"] = funcTy;
 
-    funcTy = llvm::FunctionType::get(_voidTy, {}, false);
-    _funcName2funcType["before_main"] = funcTy;
-    _funcName2funcType["after_main"] = funcTy;
+        funcTy = llvm::FunctionType::get(_voidTy, {}, false);
+        _funcName2funcType["before_main"] = funcTy;
+        _funcName2funcType["after_main"] = funcTy;
 
-    funcTy = llvm::FunctionType::get(_voidTy, {_int32Ty}, false);
-    _funcName2funcType["putint"] = funcTy;
-    _funcName2funcType["putch"] = funcTy;
-    _funcName2funcType["_sysy_starttime"] = funcTy;
-    _funcName2funcType["_sysy_stoptime"] = funcTy;
+        funcTy = llvm::FunctionType::get(_voidTy, {_int32Ty}, false);
+        _funcName2funcType["putint"] = funcTy;
+        _funcName2funcType["putch"] = funcTy;
+        _funcName2funcType["_sysy_starttime"] = funcTy;
+        _funcName2funcType["_sysy_stoptime"] = funcTy;
+    }
 }
 
 IRBuilder::~IRBuilder() {

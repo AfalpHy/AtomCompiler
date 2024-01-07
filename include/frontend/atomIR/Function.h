@@ -82,7 +82,7 @@ public:
 
     void updateName();
 
-    void dump();
+    void dump(std::ostream& os = std::cout);
 
 private:
     Module* _parent;

@@ -50,7 +50,7 @@ public:
 
     virtual void visit(ReturnStatement *) override;
 
-    void dumpLL(std::string path) {
+    void dumpIR(std::string path) {
         std::error_code EC;
         llvm::raw_fd_ostream outputFile(path, EC);
         _module->print(outputFile, nullptr);
