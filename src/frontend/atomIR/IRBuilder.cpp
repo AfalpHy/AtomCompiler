@@ -790,12 +790,18 @@ Value *IRBuilder::getIndexedRefAddress(IndexedRef *indexedRef) {
         ATC::PointerType *varType = (ATC::PointerType *)var->getDataType();
         if (varType->getBaseDataType()->getClassId() == ID_ARRAY_TYPE) {
             elementSize = static_cast<ATC::ArrayType *>(varType->getBaseDataType())->getElementSize();
+            Value *tmp = nullptr;
             for (; i != dimension.size(); i++) {
                 dimension[i]->accept(this);
                 _value = createBinaryInst(BinaryInst::INST_MUL, _value, ConstantInt::get(elementSize[i - 1]));
+                if (tmp == nullptr) {
+                    tmp = _value;
+                } else {
+                    tmp = createBinaryInst(BinaryInst::INST_ADD, _value, tmp);
+                }
             }
-            if (i > 1) {
-                return createGEP(addr, {_int32Zero, _value});
+            if (tmp) {
+                return createGEP(addr, {_int32Zero, tmp});
             }
         }
         return addr;

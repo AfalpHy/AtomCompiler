@@ -667,7 +667,7 @@ void CodeGenerator::emitCondJumpInst(AtomIR::CondJumpInst* inst) {
                 break;
             case AtomIR::CondJumpInst::INST_JNE:
                 cmpInst = new BinaryInst(BinaryInst::INST_FSEQ_S, src1, src2);
-                type = CondJumpInst::INST_BNE;
+                type = CondJumpInst::INST_BEQ;
                 break;
             case AtomIR::CondJumpInst::INST_JLT:
                 cmpInst = new BinaryInst(BinaryInst::INST_FSLT_S, src1, src2);
