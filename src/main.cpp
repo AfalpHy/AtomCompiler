@@ -31,7 +31,7 @@ int main(int argc, const char *argv[]) {
 
     if (!file.is_open()) {
         cerr << filesystem::absolute(std::string(SrcPath)) << " not exist" << endl;
-        return 0;
+        return -1;
     }
     ANTLRInputStream input(file);
     input.name = argv[1];
@@ -63,6 +63,7 @@ int main(int argc, const char *argv[]) {
     string filename = filePath.stem();
     string outFile = filename + ".out";
     string cmd;
+    int ret = 0;
     if (EmitLLVM) {
         LLVMIR::IRBuilder irBuilder;
         // only on module now
@@ -72,9 +73,22 @@ int main(int argc, const char *argv[]) {
 
         if (DumpIR) {
             irBuilder.dumpIR(filename + ".ll");
-            cmd = "clang " + filename + ".ll";
+            cmd = "clang -c " + filename + ".ll -o " + filename + ".o";
+            ret = WEXITSTATUS(system(cmd.c_str()));
+            if (ret) {
+                return ret;
+            }
         } else {
             /// TODO:use llvm API to create the .o file
+        }
+        if (!SySrc.empty()) {
+            cmd = "clang " + filename + ".o " + SySrc;
+        } else {
+            cmd = "clang " + filename + ".o ";
+        }
+        ret = WEXITSTATUS(system(cmd.c_str()));
+        if (ret) {
+            return ret;
         }
     } else {
         AtomIR::IRBuilder irBuilder;
@@ -92,16 +106,22 @@ int main(int argc, const char *argv[]) {
         if (GenerateASM) {
             return 0;
         }
-        cmd = "clang -target riscv64-linux-gnu " + filename + ".s";
+        cmd = "clang -target riscv64-linux-gnu -c " + filename + ".s -o " + filename + ".o";
+        ret = WEXITSTATUS(system(cmd.c_str()));
+        if (ret) {
+            return ret;
+        }
+        if (!SySrc.empty()) {
+            cmd = "clang -target riscv64-linux-gnu " + filename + ".o " + SySrc;
+        } else {
+            cmd = "clang -target riscv64-linux-gnu " + filename + ".o ";
+        }
+        ret = WEXITSTATUS(system(cmd.c_str()));
+        if (ret) {
+            return ret;
+        }
     }
 
-    if (Sy) {
-        cmd.append(" ").append(SySrc);
-    }
-    int ret = WEXITSTATUS(system(cmd.c_str()));
-    if (ret) {
-        return ret;
-    }
     if (RunAfterCompiling) {
         cmd = "./a.out";
         if (!RunInput.empty()) {
