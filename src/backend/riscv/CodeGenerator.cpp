@@ -491,35 +491,35 @@ void CodeGenerator::emitGEPInst(AtomIR::GetElementPtrInst* inst) {
         ptr = getPtr->getDest();
         _currentBasicBlock->addInstruction(getPtr);
     }
+    Register* offsetReg;
     auto& indexes = inst->getIndexes();
     if (indexes.size() == 1) {
         int offset = inst->getPtr()->getType()->getBaseType()->getByteLen();
         if (indexes[0]->isConst()) {
-            _value2reg[inst->getResult()] = ptr;
-            _value2offset[inst->getResult()] = static_cast<AtomIR::ConstantInt*>(indexes[0])->getConstValue() * offset;
-        } else {
+            offset *= static_cast<AtomIR::ConstantInt*>(indexes[0])->getConstValue();
             auto li = new ImmInst(ImmInst::INST_LI, offset);
             _currentBasicBlock->addInstruction(li);
-            auto mul = new BinaryInst(BinaryInst::INST_MUL, _value2reg[indexes[0]], li->getDest());
+            offsetReg = li->getDest();
+        } else {
+            auto mul = new BinaryInst(BinaryInst::INST_SLLI, _value2reg[indexes[0]], 2);
             _currentBasicBlock->addInstruction(mul);
-            auto add = new BinaryInst(BinaryInst::INST_ADD, ptr, mul->getDest());
-            _currentBasicBlock->addInstruction(add);
-            _value2reg[inst->getResult()] = add->getDest();
+            offsetReg = mul->getDest();
         }
     } else {
         if (indexes[1]->isConst()) {
-            _value2reg[inst->getResult()] = ptr;
-            _value2offset[inst->getResult()] = static_cast<AtomIR::ConstantInt*>(indexes[1])->getConstValue() * 4;
-        } else {
-            auto li = new ImmInst(ImmInst::INST_LI, 4);
+            int offset = 4 * static_cast<AtomIR::ConstantInt*>(indexes[1])->getConstValue();
+            auto li = new ImmInst(ImmInst::INST_LI, offset);
             _currentBasicBlock->addInstruction(li);
-            auto mul = new BinaryInst(BinaryInst::INST_MUL, _value2reg[indexes[1]], li->getDest());
+            offsetReg = li->getDest();
+        } else {
+            auto mul = new BinaryInst(BinaryInst::INST_SLLI, _value2reg[indexes[1]], 2);
             _currentBasicBlock->addInstruction(mul);
-            auto add = new BinaryInst(BinaryInst::INST_ADD, ptr, mul->getDest());
-            _currentBasicBlock->addInstruction(add);
-            _value2reg[inst->getResult()] = add->getDest();
+            offsetReg = mul->getDest();
         }
     }
+    auto add = new BinaryInst(BinaryInst::INST_ADD, ptr, offsetReg);
+    _currentBasicBlock->addInstruction(add);
+    _value2reg[inst->getResult()] = add->getDest();
 }
 
 void CodeGenerator::emitBitCastInst(AtomIR::BitCastInst* inst) {

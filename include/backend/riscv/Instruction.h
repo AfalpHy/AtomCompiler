@@ -222,6 +222,7 @@ public:
         INST_ADDI,
         INST_SLTI,
         INST_XORI,
+        INST_SLLI,
 
         INST_ADDIW,
 

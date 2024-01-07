@@ -88,6 +88,8 @@ std::string BinaryInst::toString() {
             return "slti\t" + _dest->getName() + ", " + _src1->getName() + ", " + std::to_string(_imm);
         case INST_XORI:
             return "xori\t" + _dest->getName() + ", " + _src1->getName() + ", " + std::to_string(_imm);
+        case INST_SLLI:
+            return "slli\t" + _dest->getName() + ", " + _src1->getName() + ", " + std::to_string(_imm);
         case INST_ADDIW:
             return "addiw\t" + _dest->getName() + ", " + _src1->getName() + ", " + std::to_string(_imm);
         case INST_ADD:
