@@ -811,7 +811,12 @@ Register* CodeGenerator::emitIntBinaryInst(int instType, AtomIR::Value* operand1
             if (src2) {
                 binaryInst = new BinaryInst(BinaryInst::INST_SLT, src1, src2);
             } else {
-                binaryInst = new BinaryInst(BinaryInst::INST_SLTI, src1, imm);
+                src2 = loadConstInt(imm);
+                if (imm < -2048 || imm > 2047) {
+                    binaryInst = new BinaryInst(BinaryInst::INST_SLT, src1, src2);
+                } else {
+                    binaryInst = new BinaryInst(BinaryInst::INST_SLTI, src1, imm);
+                }
             }
             break;
         case AtomIR::BinaryInst::INST_EQ:
@@ -830,6 +835,7 @@ Register* CodeGenerator::emitIntBinaryInst(int instType, AtomIR::Value* operand1
     _currentBasicBlock->addInstruction(binaryInst);
     auto dest = binaryInst->getDest();
     if (needXor) {
+        // revert the result
         auto xorInst = new BinaryInst(BinaryInst::INST_XORI, binaryInst->getDest(), 1);
         _currentBasicBlock->addInstruction(xorInst);
         dest = xorInst->getDest();
