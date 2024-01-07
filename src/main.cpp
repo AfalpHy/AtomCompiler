@@ -101,7 +101,7 @@ int main(int argc, const char *argv[]) {
             // irBuilder.getCurrentModule()->dump();
             ofstream asmfile(filename + ".s", ios::trunc);
             codeGenerator.dump(asmfile);
-            string cmd = "clang -target riscv64-linux-gnu -static " + filename + ".s " + OtherSrc;
+            string cmd = "clang -target riscv64-linux-gnu " + filename + ".s " + OtherSrc;
             int compileRet = WEXITSTATUS(system(cmd.c_str()));
             if (RunAfterCompiling) {
                 cmd = "./a.out";

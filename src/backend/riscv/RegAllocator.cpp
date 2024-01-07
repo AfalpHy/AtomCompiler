@@ -173,10 +173,10 @@ void RegAllocator::spill() {
             }
         }
         if (spillPos != instList.end()) {
-            instList.insert(++spillPos, new StoreInst(StoreInst::INST_SW, _needSpill, Register::S0, _currentOffset));
+            instList.insert(++spillPos, new StoreInst(StoreInst::INST_SD, _needSpill, Register::S0, _currentOffset));
         }
         for (auto pos : reloadPos) {
-            instList.insert(pos, new LoadInst(LoadInst::INST_LW, _needSpill, Register::S0, _currentOffset));
+            instList.insert(pos, new LoadInst(LoadInst::INST_LD, _needSpill, Register::S0, _currentOffset));
         }
     }
 
