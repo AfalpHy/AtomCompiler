@@ -308,6 +308,9 @@ void IRBuilder::visit(NestedExpression *node) {
     }
     deep--;
     if (deep == 0) {
+        if (zeroNum) {
+            arrayValue->addElement({zeroNum, {}});
+        }
         _value = arrayValue;
     }
 }
