@@ -145,7 +145,6 @@ void IRBuilder::visit(Variable *node) {
         Value *addr = createAlloc(convertToAtomType(node->getDataType()), node->getName());
         _var2addr.insert({node, addr});
         if (auto initValue = node->getInitValue()) {
-            initValue->accept(this);
             if (initValue->getClassId() == ID_NESTED_EXPRESSION) {
                 ATC::ArrayType *arrayType = static_cast<ATC::ArrayType *>(node->getDataType());
                 FunctionType *funcType =
@@ -153,7 +152,7 @@ void IRBuilder::visit(Variable *node) {
                 createFunctionCall(*funcType, "memset",
                                    {castToDestTyIfNeed(addr, _voidTy->getPointerTy()), ConstantInt::get(0),
                                     ConstantInt::get(arrayType->getTotalSize() * 4)});
-
+                initValue->accept(this);
                 auto dimension = arrayType->getDimensions();
                 auto elementSize = arrayType->getElementSize();
                 ArrayValue *arrayValue = (ArrayValue *)_value;
@@ -169,6 +168,7 @@ void IRBuilder::visit(Variable *node) {
                     }
                 }
             } else {
+                initValue->accept(this);
                 _value = castToDestTyIfNeed(_value, basicType);
                 createStore(_value, addr);
             }
