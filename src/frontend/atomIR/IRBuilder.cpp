@@ -750,16 +750,20 @@ Value *IRBuilder::castToDestTyIfNeed(Value *value, Type *destTy) {
         return createBitCast(value, destTy);
     }
     if (destTy == _floatTy) {
-        if (value->isConst()) {
-            return ConstantFloat::get(std::stof(value->getValueStr()));
-        } else if (value->getType() == _int32Ty) {
-            return createUnaryInst(UnaryInst::INST_ITOF, value);
+        if (value->getType() == _int32Ty) {
+            if (value->isConst()) {
+                return ConstantFloat::get(static_cast<Constant *>(value)->getConstValue());
+            } else {
+                return createUnaryInst(UnaryInst::INST_ITOF, value);
+            }
         }
     } else if (destTy == _int32Ty) {
-        if (value->isConst()) {
-            return ConstantInt::get(std::stoi(value->getValueStr()));
-        } else if (value->getType() == _floatTy) {
-            return createUnaryInst(UnaryInst::INST_FTOI, value);
+        if (value->getType() == _floatTy) {
+            if (value->isConst()) {
+                return ConstantInt::get(static_cast<Constant *>(value)->getConstValue());
+            } else {
+                return createUnaryInst(UnaryInst::INST_FTOI, value);
+            }
         }
     }
     return value;
