@@ -501,9 +501,17 @@ void CodeGenerator::emitGEPInst(AtomIR::GetElementPtrInst* inst) {
             _currentBasicBlock->addInstruction(li);
             offsetReg = li->getDest();
         } else {
-            auto mul = new BinaryInst(BinaryInst::INST_SLLI, _value2reg[indexes[0]], 2);
-            _currentBasicBlock->addInstruction(mul);
-            offsetReg = mul->getDest();
+            if (offset == 4) {
+                auto slli = new BinaryInst(BinaryInst::INST_SLLI, _value2reg[indexes[0]], 2);
+                _currentBasicBlock->addInstruction(slli);
+                offsetReg = slli->getDest();
+            } else {
+                auto li = new ImmInst(ImmInst::INST_LI, offset);
+                _currentBasicBlock->addInstruction(li);
+                auto mul = new BinaryInst(BinaryInst::INST_MUL, _value2reg[indexes[0]], li->getDest());
+                _currentBasicBlock->addInstruction(mul);
+                offsetReg = mul->getDest();
+            }
         }
     } else {
         if (indexes[1]->isConst()) {
@@ -512,9 +520,10 @@ void CodeGenerator::emitGEPInst(AtomIR::GetElementPtrInst* inst) {
             _currentBasicBlock->addInstruction(li);
             offsetReg = li->getDest();
         } else {
-            auto mul = new BinaryInst(BinaryInst::INST_SLLI, _value2reg[indexes[1]], 2);
-            _currentBasicBlock->addInstruction(mul);
-            offsetReg = mul->getDest();
+            /// FIXME: the imm should be 3 when base type if array of pointer
+            auto slli = new BinaryInst(BinaryInst::INST_SLLI, _value2reg[indexes[1]], 2);
+            _currentBasicBlock->addInstruction(slli);
+            offsetReg = slli->getDest();
         }
     }
     auto add = new BinaryInst(BinaryInst::INST_ADD, ptr, offsetReg);
