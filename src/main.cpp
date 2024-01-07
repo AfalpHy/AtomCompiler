@@ -89,8 +89,12 @@ int main(int argc, const char *argv[]) {
         }
         ofstream asmfile(filename + ".s", ios::trunc);
         codeGenerator.dump(asmfile);
+        if (GenerateASM) {
+            return;
+        }
         cmd = "clang -target riscv64-linux-gnu " + filename + ".s";
     }
+
     if (Sy) {
         cmd.append(" ").append(SySrc);
     }
