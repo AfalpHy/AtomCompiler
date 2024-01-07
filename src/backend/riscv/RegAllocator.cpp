@@ -164,7 +164,7 @@ void RegAllocator::spill() {
         for (auto begin = instList.begin(); begin != instList.end(); begin++) {
             auto inst = *begin;
             if (inst->getDest() == _needSpill) {
-                _currentOffset -= 4;
+                _currentOffset -= 8;
                 spillPos = begin;
             }
 
@@ -173,10 +173,20 @@ void RegAllocator::spill() {
             }
         }
         if (spillPos != instList.end()) {
-            instList.insert(++spillPos, new StoreInst(StoreInst::INST_SD, _needSpill, Register::S0, _currentOffset));
+            if (_needSpill->isIntReg()) {
+                instList.insert(++spillPos,
+                                new StoreInst(StoreInst::INST_SD, _needSpill, Register::S0, _currentOffset));
+            } else {
+                instList.insert(++spillPos,
+                                new StoreInst(StoreInst::INST_FSD, _needSpill, Register::S0, _currentOffset));
+            }
         }
         for (auto pos : reloadPos) {
-            instList.insert(pos, new LoadInst(LoadInst::INST_LD, _needSpill, Register::S0, _currentOffset));
+            if (_needSpill->isIntReg()) {
+                instList.insert(pos, new LoadInst(LoadInst::INST_LD, _needSpill, Register::S0, _currentOffset));
+            } else {
+                instList.insert(pos, new LoadInst(LoadInst::INST_FLD, _needSpill, Register::S0, _currentOffset));
+            }
         }
     }
 
