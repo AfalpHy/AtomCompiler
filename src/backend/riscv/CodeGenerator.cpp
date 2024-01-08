@@ -249,7 +249,7 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
             _retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::S0, Register::Sp, 2016));
         } else {
             pushRegOffset = 2016;
-            _entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::S0, Register::Sp, -2032));
+            _entryBB->addInstruction(new StoreInst(StoreInst::INST_SD, Register::S0, Register::Sp, 2024));
             _retBB->addInstruction(new LoadInst(LoadInst::INST_LD, Register::S0, Register::Sp, 2024));
         }
         for (auto reg : _currentFunction->getNeedPushRegs()) {
