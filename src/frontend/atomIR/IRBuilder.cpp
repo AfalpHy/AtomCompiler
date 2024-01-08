@@ -829,10 +829,7 @@ Value *IRBuilder::getIndexedRefAddress(IndexedRef *indexedRef) {
     return createGEP(addr, {_int32Zero, tmp});
 }
 
-void IRBuilder::dumpIR(std::string path) {
-    std::ofstream out(path, std::ios::trunc);
-    _currentModule->dump(out);
-}
+void IRBuilder::dumpIR(const std::string &filePath) { _currentModule->print(filePath); }
 
 }  // namespace AtomIR
 }  // namespace ATC

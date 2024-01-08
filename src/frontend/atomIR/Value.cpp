@@ -61,6 +61,14 @@ std::string ArrayValue::toString() {
     return str;
 }
 
+std::string GloabalVariable::toString() {
+    std::string str = getValueStr();
+    if (_init) {
+        str.append(" = ").append(_init->toString());
+    }
+    return str;
+}
+
 std::string Value::getValueStr() { return _belong->getUniqueNameInFunction(this); }
 
 std::string ConstantInt::getValueStr() { return std::to_string(_constValue); }
@@ -69,20 +77,12 @@ std::string ConstantFloat::getValueStr() { return std::to_string(_constValue); }
 
 std::string GloabalVariable::getValueStr() { return "@" + _name; }
 
-void Value::dump(std::ostream& os) {
+void Value::dump() {
     if (!_defined) {
-        os << toString() << std::endl;
+        std::cout << toString() << std::endl;
     } else {
-        os << _defined->toString() << std::endl;
+        std::cout << _defined->toString() << std::endl;
     }
-}
-
-void GloabalVariable::dump(std::ostream& os) {
-    std::string str = getValueStr();
-    if (_init) {
-        str.append(" = ").append(_init->toString());
-    }
-    os << str << std::endl;
 }
 
 }  // namespace AtomIR

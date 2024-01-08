@@ -33,7 +33,7 @@ public:
 
     virtual bool isGlobal() { return false; }
 
-    virtual void dump(std::ostream& os = std::cout);
+    virtual void dump();
 
 protected:
     Type* _type = nullptr;
@@ -116,7 +116,7 @@ public:
 
     virtual bool isGlobal() { return true; }
 
-    virtual void dump(std::ostream& os = std::cout) override;
+    virtual std::string toString() override;
 
 private:
     Value* _init = nullptr;

@@ -18,7 +18,11 @@ public:
     const std::vector<Function*>& getFunctions() { return _functions; }
     const std::vector<GloabalVariable*>& getGlobalVariables() { return _globalVariables; }
 
-    void dump(std::ostream& os = std::cout);
+    std::string toString();
+
+    void dump();
+
+    void print(const std::string& filePath);
 
 private:
     std::string _name;

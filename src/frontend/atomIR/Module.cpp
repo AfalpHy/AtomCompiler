@@ -1,19 +1,30 @@
 #include "atomIR/Module.h"
 
+#include <fstream>
+#include <sstream>
+
 namespace ATC {
 namespace AtomIR {
 
-void Module::dump(std::ostream& os) {
+std::string Module::toString() {
+    std::stringstream ss;
     for (auto item : _globalVariables) {
-        item->dump(os);
+        ss << item->toString() << std::endl;
     }
 
-    os << std::endl;
+    ss << std::endl;
 
     for (auto item : _functions) {
-        item->dump(os);
+        ss << item->toString() << std::endl;
     }
+    return ss.str();
 }
 
+void Module::dump() { std::cout << toString() << std::endl; }
+
+void Module::print(const std::string& filePath) {
+    std::ofstream out(filePath, std::ios::trunc);
+    out << toString() << std::endl;
+}
 }  // namespace AtomIR
 }  // namespace ATC

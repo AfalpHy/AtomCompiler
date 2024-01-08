@@ -1,6 +1,7 @@
 #include <assert.h>
 
 #include <iostream>
+#include <sstream>
 
 #include "atomIR/Module.h"
 
@@ -60,8 +61,9 @@ void Function::updateName() {
     }
 }
 
-void Function::dump(std::ostream& os) {
-    os << "define " << _functionType._ret->toString() << " " << _name << "(";
+std::string Function::toString() {
+    std::stringstream ss;
+    ss << "define " << _functionType._ret->toString() << " " << _name << "(";
     std::string paramsStr;
     for (auto param : _params) {
         paramsStr.append(param->toString() + ", ");
@@ -70,18 +72,21 @@ void Function::dump(std::ostream& os) {
         paramsStr.pop_back();
         paramsStr.pop_back();
     }
-    os << paramsStr << ") {" << std::endl;
+    ss << paramsStr << ") {" << std::endl;
     for (auto bb : _basicBlocks) {
-        os << bb->getBBStr() << ":" << std::endl;
+        ss << bb->getBBStr() << ":" << std::endl;
         for (auto inst : bb->getInstructionList()) {
-            os << "  " << inst->toString() << std::endl;
+            ss << "  " << inst->toString() << std::endl;
         }
         if (bb != _basicBlocks.back()) {
-            os << std::endl;
+            ss << std::endl;
         }
     }
-    os << "}" << std::endl;
+    ss << "}" << std::endl;
+    return ss.str();
 }
+
+void Function::dump() { std::cout << toString() << std::endl; }
 
 }  // namespace AtomIR
 }  // namespace ATC
