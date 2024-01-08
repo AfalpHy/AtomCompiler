@@ -86,7 +86,9 @@ CodeGenerator::CodeGenerator() {
     }
 }
 
-void CodeGenerator::dump(std::ostream& os) { os << _contend.str() << endl; }
+void CodeGenerator::dump() { std::cout << _contend.str() << endl; }
+
+void CodeGenerator::print(std::ofstream& os) { os << _contend.str() << endl; }
 
 void CodeGenerator::emitModule(AtomIR::Module* module) {
     if (!module->getGlobalVariables().empty()) {

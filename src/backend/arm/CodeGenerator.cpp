@@ -2,6 +2,6 @@
 
 namespace ATC {
 namespace ARM {
-void CodeGenerator::dump(std::ostream& os) { os << "arm" << std::endl; }
+void CodeGenerator::dump(std::ofstream& os) { os << "arm" << std::endl; }
 }  // namespace ARM
 }  // namespace ATC

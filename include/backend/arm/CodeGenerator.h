@@ -1,5 +1,6 @@
 #pragma once
 
+#include <fstream>
 #include <iostream>
 
 namespace ATC {
@@ -7,7 +8,7 @@ namespace ATC {
 namespace ARM {
 class CodeGenerator {
 public:
-    void dump(std::ostream& os);
+    void dump(std::ofstream& os);
 
 private:
 };

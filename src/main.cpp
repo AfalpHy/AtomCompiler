@@ -102,7 +102,7 @@ int main(int argc, const char *argv[]) {
             irBuilder.dumpIR(filename + ".atom");
         }
         ofstream asmfile(filename + ".s", ios::trunc);
-        codeGenerator.dump(asmfile);
+        codeGenerator.print(asmfile);
         if (GenerateASM) {
             return 0;
         }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <unordered_map>
@@ -18,7 +19,9 @@ class CodeGenerator {
 public:
     CodeGenerator();
 
-    void dump(std::ostream &os = std::cout);
+    void dump();
+
+    void print(std::ofstream &os);
 
     void emitModule(AtomIR::Module *);
 
