@@ -51,8 +51,6 @@ public:
     virtual std::string getLiteralStr() = 0;
 
     virtual bool isInt() = 0;
-
-    virtual float getConstValue() = 0;
 };
 
 class ConstantInt : public Constant {
@@ -65,7 +63,7 @@ public:
 
     virtual bool isInt() { return true; }
 
-    virtual float getConstValue() { return _constValue; }
+    int getConstValue() { return _constValue; }
 
 private:
     ConstantInt(int value) : Constant(Type::getInt32Ty()), _constValue(value) {}
@@ -85,7 +83,7 @@ public:
 
     virtual bool isInt() { return false; }
 
-    virtual float getConstValue() { return _constValue; }
+    float getConstValue() { return _constValue; }
 
 private:
     ConstantFloat(float value) : Constant(Type::getFloatTy()), _constValue(value) {}

@@ -713,10 +713,20 @@ void IRBuilder::createCondJump(int type, BasicBlock *trueBB, BasicBlock *falseBB
 void IRBuilder::createCondJumpForValue(BasicBlock *trueBB, BasicBlock *falseBB, Value *value) {
     if (value->isConst()) {
         auto constValue = (Constant *)value;
-        if (constValue->getConstValue() == 0) {
-            createJump(_falseBB);
+        if (constValue->isInt()) {
+            auto constInt = (ConstantInt *)value;
+            if (constInt->getConstValue()) {
+                createJump(_trueBB);
+            } else {
+                createJump(_falseBB);
+            }
         } else {
-            createJump(_trueBB);
+            auto constFloat = (ConstantFloat *)value;
+            if (constFloat->getConstValue()) {
+                createJump(_trueBB);
+            } else {
+                createJump(_falseBB);
+            }
         }
     } else {
         createCondJump(CondJumpInst::INST_JNE, _trueBB, _falseBB, value,
@@ -755,7 +765,7 @@ Value *IRBuilder::castToDestTyIfNeed(Value *value, Type *destTy) {
     if (destTy == _floatTy) {
         if (value->getType() == _int32Ty) {
             if (value->isConst()) {
-                return ConstantFloat::get(static_cast<Constant *>(value)->getConstValue());
+                return ConstantFloat::get(static_cast<ConstantInt *>(value)->getConstValue());
             } else {
                 return createUnaryInst(UnaryInst::INST_ITOF, value);
             }
@@ -763,7 +773,7 @@ Value *IRBuilder::castToDestTyIfNeed(Value *value, Type *destTy) {
     } else if (destTy == _int32Ty) {
         if (value->getType() == _floatTy) {
             if (value->isConst()) {
-                return ConstantInt::get(static_cast<Constant *>(value)->getConstValue());
+                return ConstantInt::get(static_cast<ConstantFloat *>(value)->getConstValue());
             } else {
                 return createUnaryInst(UnaryInst::INST_FTOI, value);
             }
