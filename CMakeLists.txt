@@ -4,15 +4,13 @@ cmake_minimum_required(VERSION 3.10)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# 重新生成antlr前端
-if(UPDATE_ANTLR STREQUAL "ON")
-  execute_process(COMMAND rm -rf ${CMAKE_CURRENT_SOURCE_DIR}/src/frontend/antlr)
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/frontend/antlr")
   execute_process(
     COMMAND
       antlr4 -Dlanguage=Cpp -no-listener -visitor -o
       ${CMAKE_CURRENT_SOURCE_DIR}/src/frontend/antlr
       ${CMAKE_CURRENT_SOURCE_DIR}/ATC.g4)
-  message("update antlr code success!")
+  message("generate antlr code success!")
 endif()
 
 add_subdirectory(src/frontend)
