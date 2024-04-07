@@ -90,14 +90,15 @@ Stmt:
 `AddressOf`  
 `Dereference`
 
-# Build
+# Build & TEST
 
 ## Ubuntu22.04
 
 ~~~sh
-sudo apt install antlr4 libantlr4-runtime-dev llvm-dev clang
+sudo apt install antlr4 libantlr4-runtime-dev llvm-dev clang gcc-riscv64-linux-gnu 
 mkdir build
 cd build
-cmake -DUPDATE_ANTLR=ON ..
+cmake ..
 make -j `nproc`
+ctest -j `nproc`
 ~~~
