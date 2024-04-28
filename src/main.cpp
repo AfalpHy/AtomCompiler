@@ -15,7 +15,6 @@
 #include "antlr4-runtime.h"
 #include "arm/CodeGenerator.h"
 #include "atomIR/IRBuilder.h"
-#include "llvmIR/IRBuilder.h"
 #include "riscv/CodeGenerator.h"
 
 using namespace std;
@@ -34,7 +33,6 @@ int main(int argc, const char *argv[]) {
         return -1;
     }
     ANTLRInputStream input(file);
-    input.name = argv[1];
     ATCLexer lexer(&input);
     CommonTokenStream token(&lexer);
     ATCParser parser(&token);
@@ -64,66 +62,43 @@ int main(int argc, const char *argv[]) {
     string outFile = filename + ".out";
     string cmd;
     int ret = 0;
-    if (EmitLLVM) {
-        LLVMIR::IRBuilder irBuilder;
-        // only on module now
-        for (auto compUnit : CompUnit::AllCompUnits) {
-            compUnit->accept(&irBuilder);
-        }
 
-        if (DumpIR) {
-            irBuilder.dumpIR(filename + ".ll");
-            cmd = "clang -c " + filename + ".ll -o " + filename + ".o";
-            ret = WEXITSTATUS(system(cmd.c_str()));
-            if (ret) {
-                return ret;
-            }
-        } else {
-            /// TODO:use llvm API to create the .o file
-        }
-        if (!SySrc.empty()) {
-            cmd = "clang " + filename + ".o " + SySrc;
-        } else {
-            cmd = "clang " + filename + ".o ";
-        }
-        ret = WEXITSTATUS(system(cmd.c_str()));
-        if (ret) {
-            return ret;
-        }
+    AtomIR::IRBuilder irBuilder;
+    RISCV::CodeGenerator codeGenerator;
+    // only one module now
+    for (auto compUnit : CompUnit::AllCompUnits) {
+        compUnit->accept(&irBuilder);
+        codeGenerator.emitModule(irBuilder.getCurrentModule());
+    }
+    if (DumpIR) {
+        irBuilder.dumpIR(filename + ".atom");
+    }
+    ofstream asmfile(filename + ".s", ios::trunc);
+    codeGenerator.print(asmfile);
+    if (GenerateASM) {
+        return 0;
+    }
+    cmd = "clang -target riscv64-linux-gnu -c " + filename + ".s -o " + filename + ".o";
+    ret = WEXITSTATUS(system(cmd.c_str()));
+    if (ret) {
+        return ret;
+    }
+    if (!SySrc.empty()) {
+        cmd = "clang -target riscv64-linux-gnu  -static " + filename + ".o " + SySrc;
     } else {
-        AtomIR::IRBuilder irBuilder;
-        RISCV::CodeGenerator codeGenerator;
-        // only on module now
-        for (auto compUnit : CompUnit::AllCompUnits) {
-            compUnit->accept(&irBuilder);
-            codeGenerator.emitModule(irBuilder.getCurrentModule());
-        }
-        if (DumpIR) {
-            irBuilder.dumpIR(filename + ".atom");
-        }
-        ofstream asmfile(filename + ".s", ios::trunc);
-        codeGenerator.print(asmfile);
-        if (GenerateASM) {
-            return 0;
-        }
-        cmd = "clang -target riscv64-linux-gnu -c " + filename + ".s -o " + filename + ".o";
-        ret = WEXITSTATUS(system(cmd.c_str()));
-        if (ret) {
-            return ret;
-        }
-        if (!SySrc.empty()) {
-            cmd = "clang -target riscv64-linux-gnu " + filename + ".o " + SySrc;
-        } else {
-            cmd = "clang -target riscv64-linux-gnu " + filename + ".o ";
-        }
-        ret = WEXITSTATUS(system(cmd.c_str()));
-        if (ret) {
-            return ret;
-        }
+        cmd = "clang -target riscv64-linux-gnu -static " + filename + ".o ";
+    }
+    ret = WEXITSTATUS(system(cmd.c_str()));
+    if (ret) {
+        return ret;
     }
 
     if (RunAfterCompiling) {
-        cmd = "./a.out";
+        if (Platform == "riscv") {
+            cmd = "spike  /riscv64-linux-gnu/bin/pk ./a.out";
+        } else if (Platform == "arm") {
+            // TODO:
+        }
         if (!RunInput.empty()) {
             cmd.append(" < ").append(RunInput);
         }
