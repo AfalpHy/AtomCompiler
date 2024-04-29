@@ -425,8 +425,7 @@ antlrcpp::Any ASTBuilder::visitMulExpr(ATCParser::MulExprContext *ctx) {
         mulExpr->setPosition(ctx->getStart(), unaryExprs[i]->getStop());
         left = mulExpr;
     }
-
-    left->setPosition(ctx->getStart(), ctx->getStop());
+    
     return (Expression *)left;
 }
 
@@ -454,7 +453,6 @@ antlrcpp::Any ASTBuilder::visitAddExpr(ATCParser::AddExprContext *ctx) {
         left = addExpr;
     }
 
-    left->setPosition(ctx->getStart(), ctx->getStop());
     return (Expression *)left;
 }
 
@@ -487,7 +485,6 @@ antlrcpp::Any ASTBuilder::visitRelExpr(ATCParser::RelExprContext *ctx) {
         left = relExpr;
     }
 
-    left->setPosition(ctx->getStart(), ctx->getStop());
     return (Expression *)left;
 }
 
@@ -515,7 +512,6 @@ antlrcpp::Any ASTBuilder::visitEqExpr(ATCParser::EqExprContext *ctx) {
         left = eqExpr;
     }
 
-    left->setPosition(ctx->getStart(), ctx->getStop());
     return (Expression *)left;
 }
 
@@ -540,7 +536,6 @@ antlrcpp::Any ASTBuilder::visitLAndExpr(ATCParser::LAndExprContext *ctx) {
         left = andExpr;
     }
 
-    left->setPosition(ctx->getStart(), ctx->getStop());
     return (Expression *)left;
 }
 
@@ -556,16 +551,17 @@ antlrcpp::Any ASTBuilder::visitLOrExpr(ATCParser::LOrExprContext *ctx) {
 
         orExpr->setOperator(OR);
         orExpr->setLeft(left);
+
         auto right = lAndExprs[i]->accept(this).as<Expression *>();
         if (right->getClassId() == ID_BINARY_EXPRESSION) {
             static_cast<BinaryExpression *>(right)->setNotForValue();
         }
         orExpr->setRight(right);
+
         orExpr->setPosition(ctx->getStart(), lAndExprs[i]->getStop());
         left = orExpr;
     }
 
-    left->setPosition(ctx->getStart(), ctx->getStop());
     return (Expression *)left;
 }
 
@@ -579,11 +575,5 @@ antlrcpp::Any ASTBuilder::visitIntConst(ATCParser::IntConstContext *ctx) {
     }
 }
 
-antlrcpp::Any ASTBuilder::visitFloatConst(ATCParser::FloatConstContext *ctx) {
-    if (ctx->DecFloatConst()) {
-        return std::stof(ctx->getText());
-    } else {
-        return std::stof(ctx->getText());
-    }
-}
+antlrcpp::Any ASTBuilder::visitFloatConst(ATCParser::FloatConstContext *ctx) { return std::stof(ctx->getText()); }
 }  // namespace ATC
