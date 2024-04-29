@@ -10,7 +10,9 @@ static T getArrayElement(IndexedRef *indexedRef) {
     Variable *var = indexedRef->getVariable();
     assert(var->isConst());
     Expression *initExpr = var->getInitValue();
-    assert(initExpr);
+    if (initExpr == nullptr) {
+        return 0;
+    }
     const auto &refDimensions = indexedRef->getDimensions();
 
     auto &elementSize = static_cast<ATC::ArrayType *>(var->getDataType())->getElementSize();
@@ -38,9 +40,11 @@ static T getArrayElement(IndexedRef *indexedRef) {
                 if (elements[0]->getClassId() == ID_NESTED_EXPRESSION) {
                     processNestExpr((NestedExpression *)elements[0]);
                 } else {
-                    var2arrayElemnt[var][index] = ExpressionHandle::isIntExpr(elements[0])
-                                                      ? ExpressionHandle::evaluateConstIntExpr(elements[0])
-                                                      : ExpressionHandle::evaluateConstFloatExpr(elements[0]);
+                    if (ExpressionHandle::isIntExpr(elements[0])) {
+                        var2arrayElemnt[var][index] = ExpressionHandle::evaluateConstIntExpr(elements[0]);
+                    } else {
+                        var2arrayElemnt[var][index] = ExpressionHandle::evaluateConstFloatExpr(elements[0]);
+                    }
                     index++;
                 }
             }
@@ -55,7 +59,6 @@ static T getArrayElement(IndexedRef *indexedRef) {
                     } else {
                         var2arrayElemnt[var][index] = ExpressionHandle::evaluateConstFloatExpr(elements[i]);
                     }
-
                     index++;
                 }
                 // ignore the remaining elements
