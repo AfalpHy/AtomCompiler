@@ -95,7 +95,7 @@ Stmt:
 ## Ubuntu22.04
 
 ~~~sh
-sudo apt install antlr4 libantlr4-runtime-dev llvm-dev clang gcc-riscv64-linux-gnu 
+sudo apt install antlr4 libantlr4-runtime-dev llvm-dev gcc-riscv64-linux-gnu qemu-user
 mkdir build
 cd build
 cmake ..

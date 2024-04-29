@@ -1,5 +1,5 @@
 file(GLOB sy_files *.sy)
-file(GLOB sylib_source ../sylib.c)
+file(GLOB sylib_path ../sylib.c)
 
 foreach(sy_path ${sy_files})
   string(REGEX REPLACE "\\..*$" ".in" in_path ${sy_path})
@@ -12,14 +12,14 @@ foreach(sy_path ${sy_files})
       add_test(
         NAME ${test}
         COMMAND
-          ${CMAKE_BINARY_DIR}/bin/atc ${sy_path} --sy --sy-src ${sylib_source}
+          ${CMAKE_BINARY_DIR}/bin/atc ${sy_path} --sy --sylib ${sylib_path}
           --platform ${Platform} --dump-ir -R --R-input ${in_path} --check
           --compare-file ${out_path})
     else()
       add_test(
         NAME ${test}
         COMMAND
-          ${CMAKE_BINARY_DIR}/bin/atc ${sy_path} --sy --sy-src ${sylib_source}
+          ${CMAKE_BINARY_DIR}/bin/atc ${sy_path} --sy --sylib ${sylib_path}
           --platform ${Platform} --dump-ir -R --check --compare-file
           ${out_path})
     endif()

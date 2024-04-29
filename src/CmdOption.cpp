@@ -7,7 +7,7 @@ llvm::cl::opt<std::string> SrcPath(llvm::cl::Positional, llvm::cl::desc("file"),
 
 llvm::cl::opt<bool> Sy("sy", llvm::cl::desc("include sy function"), llvm::cl::init(false), llvm::cl::cat(MyCategory));
 
-llvm::cl::opt<std::string> SySrc("sy-src", llvm::cl::desc("sy src which need to be compiled by clang"),
+llvm::cl::opt<std::string> SyLibPath("sylib", llvm::cl::desc("sy src which need to be compiled by clang"),
                                  llvm::cl::cat(MyCategory));
 
 llvm::cl::opt<bool> GenerateASM("S", llvm::cl::desc("generate asm only"), llvm::cl::init(false),

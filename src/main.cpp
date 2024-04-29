@@ -78,15 +78,15 @@ int main(int argc, const char *argv[]) {
     if (GenerateASM) {
         return 0;
     }
-    cmd = "clang -target riscv64-linux-gnu -c " + filename + ".s -o " + filename + ".o";
+    cmd = "riscv64-linux-gnu-gcc -c " + filename + ".s -o " + filename + ".o";
     ret = WEXITSTATUS(system(cmd.c_str()));
     if (ret) {
         return ret;
     }
-    if (!SySrc.empty()) {
-        cmd = "clang -target riscv64-linux-gnu  -static " + filename + ".o " + SySrc;
+    if (!SyLibPath.empty()) {
+        cmd = "riscv64-linux-gnu-gcc -static " + filename + ".o " + SyLibPath;
     } else {
-        cmd = "clang -target riscv64-linux-gnu -static " + filename + ".o ";
+        cmd = "riscv64-linux-gnu-gcc -static " + filename + ".o ";
     }
     ret = WEXITSTATUS(system(cmd.c_str()));
     if (ret) {
@@ -95,7 +95,7 @@ int main(int argc, const char *argv[]) {
 
     if (RunAfterCompiling) {
         if (Platform == "riscv") {
-            cmd = "spike  /riscv64-linux-gnu/bin/pk ./a.out";
+            cmd = "qemu-riscv64 ./a.out";
         } else if (Platform == "arm") {
             // TODO:
         }
