@@ -425,7 +425,7 @@ antlrcpp::Any ASTBuilder::visitMulExpr(ATCParser::MulExprContext *ctx) {
         mulExpr->setPosition(ctx->getStart(), unaryExprs[i]->getStop());
         left = mulExpr;
     }
-    
+
     return (Expression *)left;
 }
 
@@ -519,19 +519,22 @@ antlrcpp::Any ASTBuilder::visitLAndExpr(ATCParser::LAndExprContext *ctx) {
     auto eqExprs = ctx->eqExpr();
 
     auto left = eqExprs[0]->accept(this).as<Expression *>();
-    if (left->getClassId() == ID_BINARY_EXPRESSION) {
-        static_cast<BinaryExpression *>(left)->setNotForValue();
-    }
     for (int i = 1; i < eqExprs.size(); i++) {
         BinaryExpression *andExpr = new BinaryExpression();
 
         andExpr->setOperator(AND);
+
+        if (left->getClassId() == ID_BINARY_EXPRESSION) {
+            static_cast<BinaryExpression *>(left)->setNotForValue();
+        }
         andExpr->setLeft(left);
+
         auto right = eqExprs[i]->accept(this).as<Expression *>();
         if (right->getClassId() == ID_BINARY_EXPRESSION) {
             static_cast<BinaryExpression *>(right)->setNotForValue();
         }
         andExpr->setRight(right);
+
         andExpr->setPosition(ctx->getStart(), eqExprs[i]->getStop());
         left = andExpr;
     }
@@ -543,13 +546,14 @@ antlrcpp::Any ASTBuilder::visitLOrExpr(ATCParser::LOrExprContext *ctx) {
     auto lAndExprs = ctx->lAndExpr();
 
     auto left = lAndExprs[0]->accept(this).as<Expression *>();
-    if (left->getClassId() == ID_BINARY_EXPRESSION) {
-        static_cast<BinaryExpression *>(left)->setNotForValue();
-    }
     for (int i = 1; i < lAndExprs.size(); i++) {
         BinaryExpression *orExpr = new BinaryExpression();
 
         orExpr->setOperator(OR);
+
+        if (left->getClassId() == ID_BINARY_EXPRESSION) {
+            static_cast<BinaryExpression *>(left)->setNotForValue();
+        }
         orExpr->setLeft(left);
 
         auto right = lAndExprs[i]->accept(this).as<Expression *>();

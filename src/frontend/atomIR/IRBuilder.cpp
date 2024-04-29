@@ -790,40 +790,40 @@ Value *IRBuilder::getIndexedRefAddress(IndexedRef *indexedRef) {
     const auto &dimension = indexedRef->getDimensions();
     std::vector<int> elementSize;
 
+    int constPart = 0;
+    int dimIdx = 0;
     if (var->getDataType()->getClassId() == ID_POINTER_TYPE) {
         addr = createUnaryInst(UnaryInst::INST_LOAD, addr);
-        int i = 0;
-        dimension[i++]->accept(this);
+
+        dimension[dimIdx++]->accept(this);
         addr = createGEP(addr, {_value});
 
         ATC::PointerType *varType = (ATC::PointerType *)var->getDataType();
         if (varType->getBaseDataType()->getClassId() == ID_ARRAY_TYPE) {
             elementSize = static_cast<ATC::ArrayType *>(varType->getBaseDataType())->getElementSize();
-            Value *tmp = nullptr;
-            for (; i != dimension.size(); i++) {
-                dimension[i]->accept(this);
-                _value = createBinaryInst(BinaryInst::INST_MUL, _value, ConstantInt::get(elementSize[i - 1]));
-                if (tmp == nullptr) {
-                    tmp = _value;
-                } else {
-                    tmp = createBinaryInst(BinaryInst::INST_ADD, _value, tmp);
-                }
-            }
-            if (tmp) {
-                return createGEP(addr, {_int32Zero, tmp});
-            }
+        } else {
+            return addr;
         }
-        return addr;
+    } else {
+        elementSize = static_cast<ATC::ArrayType *>(var->getDataType())->getElementSize();
     }
-    elementSize = static_cast<ATC::ArrayType *>(var->getDataType())->getElementSize();
-    int i = 0;
-    dimension[i]->accept(this);
-    _value = createBinaryInst(BinaryInst::INST_MUL, _value, ConstantInt::get(elementSize[i]));
-    auto tmp = _value;
-    for (i = 1; i != dimension.size(); i++) {
-        dimension[i]->accept(this);
-        _value = createBinaryInst(BinaryInst::INST_MUL, _value, ConstantInt::get(elementSize[i]));
-        tmp = createBinaryInst(BinaryInst::INST_ADD, _value, tmp);
+
+    Value *tmp = nullptr;
+    int sizeIdx = 0;
+    while (dimIdx < dimension.size()) {
+        dimension[dimIdx++]->accept(this);
+        if (_value->isConst()) {
+            constPart += static_cast<ConstantInt *>(_value)->getConstValue() * elementSize[sizeIdx++];
+        } else {
+            _value = createBinaryInst(BinaryInst::INST_MUL, _value, ConstantInt::get(elementSize[sizeIdx++]));
+            tmp = tmp ? createBinaryInst(BinaryInst::INST_ADD, _value, tmp) : _value;
+        }
+    }
+
+    if (tmp == nullptr) {
+        tmp = ConstantInt::get(constPart);
+    } else if (constPart) {
+        tmp = createBinaryInst(BinaryInst::INST_ADD, ConstantInt::get(constPart), tmp);
     }
     return createGEP(addr, {_int32Zero, tmp});
 }
