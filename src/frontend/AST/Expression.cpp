@@ -50,9 +50,12 @@ static T getArrayElement(IndexedRef *indexedRef) {
                 if (elements[i]->getClassId() == ID_NESTED_EXPRESSION) {
                     processNestExpr((NestedExpression *)elements[i]);
                 } else {
-                    var2arrayElemnt[var][index] = ExpressionHandle::isIntExpr(elements[i])
-                                                      ? ExpressionHandle::evaluateConstIntExpr(elements[i])
-                                                      : ExpressionHandle::evaluateConstFloatExpr(elements[i]);
+                    if (ExpressionHandle::isIntExpr(elements[i])) {
+                        var2arrayElemnt[var][index] = ExpressionHandle::evaluateConstIntExpr(elements[i]);
+                    } else {
+                        var2arrayElemnt[var][index] = ExpressionHandle::evaluateConstFloatExpr(elements[i]);
+                    }
+
                     index++;
                 }
                 // ignore the remaining elements
