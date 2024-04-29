@@ -187,9 +187,9 @@ void IRBuilder::visit(ConstVal *node) {
 void IRBuilder::visit(VarRef *node) {
     if (node->isConst()) {
         if (ExpressionHandle::isIntExpr(node)) {
-            _value = ConstantInt::get(ExpressionHandle::evaluateConstExpr(node));
+            _value = ConstantInt::get(ExpressionHandle::evaluateConstIntExpr(node));
         } else {
-            _value = ConstantFloat::get(ExpressionHandle::evaluateConstExpr(node));
+            _value = ConstantFloat::get(ExpressionHandle::evaluateConstFloatExpr(node));
         }
         return;
     }
@@ -206,9 +206,9 @@ void IRBuilder::visit(VarRef *node) {
 void IRBuilder::visit(IndexedRef *node) {
     if (node->isConst()) {
         if (ExpressionHandle::isIntExpr(node)) {
-            _value = ConstantInt::get(ExpressionHandle::evaluateConstExpr(node));
+            _value = ConstantInt::get(ExpressionHandle::evaluateConstIntExpr(node));
         } else {
-            _value = ConstantFloat::get(ExpressionHandle::evaluateConstExpr(node));
+            _value = ConstantFloat::get(ExpressionHandle::evaluateConstFloatExpr(node));
         }
         return;
     }
@@ -318,9 +318,9 @@ void IRBuilder::visit(NestedExpression *node) {
 void IRBuilder::visit(UnaryExpression *node) {
     if (node->isConst()) {
         if (ExpressionHandle::isIntExpr(node)) {
-            _value = ConstantInt::get(ExpressionHandle::evaluateConstExpr(node));
+            _value = ConstantInt::get(ExpressionHandle::evaluateConstIntExpr(node));
         } else {
-            _value = ConstantFloat::get(ExpressionHandle::evaluateConstExpr(node));
+            _value = ConstantFloat::get(ExpressionHandle::evaluateConstFloatExpr(node));
         }
         return;
     }
@@ -343,9 +343,9 @@ void IRBuilder::visit(UnaryExpression *node) {
 void IRBuilder::visit(BinaryExpression *node) {
     if (node->isConst()) {
         if (ExpressionHandle::isIntExpr(node)) {
-            _value = ConstantInt::get(ExpressionHandle::evaluateConstExpr(node));
+            _value = ConstantInt::get(ExpressionHandle::evaluateConstIntExpr(node));
         } else {
-            _value = ConstantFloat::get(ExpressionHandle::evaluateConstExpr(node));
+            _value = ConstantFloat::get(ExpressionHandle::evaluateConstFloatExpr(node));
         }
         return;
     }

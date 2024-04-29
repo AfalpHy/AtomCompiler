@@ -190,8 +190,9 @@ private:
 
 class ExpressionHandle {
 public:
-    static float evaluateConstExpr(Expression* expr);
     static bool isIntExpr(Expression* expr);
     static bool isForValue(BinaryExpression* expr);
+    static int evaluateConstIntExpr(Expression* expr);
+    static float evaluateConstFloatExpr(Expression* expr);
 };
 }  // namespace ATC

@@ -4,21 +4,20 @@
 
 namespace ATC {
 
-static float getArrayElement(IndexedRef *indexedRef) {
-    static std::unordered_map<Variable *, std::unordered_map<int, float>> var2arrayElemnt;
+template <typename T>
+static T getArrayElement(IndexedRef *indexedRef) {
+    static std::unordered_map<Variable *, std::unordered_map<int, T>> var2arrayElemnt;
     Variable *var = indexedRef->getVariable();
     assert(var->isConst());
     Expression *initExpr = var->getInitValue();
-    if (initExpr == nullptr) {
-        return 0;
-    }
+    assert(initExpr);
     const auto &refDimensions = indexedRef->getDimensions();
 
     auto &elementSize = static_cast<ATC::ArrayType *>(var->getDataType())->getElementSize();
 
     int elementIndex = 0;
     for (int i = 0; i != refDimensions.size(); i++) {
-        elementIndex += ExpressionHandle::evaluateConstExpr(refDimensions[i]) * elementSize[i];
+        elementIndex += ExpressionHandle::evaluateConstIntExpr(refDimensions[i]) * elementSize[i];
     }
     if (var2arrayElemnt.find(var) != var2arrayElemnt.end()) {
         return var2arrayElemnt[var][elementIndex];
@@ -39,7 +38,9 @@ static float getArrayElement(IndexedRef *indexedRef) {
                 if (elements[0]->getClassId() == ID_NESTED_EXPRESSION) {
                     processNestExpr((NestedExpression *)elements[0]);
                 } else {
-                    var2arrayElemnt[var][index] = ExpressionHandle::evaluateConstExpr(elements[0]);
+                    var2arrayElemnt[var][index] = ExpressionHandle::isIntExpr(elements[0])
+                                                      ? ExpressionHandle::evaluateConstIntExpr(elements[0])
+                                                      : ExpressionHandle::evaluateConstFloatExpr(elements[0]);
                     index++;
                 }
             }
@@ -49,7 +50,9 @@ static float getArrayElement(IndexedRef *indexedRef) {
                 if (elements[i]->getClassId() == ID_NESTED_EXPRESSION) {
                     processNestExpr((NestedExpression *)elements[i]);
                 } else {
-                    var2arrayElemnt[var][index] = ExpressionHandle::evaluateConstExpr(elements[i]);
+                    var2arrayElemnt[var][index] = ExpressionHandle::isIntExpr(elements[i])
+                                                      ? ExpressionHandle::evaluateConstIntExpr(elements[i])
+                                                      : ExpressionHandle::evaluateConstFloatExpr(elements[i]);
                     index++;
                 }
                 // ignore the remaining elements
@@ -67,41 +70,129 @@ static float getArrayElement(IndexedRef *indexedRef) {
     return var2arrayElemnt[var][elementIndex];
 }
 
-float ExpressionHandle::evaluateConstExpr(Expression *expr) {
+int ExpressionHandle::evaluateConstIntExpr(Expression *expr) {
     assert(expr->isConst());
     switch (expr->getClassId()) {
         case ID_CONST_VAL: {
             auto constVal = (ConstVal *)expr;
-            if (constVal->getBasicType() == BasicType::INT) {
-                return constVal->getIntValue();
-            } else {
-                return constVal->getFloatValue();
-            }
+            return constVal->getIntValue();
         }
         case ID_VAR_REF: {
-            auto ret = evaluateConstExpr(((VarRef *)expr)->getVariable()->getInitValue());
-            if (((VarRef *)expr)->getVariable()->getBasicType() == BasicType::INT) {
-                ret = (int)ret;
-            }
-            return ret;
+            auto initValue = static_cast<VarRef *>(expr)->getVariable()->getInitValue();
+            return isIntExpr(initValue) ? evaluateConstIntExpr(initValue) : evaluateConstFloatExpr(initValue);
         }
         case ID_INDEXED_REF: {
-            return getArrayElement((IndexedRef *)expr);
+            return getArrayElement<int>((IndexedRef *)expr);
         }
         case ID_UNARY_EXPRESSION: {
             auto unaryExpr = (UnaryExpression *)expr;
             if (unaryExpr->getOperator() == NOT) {
-                return !evaluateConstExpr(unaryExpr->getOperand());
+                return !(isIntExpr(unaryExpr->getOperand()) ? evaluateConstIntExpr(unaryExpr->getOperand())
+                                                            : evaluateConstFloatExpr(unaryExpr->getOperand()));
             } else if (unaryExpr->getOperator() == MINUS) {
-                return -evaluateConstExpr(unaryExpr->getOperand());
+                return -evaluateConstIntExpr(unaryExpr->getOperand());
             } else {
-                return evaluateConstExpr(unaryExpr->getOperand());
+                return evaluateConstIntExpr(unaryExpr->getOperand());
             }
         }
         default: {
             auto binaryExpr = (BinaryExpression *)expr;
-            auto left = evaluateConstExpr(binaryExpr->getLeft());
-            auto right = evaluateConstExpr(binaryExpr->getRight());
+            if (isIntExpr(binaryExpr->getLeft()) && isIntExpr(binaryExpr->getRight())) {
+                auto left = evaluateConstIntExpr(binaryExpr->getLeft());
+                auto right = evaluateConstIntExpr(binaryExpr->getRight());
+                switch (binaryExpr->getOperator()) {
+                    case PLUS:
+                        return left + right;
+                    case MINUS:
+                        return left - right;
+                    case MUL:
+                        return left * right;
+                    case DIV:
+                        return left / right;
+                    case MOD:
+                        return left % right;
+                    case LT:
+                        return left < right;
+                    case GT:
+                        return left > right;
+                    case LE:
+                        return left <= right;
+                    case GE:
+                        return left >= right;
+                    case EQ:
+                        return left == right;
+                    case NE:
+                        return left != right;
+                    case AND:
+                        return left && right;
+                    case OR:
+                        return left || right;
+                    default:
+                        assert(false && "could not reach here");
+                        break;
+                }
+            } else {
+                float left = isIntExpr(binaryExpr->getLeft()) ? evaluateConstIntExpr(binaryExpr->getLeft())
+                                                              : evaluateConstFloatExpr(binaryExpr->getLeft());
+                float right = isIntExpr(binaryExpr->getRight()) ? evaluateConstIntExpr(binaryExpr->getRight())
+                                                                : evaluateConstFloatExpr(binaryExpr->getRight());
+                switch (binaryExpr->getOperator()) {
+                    case LT:
+                        return left < right;
+                    case GT:
+                        return left > right;
+                    case LE:
+                        return left <= right;
+                    case GE:
+                        return left >= right;
+                    case EQ:
+                        return left == right;
+                    case NE:
+                        return left != right;
+                    case AND:
+                        return left && right;
+                    case OR:
+                        return left || right;
+                    default:
+                        assert(false && "could not reach here");
+                        break;
+                }
+            }
+        }
+    }
+}
+
+float ExpressionHandle::evaluateConstFloatExpr(Expression *expr) {
+    assert(expr->isConst());
+    switch (expr->getClassId()) {
+        case ID_CONST_VAL: {
+            auto constVal = (ConstVal *)expr;
+            return constVal->getFloatValue();
+        }
+        case ID_VAR_REF: {
+            auto initValue = static_cast<VarRef *>(expr)->getVariable()->getInitValue();
+            return isIntExpr(initValue) ? evaluateConstIntExpr(initValue) : evaluateConstFloatExpr(initValue);
+        }
+        case ID_INDEXED_REF: {
+            return getArrayElement<float>((IndexedRef *)expr);
+        }
+        case ID_UNARY_EXPRESSION: {
+            auto unaryExpr = (UnaryExpression *)expr;
+            if (unaryExpr->getOperator() == PLUS) {
+                return evaluateConstFloatExpr(unaryExpr->getOperand());
+            } else if (unaryExpr->getOperator() == MINUS) {
+                return -evaluateConstFloatExpr(unaryExpr->getOperand());
+            } else {
+                assert(false && "could not reach here");
+                break;
+            }
+        }
+        default: {
+            auto binaryExpr = (BinaryExpression *)expr;
+            float left = isIntExpr(binaryExpr->getLeft()) ? evaluateConstIntExpr(binaryExpr->getLeft())
+                                                          : evaluateConstFloatExpr(binaryExpr->getLeft());
+            float right = isIntExpr(binaryExpr->getRight()) ? evaluateConstIntExpr(binaryExpr->getRight())
+                                                            : evaluateConstFloatExpr(binaryExpr->getRight());
             switch (binaryExpr->getOperator()) {
                 case PLUS:
                     return left + right;
@@ -111,24 +202,6 @@ float ExpressionHandle::evaluateConstExpr(Expression *expr) {
                     return left * right;
                 case DIV:
                     return left / right;
-                case MOD:
-                    return (int)left % (int)right;
-                case LT:
-                    return left < right;
-                case GT:
-                    return left > right;
-                case LE:
-                    return left <= right;
-                case GE:
-                    return left >= right;
-                case EQ:
-                    return left == right;
-                case NE:
-                    return left != right;
-                case AND:
-                    return left && right;
-                case OR:
-                    return left || right;
                 default:
                     assert(false && "could not reach here");
                     break;

@@ -17,7 +17,7 @@ std::vector<CompUnit *> CompUnit::AllCompUnits;
 static void fixupArrayType(ArrayType *arrayType) {
     const auto &dimensionExprs = arrayType->getDimensionExprs();
     for (auto expr : dimensionExprs) {
-        arrayType->addDimension(ExpressionHandle::evaluateConstExpr(expr));
+        arrayType->addDimension(ExpressionHandle::evaluateConstIntExpr(expr));
     }
     const auto &dimensions = arrayType->getDimensions();
     std::vector<int> elementSize(dimensionExprs.size());
