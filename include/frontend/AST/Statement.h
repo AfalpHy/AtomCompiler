@@ -9,13 +9,11 @@ namespace ATC {
 class Statement : public TreeNode {
 public:
     Statement() = default;
-    Statement(TreeNode* parent) : TreeNode(parent) {}
 };
 
 class Block : public Statement {
 public:
     Block() = default;
-    Block(TreeNode* parent) : Statement(parent) {}
 
     virtual int getClassId() override { return ID_BLOCK; }
 
@@ -32,7 +30,6 @@ private:
 class BlankStatement : public Statement {
 public:
     BlankStatement() = default;
-    BlankStatement(TreeNode* parent) : Statement(parent) {}
 
     virtual int getClassId() override { return ID_BLANK_STATEMENT; }
 };
@@ -40,7 +37,6 @@ public:
 class AssignStatement : public Statement {
 public:
     AssignStatement() = default;
-    AssignStatement(TreeNode* parent) : Statement(parent) {}
 
     virtual int getClassId() override { return ID_ASSIGN_STATEMENT; }
 
@@ -60,7 +56,6 @@ private:
 class IfStatement : public Statement {
 public:
     IfStatement() = default;
-    IfStatement(TreeNode* parent) : Statement(parent) {}
 
     virtual int getClassId() override { return ID_IF_STATEMENT; }
 
@@ -83,7 +78,6 @@ private:
 class ElseStatement : public Statement {
 public:
     ElseStatement() = default;
-    ElseStatement(TreeNode* parent) : Statement(parent) {}
 
     virtual int getClassId() override { return ID_ELSE_STATEMENT; }
 
@@ -100,7 +94,6 @@ private:
 class WhileStatement : public Statement {
 public:
     WhileStatement() = default;
-    WhileStatement(TreeNode* parent) : Statement(parent) {}
 
     virtual int getClassId() override { return ID_WHILE_STATEMENT; }
 
@@ -120,7 +113,6 @@ private:
 class BreakStatement : public Statement {
 public:
     BreakStatement() = default;
-    BreakStatement(TreeNode* parent) : Statement(parent) {}
 
     virtual int getClassId() override { return ID_BREAK_STATEMENT; }
 
@@ -130,7 +122,6 @@ public:
 class ContinueStatement : public Statement {
 public:
     ContinueStatement() = default;
-    ContinueStatement(TreeNode* parent) : Statement(parent) {}
 
     virtual int getClassId() override { return ID_CONTINUE_STATEMENT; }
 
@@ -140,7 +131,6 @@ public:
 class ReturnStatement : public Statement {
 public:
     ReturnStatement() = default;
-    ReturnStatement(TreeNode* parent) : Statement(parent) {}
 
     virtual int getClassId() override { return ID_RETURN_STATEMENT; }
 
@@ -157,7 +147,6 @@ private:
 class OtherStatement : public Statement {
 public:
     OtherStatement() = default;
-    OtherStatement(TreeNode* parent) : Statement(parent) {}
 
     virtual int getClassId() override { return ID_OTHER_STATEMENT; }
 

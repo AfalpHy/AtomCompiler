@@ -249,8 +249,7 @@ void IRBuilder::visit(NestedExpression *node) {
         dimensions.clear();
         element.clear();
         zeroNum = 0;
-        assert(node->getParent()->getClassId() == ID_VARIABLE);
-        auto var = (Variable *)node->getParent();
+        auto var = node->getVariable();
         assert(var->getDataType()->getClassId() == ID_ARRAY_TYPE);
         ATC::ArrayType *varType = (ATC::ArrayType *)var->getDataType();
         basicType = convertToAtomType(var->getBasicType());
@@ -351,7 +350,7 @@ void IRBuilder::visit(BinaryExpression *node) {
     }
     if (node->getOperator() == AND || node->getOperator() == OR) {
         // calculate the value of short circuit expr, not for condition
-        bool forValue = ExpressionHandle::isForValue(node);
+        bool forValue = node->isForValue();
         Value *valueAddr = nullptr;
         BasicBlock *saveTrueBB = nullptr;
         BasicBlock *saveFalseBB = nullptr;
@@ -450,7 +449,7 @@ void IRBuilder::visit(BinaryExpression *node) {
             _value = createBinaryInst(BinaryInst::INST_MOD, left, right);
             break;
         case LT: {
-            if (ExpressionHandle::isForValue(node)) {
+            if (node->isForValue()) {
                 _value = createBinaryInst(BinaryInst::INST_LT, left, right);
             } else {
                 createCondJump(CondJumpInst::INST_JLT, _trueBB, _falseBB, left, right);
@@ -458,7 +457,7 @@ void IRBuilder::visit(BinaryExpression *node) {
             break;
         }
         case GT: {
-            if (ExpressionHandle::isForValue(node)) {
+            if (node->isForValue()) {
                 _value = createBinaryInst(BinaryInst::INST_GT, left, right);
             } else {
                 createCondJump(CondJumpInst::INST_JGT, _trueBB, _falseBB, left, right);
@@ -466,7 +465,7 @@ void IRBuilder::visit(BinaryExpression *node) {
             break;
         }
         case LE: {
-            if (ExpressionHandle::isForValue(node)) {
+            if (node->isForValue()) {
                 _value = createBinaryInst(BinaryInst::INST_LE, left, right);
             } else {
                 createCondJump(CondJumpInst::INST_JLE, _trueBB, _falseBB, left, right);
@@ -474,7 +473,7 @@ void IRBuilder::visit(BinaryExpression *node) {
             break;
         }
         case GE: {
-            if (ExpressionHandle::isForValue(node)) {
+            if (node->isForValue()) {
                 _value = createBinaryInst(BinaryInst::INST_GE, left, right);
             } else {
                 createCondJump(CondJumpInst::INST_JGE, _trueBB, _falseBB, left, right);
@@ -482,7 +481,7 @@ void IRBuilder::visit(BinaryExpression *node) {
             break;
         }
         case EQ: {
-            if (ExpressionHandle::isForValue(node)) {
+            if (node->isForValue()) {
                 _value = createBinaryInst(BinaryInst::INST_EQ, left, right);
             } else {
                 createCondJump(CondJumpInst::INST_JEQ, _trueBB, _falseBB, left, right);
@@ -490,7 +489,7 @@ void IRBuilder::visit(BinaryExpression *node) {
             break;
         }
         case NE: {
-            if (ExpressionHandle::isForValue(node)) {
+            if (node->isForValue()) {
                 _value = createBinaryInst(BinaryInst::INST_NE, left, right);
             } else {
                 createCondJump(CondJumpInst::INST_JNE, _trueBB, _falseBB, left, right);

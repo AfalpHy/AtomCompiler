@@ -56,16 +56,13 @@ typedef struct {
 class TreeNode {
 public:
     TreeNode() = default;
-    TreeNode(TreeNode* parent) : _parent(parent) {}
 
     virtual int getClassId() = 0;
 
-    TreeNode* getParent() { return _parent; }
     std::string getName() { return _name; }
     Position getPosition() { return _position; }
     Scope* getScope() { return _scope; }
 
-    void setParent(TreeNode* parent) { _parent = parent; }
     void setName(std::string name) { _name = name; }
     void setPosition(antlr4::Token* start, antlr4::Token* stop);
     void setScope(Scope* scope) { _scope = scope; }
@@ -73,7 +70,6 @@ public:
     ACCEPT
 
 protected:
-    TreeNode* _parent = nullptr;
     std::string _name;
     Position _position;
     Scope* _scope = nullptr;

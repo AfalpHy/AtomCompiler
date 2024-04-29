@@ -8,7 +8,6 @@ class Expression;
 class Variable : public TreeNode {
 public:
     Variable() = default;
-    Variable(TreeNode* parent) : TreeNode(parent) {}
 
     virtual int getClassId() { return ID_VARIABLE; }
 
@@ -27,7 +26,7 @@ public:
     ACCEPT
 
 private:
-    DataType* _dataType;
+    DataType* _dataType = nullptr;
     Expression* _initValue = nullptr;
     bool _isConst = false;
     bool _isGlobal = false;

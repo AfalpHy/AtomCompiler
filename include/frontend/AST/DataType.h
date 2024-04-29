@@ -8,7 +8,6 @@ class Expression;
 class DataType : public TreeNode {
 public:
     DataType() = default;
-    DataType(TreeNode* parent) : TreeNode(parent) {}
 
     virtual int getBasicType() = 0;
     virtual DataType* getBaseDataType() { return nullptr; }
@@ -17,7 +16,6 @@ public:
 class BasicType : public DataType {
 public:
     BasicType() = default;
-    BasicType(TreeNode* parent) : DataType(parent) {}
 
     virtual int getClassId() override { return ID_BASIC_TYPE; }
 
@@ -35,7 +33,6 @@ private:
 class ArrayType : public DataType {
 public:
     ArrayType() = default;
-    ArrayType(TreeNode* parent) : DataType(parent) {}
 
     virtual int getClassId() override { return ID_ARRAY_TYPE; }
 
@@ -67,7 +64,6 @@ private:
 class PointerType : public DataType {
 public:
     PointerType() = default;
-    PointerType(TreeNode* parent) : DataType(parent) {}
 
     virtual int getClassId() override { return ID_POINTER_TYPE; }
 

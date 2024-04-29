@@ -15,7 +15,6 @@ class Function;
 class FunctionDef : public TreeNode {
 public:
     FunctionDef() = default;
-    FunctionDef(TreeNode* parent) : TreeNode(parent) {}
 
     virtual int getClassId() override { return ID_FUNCTION_DEF; }
 

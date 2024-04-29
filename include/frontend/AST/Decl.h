@@ -10,13 +10,11 @@ namespace ATC {
 class Decl : public TreeNode {
 public:
     Decl() = default;
-    Decl(TreeNode* parent) : TreeNode(parent) {}
 };
 
 class VarDecl : public Decl {
 public:
     VarDecl() = default;
-    VarDecl(TreeNode* parent) : Decl(parent) {}
 
     virtual int getClassId() { return ID_VAR_DECL; }
 
