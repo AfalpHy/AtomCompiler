@@ -85,7 +85,10 @@ int ExpressionHandle::evaluateConstIntExpr(Expression *expr) {
         }
         case ID_VAR_REF: {
             auto initValue = static_cast<VarRef *>(expr)->getVariable()->getInitValue();
-            return isIntExpr(initValue) ? evaluateConstIntExpr(initValue) : evaluateConstFloatExpr(initValue);
+            if (isIntExpr(initValue)) {
+                return evaluateConstIntExpr(initValue);
+            }
+            return evaluateConstFloatExpr(initValue);
         }
         case ID_INDEXED_REF: {
             return getArrayElement<int>((IndexedRef *)expr);
@@ -93,8 +96,10 @@ int ExpressionHandle::evaluateConstIntExpr(Expression *expr) {
         case ID_UNARY_EXPRESSION: {
             auto unaryExpr = (UnaryExpression *)expr;
             if (unaryExpr->getOperator() == NOT) {
-                return !(isIntExpr(unaryExpr->getOperand()) ? evaluateConstIntExpr(unaryExpr->getOperand())
-                                                            : evaluateConstFloatExpr(unaryExpr->getOperand()));
+                if (isIntExpr(unaryExpr->getOperand())) {
+                    return !evaluateConstIntExpr(unaryExpr->getOperand());
+                }
+                return !evaluateConstFloatExpr(unaryExpr->getOperand());
             } else if (unaryExpr->getOperator() == MINUS) {
                 return -evaluateConstIntExpr(unaryExpr->getOperand());
             } else {
@@ -138,10 +143,18 @@ int ExpressionHandle::evaluateConstIntExpr(Expression *expr) {
                         break;
                 }
             } else {
-                float left = isIntExpr(binaryExpr->getLeft()) ? evaluateConstIntExpr(binaryExpr->getLeft())
-                                                              : evaluateConstFloatExpr(binaryExpr->getLeft());
-                float right = isIntExpr(binaryExpr->getRight()) ? evaluateConstIntExpr(binaryExpr->getRight())
-                                                                : evaluateConstFloatExpr(binaryExpr->getRight());
+                float left;
+                if (isIntExpr(binaryExpr->getLeft())) {
+                    left = evaluateConstIntExpr(binaryExpr->getLeft());
+                } else {
+                    left = evaluateConstFloatExpr(binaryExpr->getLeft());
+                }
+                float right;
+                if (isIntExpr(binaryExpr->getRight())) {
+                    right = evaluateConstIntExpr(binaryExpr->getRight());
+                } else {
+                    right = evaluateConstFloatExpr(binaryExpr->getRight());
+                }
                 switch (binaryExpr->getOperator()) {
                     case LT:
                         return left < right;
@@ -177,7 +190,10 @@ float ExpressionHandle::evaluateConstFloatExpr(Expression *expr) {
         }
         case ID_VAR_REF: {
             auto initValue = static_cast<VarRef *>(expr)->getVariable()->getInitValue();
-            return isIntExpr(initValue) ? evaluateConstIntExpr(initValue) : evaluateConstFloatExpr(initValue);
+            if (isIntExpr(initValue)) {
+                return evaluateConstIntExpr(initValue);
+            }
+            return evaluateConstFloatExpr(initValue);
         }
         case ID_INDEXED_REF: {
             return getArrayElement<float>((IndexedRef *)expr);
@@ -195,10 +211,18 @@ float ExpressionHandle::evaluateConstFloatExpr(Expression *expr) {
         }
         default: {
             auto binaryExpr = (BinaryExpression *)expr;
-            float left = isIntExpr(binaryExpr->getLeft()) ? evaluateConstIntExpr(binaryExpr->getLeft())
-                                                          : evaluateConstFloatExpr(binaryExpr->getLeft());
-            float right = isIntExpr(binaryExpr->getRight()) ? evaluateConstIntExpr(binaryExpr->getRight())
-                                                            : evaluateConstFloatExpr(binaryExpr->getRight());
+            float left;
+            if (isIntExpr(binaryExpr->getLeft())) {
+                left = evaluateConstIntExpr(binaryExpr->getLeft());
+            } else {
+                left = evaluateConstFloatExpr(binaryExpr->getLeft());
+            }
+            float right;
+            if (isIntExpr(binaryExpr->getRight())) {
+                right = evaluateConstIntExpr(binaryExpr->getRight());
+            } else {
+                right = evaluateConstFloatExpr(binaryExpr->getRight());
+            }
             switch (binaryExpr->getOperator()) {
                 case PLUS:
                     return left + right;
