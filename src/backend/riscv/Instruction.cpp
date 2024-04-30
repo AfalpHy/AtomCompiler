@@ -128,8 +128,7 @@ std::string BinaryInst::toString() {
             return "flt.s\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
         case INST_FSLE_S:
             return "fle.s\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
-        case INST_FSEQ_S:
-        case INST_FSNE_S:
+        case INST_FEQ_S:
             return "feq.s\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
         default:
             assert(0 && "unsupported");

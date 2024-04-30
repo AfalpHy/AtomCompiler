@@ -577,9 +577,10 @@ void CodeGenerator::emitUnaryInst(AtomIR::UnaryInst* inst) {
             break;
         }
         case AtomIR::UnaryInst::INST_ITOF: {
+            // optimize covert time when the value must be 0 or 1
             for (auto preInst : _currentBasicBlock->getInstructionList()) {
                 if (preInst->getDest() == src1 && preInst->getClassId() == ID_BINARY_INST &&
-                    preInst->getInstType() == BinaryInst::INST_FSEQ_S) {
+                    preInst->getInstType() == BinaryInst::INST_FEQ_S) {
                     auto oneBB = new BasicBlock();
                     auto zeroBB = new BasicBlock();
                     auto afterBB = new BasicBlock();
@@ -655,20 +656,20 @@ void CodeGenerator::emitCondJumpInst(AtomIR::CondJumpInst* inst) {
                 break;
             case AtomIR::CondJumpInst::INST_JGE:
                 type = CondJumpInst::INST_BGE;
+                break;
             default:
+                assert(0 && "can't not reach here");
                 break;
         }
     } else {
-        auto intZero = loadConstInt(0);
-
         Instruction* cmpInst;
         type = CondJumpInst::INST_BNE;
         switch (inst->getInstType()) {
             case AtomIR::CondJumpInst::INST_JEQ:
-                cmpInst = new BinaryInst(BinaryInst::INST_FSEQ_S, src1, src2);
+                cmpInst = new BinaryInst(BinaryInst::INST_FEQ_S, src1, src2);
                 break;
             case AtomIR::CondJumpInst::INST_JNE:
-                cmpInst = new BinaryInst(BinaryInst::INST_FSEQ_S, src1, src2);
+                cmpInst = new BinaryInst(BinaryInst::INST_FEQ_S, src1, src2);
                 type = CondJumpInst::INST_BEQ;
                 break;
             case AtomIR::CondJumpInst::INST_JLT:
@@ -682,12 +683,14 @@ void CodeGenerator::emitCondJumpInst(AtomIR::CondJumpInst* inst) {
                 break;
             case AtomIR::CondJumpInst::INST_JGE:
                 cmpInst = new BinaryInst(BinaryInst::INST_FSLE_S, src2, src1);
+                break;
             default:
+                assert(0 && "can't not reach here");
                 break;
         }
         _currentBasicBlock->addInstruction(cmpInst);
         src1 = cmpInst->getDest();
-        src2 = intZero;
+        src2 = loadConstInt(0);
     }
     /// FIXME:Temporarily reslove the problem of relocation failure, need to modify
     auto newBB = new BasicBlock();
@@ -823,8 +826,8 @@ Register* CodeGenerator::emitIntBinaryInst(int instType, AtomIR::Value* operand1
             if (src2) {
                 binaryInst = new BinaryInst(BinaryInst::INST_SLT, src1, src2);
             } else {
-                src2 = loadConstInt(imm);
                 if (imm < -2048 || imm > 2047) {
+                    src2 = loadConstInt(imm);
                     binaryInst = new BinaryInst(BinaryInst::INST_SLT, src1, src2);
                 } else {
                     binaryInst = new BinaryInst(BinaryInst::INST_SLTI, src1, imm);
@@ -898,7 +901,7 @@ Register* CodeGenerator::emitFloatBinaryInst(int instType, AtomIR::Value* operan
             break;
         case AtomIR::BinaryInst::INST_EQ:
         case AtomIR::BinaryInst::INST_NE:
-            binaryInst = new BinaryInst(BinaryInst::INST_FSEQ_S, src1, src2);
+            binaryInst = new BinaryInst(BinaryInst::INST_FEQ_S, src1, src2);
             break;
         default:
             assert(0 && "unsupported yet");

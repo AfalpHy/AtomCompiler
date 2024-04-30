@@ -246,8 +246,7 @@ public:
         INST_FDIV_S,
         INST_FSLT_S,
         INST_FSLE_S,
-        INST_FSEQ_S,
-        INST_FSNE_S  // just for next inst, the asm code same as INST_FSEQ_S
+        INST_FEQ_S
     };
 };
 
