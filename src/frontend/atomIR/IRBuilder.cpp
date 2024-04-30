@@ -503,6 +503,12 @@ void IRBuilder::visit(BinaryExpression *node) {
 }
 
 void IRBuilder::visit(FunctionCall *node) {
+    if (Sy && (node->getName() == "starttime" || node->getName() == "stoptime")) {
+        std::string funName = "_sysy_" + node->getName();
+        _value = createFunctionCall(*_funcName2funcType[funName], funName,
+                                    {ConstantInt::get(node->getPosition()._leftLine)});
+        return;
+    }
     std::vector<Value *> params;
     FunctionType *funcTy = nullptr;
     funcTy = _funcName2funcType[node->getName()];

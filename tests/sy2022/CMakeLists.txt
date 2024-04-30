@@ -36,3 +36,4 @@ endfunction()
 
 add_subdirectory(functional)
 add_subdirectory(hidden_functional)
+add_subdirectory(performance)
