@@ -9,7 +9,7 @@ namespace AtomIR {
 std::string Module::toString() {
     std::stringstream ss;
     for (auto item : _globalVariables) {
-        ss << item->toString() << std::endl;
+        ss << item->getValueStr() << " = " << item->getInitialValue()->toString() << std::endl;
     }
 
     ss << std::endl;

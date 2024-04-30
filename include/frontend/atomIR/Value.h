@@ -116,8 +116,6 @@ public:
 
     virtual bool isGlobal() { return true; }
 
-    virtual std::string toString() override;
-
 private:
     Value* _init = nullptr;
 };

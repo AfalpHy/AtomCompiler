@@ -372,6 +372,7 @@ antlrcpp::Any ASTBuilder::visitUnaryExpr(ATCParser::UnaryExprContext *ctx) {
             }
         }
         functionCall->setFunctionDef(CurrentScope->getFunctionDef(functionCall->getName()));
+        functionCall->setPosition(ctx->getStart(), ctx->getStop());
         return (Expression *)functionCall;
     } else {
         auto unaryExpr = new UnaryExpression();

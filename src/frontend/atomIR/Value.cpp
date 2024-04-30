@@ -61,14 +61,6 @@ std::string ArrayValue::toString() {
     return str;
 }
 
-std::string GloabalVariable::toString() {
-    std::string str = getValueStr();
-    if (_init) {
-        str.append(" = ").append(_init->toString());
-    }
-    return str;
-}
-
 std::string Value::getValueStr() { return _belong->getUniqueNameInFunction(this); }
 
 std::string ConstantInt::getValueStr() { return std::to_string(_constValue); }
