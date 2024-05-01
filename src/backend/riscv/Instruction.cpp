@@ -124,9 +124,9 @@ std::string BinaryInst::toString() {
             return "fmul.s\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
         case INST_FDIV_S:
             return "fdiv.s\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
-        case INST_FSLT_S:
+        case INST_FLT_S:
             return "flt.s\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
-        case INST_FSLE_S:
+        case INST_FLE_S:
             return "fle.s\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();
         case INST_FEQ_S:
             return "feq.s\t" + _dest->getName() + ", " + _src1->getName() + ", " + _src2->getName();

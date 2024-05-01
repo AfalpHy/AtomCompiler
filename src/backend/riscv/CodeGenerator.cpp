@@ -186,7 +186,6 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
         }
         // prepare the BasicBlocks
         _entryBB = new BasicBlock();
-        _entryBB->setIsEntry();
         for (auto bb : function->getBasicBlocks()) {
             _atomBB2asmBB[bb] = new BasicBlock();
         }
@@ -277,6 +276,26 @@ void CodeGenerator::emitFunction(AtomIR::Function* function) {
 
     _retBB->addInstruction(new ReturnInst());
 
+    // remove redundant jump and lable
+    for (auto begin = _currentFunction->getBasicBlocks().begin(); begin != _currentFunction->getBasicBlocks().end();
+         begin++) {
+        auto tmpBB = *begin;
+        if (tmpBB->getPredecessors().empty()) {
+            tmpBB->setIsNeedLable(false);
+        }
+        auto lastInst = tmpBB->getInstructionList().back();
+        if (lastInst->getClassId() == ID_JUMP_INST) {
+            BasicBlock* targetBB = static_cast<JumpInst*>(lastInst)->getTargetBB();
+            auto nextBBIter = begin;
+            auto nextBB = *++nextBBIter;
+            if (nextBB == targetBB) {
+                tmpBB->getMutableInstructionList().pop_back();
+                if (targetBB->getPredecessors().size() == 1) {
+                    targetBB->setIsNeedLable(false);
+                }
+            }
+        }
+    }
     _contend << _currentFunction->toString();
 }
 
@@ -580,7 +599,9 @@ void CodeGenerator::emitUnaryInst(AtomIR::UnaryInst* inst) {
             // optimize covert time when the value must be 0 or 1
             for (auto preInst : _currentBasicBlock->getInstructionList()) {
                 if (preInst->getDest() == src1 && preInst->getClassId() == ID_BINARY_INST &&
-                    preInst->getInstType() == BinaryInst::INST_FEQ_S) {
+                    (preInst->getInstType() == BinaryInst::INST_FLT_S ||
+                     preInst->getInstType() == BinaryInst::INST_FLE_S ||
+                     preInst->getInstType() == BinaryInst::INST_FEQ_S)) {
                     auto oneBB = new BasicBlock();
                     auto zeroBB = new BasicBlock();
                     auto afterBB = new BasicBlock();
@@ -673,16 +694,16 @@ void CodeGenerator::emitCondJumpInst(AtomIR::CondJumpInst* inst) {
                 type = CondJumpInst::INST_BEQ;
                 break;
             case AtomIR::CondJumpInst::INST_JLT:
-                cmpInst = new BinaryInst(BinaryInst::INST_FSLT_S, src1, src2);
+                cmpInst = new BinaryInst(BinaryInst::INST_FLT_S, src1, src2);
                 break;
             case AtomIR::CondJumpInst::INST_JLE:
-                cmpInst = new BinaryInst(BinaryInst::INST_FSLE_S, src1, src2);
+                cmpInst = new BinaryInst(BinaryInst::INST_FLE_S, src1, src2);
                 break;
             case AtomIR::CondJumpInst::INST_JGT:
-                cmpInst = new BinaryInst(BinaryInst::INST_FSLT_S, src2, src1);
+                cmpInst = new BinaryInst(BinaryInst::INST_FLT_S, src2, src1);
                 break;
             case AtomIR::CondJumpInst::INST_JGE:
-                cmpInst = new BinaryInst(BinaryInst::INST_FSLE_S, src2, src1);
+                cmpInst = new BinaryInst(BinaryInst::INST_FLE_S, src2, src1);
                 break;
             default:
                 assert(0 && "can't not reach here");
@@ -886,18 +907,18 @@ Register* CodeGenerator::emitFloatBinaryInst(int instType, AtomIR::Value* operan
             binaryInst = new BinaryInst(BinaryInst::INST_FDIV_S, src1, src2);
             break;
         case AtomIR::BinaryInst::INST_LT:
-            binaryInst = new BinaryInst(BinaryInst::INST_FSLT_S, src1, src2);
+            binaryInst = new BinaryInst(BinaryInst::INST_FLT_S, src1, src2);
             break;
         case AtomIR::BinaryInst::INST_LE:
-            binaryInst = new BinaryInst(BinaryInst::INST_FSLE_S, src1, src2);
+            binaryInst = new BinaryInst(BinaryInst::INST_FLE_S, src1, src2);
             break;
         case AtomIR::BinaryInst::INST_GT:
             std::swap(src1, src2);
-            binaryInst = new BinaryInst(BinaryInst::INST_FSLT_S, src1, src2);
+            binaryInst = new BinaryInst(BinaryInst::INST_FLT_S, src1, src2);
             break;
         case AtomIR::BinaryInst::INST_GE:
             std::swap(src1, src2);
-            binaryInst = new BinaryInst(BinaryInst::INST_FSLE_S, src1, src2);
+            binaryInst = new BinaryInst(BinaryInst::INST_FLE_S, src1, src2);
             break;
         case AtomIR::BinaryInst::INST_EQ:
         case AtomIR::BinaryInst::INST_NE:

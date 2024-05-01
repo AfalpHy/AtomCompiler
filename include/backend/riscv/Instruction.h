@@ -244,8 +244,8 @@ public:
         INST_FSUB_S,
         INST_FMUL_S,
         INST_FDIV_S,
-        INST_FSLT_S,
-        INST_FSLE_S,
+        INST_FLT_S,
+        INST_FLE_S,
         INST_FEQ_S
     };
 };

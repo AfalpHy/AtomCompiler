@@ -15,7 +15,7 @@ public:
 
     const std::string &getName() { return _name; }
 
-    void setIsEntry() { _entry = true; }
+    void setIsNeedLable(bool b) { _needLabel = b; }
     void addInstruction(Instruction *inst);
     void addPredecessor(BasicBlock *bb) { _predecessors.push_back(bb); }
     void addSuccessor(BasicBlock *bb) { _successors.push_back(bb); }
@@ -29,10 +29,7 @@ public:
 
     std::string toString() {
         std::string str;
-        if (!_entry) {
-            if (_predecessors.empty() && _successors.empty()) {
-                return "";
-            }
+        if (_needLabel) {
             str.append(_name + ":\n");
         }
         for (auto inst : _instructions) {
@@ -48,7 +45,7 @@ public:
 
 private:
     static int Index;
-    bool _entry = false;
+    bool _needLabel = true;
     std::string _name;
     std::list<Instruction *> _instructions;
     std::vector<BasicBlock *> _predecessors;

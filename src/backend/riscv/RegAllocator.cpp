@@ -174,6 +174,7 @@ void RegAllocator::spill() {
         }
         if (spillPos != instList.end()) {
             if (_needSpill->isIntReg()) {
+                /// FIXME:_currentOffset may exceed the immediate number range 
                 instList.insert(++spillPos,
                                 new StoreInst(StoreInst::INST_SD, _needSpill, Register::S0, _currentOffset));
             } else {
