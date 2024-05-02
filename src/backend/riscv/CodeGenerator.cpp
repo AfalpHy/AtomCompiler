@@ -154,7 +154,7 @@ void CodeGenerator::emitFunction(IR::Function* function) {
         _value2reg.clear();
         _value2offset.clear();
         _paramInStack.clear();
-        _atomBB2asmBB.clear();
+        _IRBB2asmBB.clear();
         _maxPassParamsStackOffset = 0;
         _currentFunction->getMutableBasicBlocks().clear();
 
@@ -187,7 +187,7 @@ void CodeGenerator::emitFunction(IR::Function* function) {
         // prepare the BasicBlocks
         _entryBB = new BasicBlock();
         for (auto bb : function->getBasicBlocks()) {
-            _atomBB2asmBB[bb] = new BasicBlock();
+            _IRBB2asmBB[bb] = new BasicBlock();
         }
         _retBB = new BasicBlock("." + function->getName() + "_ret");
 
@@ -300,7 +300,7 @@ void CodeGenerator::emitFunction(IR::Function* function) {
 }
 
 void CodeGenerator::emitBasicBlock(IR::BasicBlock* basicBlock) {
-    _currentBasicBlock = _atomBB2asmBB[basicBlock];
+    _currentBasicBlock = _IRBB2asmBB[basicBlock];
     _currentFunction->addBasicBlock(_currentBasicBlock);
     for (auto inst : basicBlock->getInstructionList()) {
         emitInstruction(inst);
@@ -338,7 +338,7 @@ void CodeGenerator::emitInstruction(IR::Instruction* inst) {
             break;
         case IR::ID_JUMP_INST: {
             IR::JumpInst* jumpInst = (IR::JumpInst*)inst;
-            _currentBasicBlock->addInstruction(new JumpInst(_atomBB2asmBB[jumpInst->getTargetBB()]));
+            _currentBasicBlock->addInstruction(new JumpInst(_IRBB2asmBB[jumpInst->getTargetBB()]));
             break;
         }
         case IR::ID_COND_JUMP_INST:
@@ -719,9 +719,9 @@ void CodeGenerator::emitCondJumpInst(IR::CondJumpInst* inst) {
     /// FIXME:Temporarily reslove the problem of relocation failure, need to modify
     auto newBB = new BasicBlock();
     _currentFunction->addBasicBlock(newBB);
-    newBB->addInstruction(new JumpInst(_atomBB2asmBB[inst->getTureBB()]));
+    newBB->addInstruction(new JumpInst(_IRBB2asmBB[inst->getTureBB()]));
     _currentBasicBlock->addInstruction(new CondJumpInst(type, src1, src2, newBB));
-    _currentBasicBlock->addInstruction(new JumpInst(_atomBB2asmBB[inst->getFalseBB()]));
+    _currentBasicBlock->addInstruction(new JumpInst(_IRBB2asmBB[inst->getFalseBB()]));
 }
 
 Register* CodeGenerator::emitIntBinaryInst(int instType, IR::Value* operand1, IR::Value* operand2) {

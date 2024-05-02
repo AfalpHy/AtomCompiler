@@ -79,7 +79,7 @@ private:
 
     std::set<IR::Value *> _paramInStack;  // params saved in stack
 
-    std::unordered_map<IR::BasicBlock *, BasicBlock *> _atomBB2asmBB;  // IR BasicBlock to asm BasicBlock
+    std::unordered_map<IR::BasicBlock *, BasicBlock *> _IRBB2asmBB;  // IR BasicBlock to asm BasicBlock
 
     std::unordered_map<float, std::string> _float2lable;  // float constant global lable
 

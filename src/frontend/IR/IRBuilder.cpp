@@ -72,10 +72,10 @@ void IRBuilder::visit(FunctionDef *node) {
     std::vector<Type *> params;
     for (auto param : node->getParams()) {
         DataType *dataType = param->getVariables()[0]->getDataType();
-        params.push_back(convertToAtomType(dataType));
+        params.push_back(convertToIRType(dataType));
     }
 
-    auto funcType = FunctionType::get(convertToAtomType(node->getRetType()), params, false);
+    auto funcType = FunctionType::get(convertToIRType(node->getRetType()), params, false);
     _funcName2funcType.insert({node->getName(), funcType});
 
     _currentFunction = new Function(_currentModule, *funcType, node->getName());
@@ -115,7 +115,7 @@ void IRBuilder::visit(FunctionDef *node) {
 }
 
 void IRBuilder::visit(Variable *node) {
-    Type *basicType = convertToAtomType(node->getBasicType());
+    Type *basicType = convertToIRType(node->getBasicType());
     if (node->isGlobal()) {
         // create global variable
         if (auto initValue = node->getInitValue()) {
@@ -144,7 +144,7 @@ void IRBuilder::visit(Variable *node) {
 
         _var2addr.insert({node, globalVar});
     } else {
-        Value *addr = createAlloc(convertToAtomType(node->getDataType()), node->getName());
+        Value *addr = createAlloc(convertToIRType(node->getDataType()), node->getName());
         _var2addr.insert({node, addr});
         if (auto initValue = node->getInitValue()) {
             if (initValue->getClassId() == ID_NESTED_EXPRESSION) {
@@ -254,7 +254,7 @@ void IRBuilder::visit(NestedExpression *node) {
         auto var = node->getVariable();
         assert(var->getDataType()->getClassId() == ID_ARRAY_TYPE);
         ATC::ArrayType *varType = (ATC::ArrayType *)var->getDataType();
-        basicType = convertToAtomType(var->getBasicType());
+        basicType = convertToIRType(var->getBasicType());
         arrayValue = new ArrayValue(ArrayType::get(basicType, varType->getTotalSize()));
         dimensions = varType->getDimensions();
     }
@@ -747,7 +747,7 @@ void IRBuilder::createCondJumpForValue(BasicBlock *trueBB, BasicBlock *falseBB, 
     }
 }
 
-Type *IRBuilder::convertToAtomType(int basicType) {
+Type *IRBuilder::convertToIRType(int basicType) {
     switch (basicType) {
         case BasicType::INT:
             return _int32Ty;
@@ -760,14 +760,14 @@ Type *IRBuilder::convertToAtomType(int basicType) {
     }
 }
 
-Type *IRBuilder::convertToAtomType(DataType *dataType) {
+Type *IRBuilder::convertToIRType(DataType *dataType) {
     if (dataType->getClassId() == ID_POINTER_TYPE) {
-        return PointerType::get(convertToAtomType(dataType->getBaseDataType()));
+        return PointerType::get(convertToIRType(dataType->getBaseDataType()));
     } else if (dataType->getClassId() == ID_ARRAY_TYPE) {
-        return ArrayType::get(convertToAtomType(dataType->getBasicType()),
+        return ArrayType::get(convertToIRType(dataType->getBasicType()),
                               static_cast<ATC::ArrayType *>(dataType)->getTotalSize());
     } else {
-        return convertToAtomType(dataType->getBasicType());
+        return convertToIRType(dataType->getBasicType());
     }
 }
 

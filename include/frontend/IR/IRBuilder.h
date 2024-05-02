@@ -78,9 +78,9 @@ private:
 
     void createCondJumpForValue(BasicBlock *trueBB, BasicBlock *falseBB, Value *value);
 
-    Type *convertToAtomType(int type);
+    Type *convertToIRType(int type);
 
-    Type *convertToAtomType(DataType *dataType);
+    Type *convertToIRType(DataType *dataType);
 
     Value *castToDestTyIfNeed(Value *value, Type *destTy);
 
