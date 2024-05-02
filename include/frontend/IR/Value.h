@@ -4,7 +4,7 @@
 
 #include "Type.h"
 namespace ATC {
-namespace AtomIR {
+namespace IR {
 
 class Function;
 class Instruction;
@@ -119,5 +119,5 @@ public:
 private:
     Value* _init = nullptr;
 };
-}  // namespace AtomIR
+}  // namespace IR
 }  // namespace ATC

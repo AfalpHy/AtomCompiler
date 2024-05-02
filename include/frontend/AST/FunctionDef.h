@@ -8,7 +8,7 @@
 #include "Statement.h"
 namespace ATC {
 
-namespace AtomIR {
+namespace IR {
 class Function;
 }
 

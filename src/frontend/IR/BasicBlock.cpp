@@ -1,7 +1,7 @@
-#include "atomIR/Function.h"
+#include "IR/Function.h"
 
 namespace ATC {
-namespace AtomIR {
+namespace IR {
 
 BasicBlock::BasicBlock(Function* parent, const std::string& name) : _parent(parent), _name(name) {
     parent->insertBB(this);
@@ -12,5 +12,5 @@ void BasicBlock::addInstruction(Instruction* inst) { _instructions.push_back(ins
 
 std::string BasicBlock::getBBStr() { return _parent->getUniqueNameInFunction(this); }
 
-}  // namespace AtomIR
+}  // namespace IR
 }  // namespace ATC

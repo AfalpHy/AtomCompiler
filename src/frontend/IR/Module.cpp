@@ -1,10 +1,10 @@
-#include "atomIR/Module.h"
+#include "IR/Module.h"
 
 #include <fstream>
 #include <sstream>
 
 namespace ATC {
-namespace AtomIR {
+namespace IR {
 
 std::string Module::toString() {
     std::stringstream ss;
@@ -26,5 +26,5 @@ void Module::print(const std::string& filePath) {
     std::ofstream out(filePath, std::ios::trunc);
     out << toString() << std::endl;
 }
-}  // namespace AtomIR
+}  // namespace IR
 }  // namespace ATC

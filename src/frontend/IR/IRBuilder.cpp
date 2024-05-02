@@ -1,4 +1,4 @@
-#include "atomIR/IRBuilder.h"
+#include "IR/IRBuilder.h"
 
 #include "../CmdOption.h"
 #include "AST/CompUnit.h"
@@ -11,7 +11,7 @@
 
 namespace ATC {
 
-namespace AtomIR {
+namespace IR {
 IRBuilder::IRBuilder() {
     _voidTy = Type::getVoidTy();
     _int32Ty = Type::getInt32Ty();
@@ -955,5 +955,5 @@ void IRBuilder::maskDeadInst() {
 
 void IRBuilder::dumpIR(const std::string &filePath) { _currentModule->print(filePath); }
 
-}  // namespace AtomIR
+}  // namespace IR
 }  // namespace ATC

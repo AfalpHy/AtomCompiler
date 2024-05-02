@@ -5,7 +5,7 @@
 #include "Function.h"
 
 namespace ATC {
-namespace AtomIR {
+namespace IR {
 
 class Module {
 public:
@@ -29,5 +29,5 @@ private:
     std::vector<Function*> _functions;
     std::vector<GloabalVariable*> _globalVariables;
 };
-}  // namespace AtomIR
+}  // namespace IR
 }  // namespace ATC

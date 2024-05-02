@@ -14,7 +14,7 @@
 #include "CmdOption.h"
 #include "antlr4-runtime.h"
 #include "arm/CodeGenerator.h"
-#include "atomIR/IRBuilder.h"
+#include "IR/IRBuilder.h"
 #include "riscv/CodeGenerator.h"
 
 using namespace std;
@@ -63,7 +63,7 @@ int main(int argc, const char *argv[]) {
     string cmd;
     int ret = 0;
 
-    AtomIR::IRBuilder irBuilder;
+    IR::IRBuilder irBuilder;
     RISCV::CodeGenerator codeGenerator;
     // only one module now
     for (auto compUnit : CompUnit::AllCompUnits) {

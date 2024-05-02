@@ -5,7 +5,7 @@
 #include "Instruction.h"
 
 namespace ATC {
-namespace AtomIR {
+namespace IR {
 
 class Function;
 
@@ -39,5 +39,5 @@ private:
     bool _hasBr = false;
 };
 
-}  // namespace AtomIR
+}  // namespace IR
 }  // namespace ATC

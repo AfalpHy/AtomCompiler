@@ -3,11 +3,11 @@
 #include <iostream>
 #include <sstream>
 
-#include "atomIR/Module.h"
+#include "IR/Module.h"
 
 namespace ATC {
 
-namespace AtomIR {
+namespace IR {
 
 Function::Function(Module* parent, const FunctionType& functionType, const std::string& name)
     : _parent(parent), _functionType(functionType), _name(name) {
@@ -73,5 +73,5 @@ std::string Function::toString() {
 
 void Function::dump() { std::cout << toString() << std::endl; }
 
-}  // namespace AtomIR
+}  // namespace IR
 }  // namespace ATC

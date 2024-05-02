@@ -4,7 +4,7 @@
 
 namespace ATC {
 
-namespace AtomIR {
+namespace IR {
 
 class PointerType;
 
@@ -66,5 +66,5 @@ private:
     PointerType(Type* baseType) : _baseType(baseType) {}
     Type* _baseType;
 };
-}  // namespace AtomIR
+}  // namespace IR
 }  // namespace ATC

@@ -6,7 +6,7 @@
 #include "BasicBlock.h"
 
 namespace ATC {
-namespace AtomIR {
+namespace IR {
 
 class Module;
 
@@ -89,5 +89,5 @@ private:
     int _valueIndex = 0;
     std::list<Instruction*>::iterator _currentAllocIter;
 };
-}  // namespace AtomIR
+}  // namespace IR
 }  // namespace ATC

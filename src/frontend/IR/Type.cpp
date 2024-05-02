@@ -1,4 +1,4 @@
-#include "atomIR/Type.h"
+#include "IR/Type.h"
 
 #include <assert.h>
 
@@ -6,7 +6,7 @@
 
 namespace ATC {
 
-namespace AtomIR {
+namespace IR {
 
 Type* Type::getInt32Ty() {
     static Type* ret = new Type(4);
@@ -66,5 +66,5 @@ PointerType* PointerType::get(Type* baseType) {
 
 std::string PointerType::toString() { return _baseType->toString() + "*"; }
 
-}  // namespace AtomIR
+}  // namespace IR
 }  // namespace ATC

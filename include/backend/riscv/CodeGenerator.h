@@ -5,7 +5,7 @@
 #include <sstream>
 #include <unordered_map>
 
-#include "atomIR/Module.h"
+#include "IR/Module.h"
 
 namespace ATC {
 
@@ -23,46 +23,46 @@ public:
 
     void print(std::ofstream &os);
 
-    void emitModule(AtomIR::Module *);
+    void emitModule(IR::Module *);
 
-    void emitGlobalVariable(AtomIR::GloabalVariable *);
+    void emitGlobalVariable(IR::GloabalVariable *);
 
-    void emitFunction(AtomIR::Function *);
+    void emitFunction(IR::Function *);
 
-    void emitBasicBlock(AtomIR::BasicBlock *);
+    void emitBasicBlock(IR::BasicBlock *);
 
-    void emitInstruction(AtomIR::Instruction *);
+    void emitInstruction(IR::Instruction *);
 
-    void emitAllocInst(AtomIR::AllocInst *);
+    void emitAllocInst(IR::AllocInst *);
 
-    void emitStoreInst(AtomIR::StoreInst *);
+    void emitStoreInst(IR::StoreInst *);
 
-    void emitFunctionCallInst(AtomIR::FunctionCallInst *);
+    void emitFunctionCallInst(IR::FunctionCallInst *);
 
-    void emitGEPInst(AtomIR::GetElementPtrInst *);
+    void emitGEPInst(IR::GetElementPtrInst *);
 
-    void emitBitCastInst(AtomIR::BitCastInst *);
+    void emitBitCastInst(IR::BitCastInst *);
 
-    void emitRetInst(AtomIR::ReturnInst *);
+    void emitRetInst(IR::ReturnInst *);
 
-    void emitUnaryInst(AtomIR::UnaryInst *);
+    void emitUnaryInst(IR::UnaryInst *);
 
-    void emitBinaryInst(AtomIR::BinaryInst *);
+    void emitBinaryInst(IR::BinaryInst *);
 
-    void emitCondJumpInst(AtomIR::CondJumpInst *);
+    void emitCondJumpInst(IR::CondJumpInst *);
 
 private:
-    Register *emitIntBinaryInst(int instType, AtomIR::Value *operand1, AtomIR::Value *operand2);
+    Register *emitIntBinaryInst(int instType, IR::Value *operand1, IR::Value *operand2);
 
-    Register *emitFloatBinaryInst(int instType, AtomIR::Value *operand1, AtomIR::Value *operand2);
+    Register *emitFloatBinaryInst(int instType, IR::Value *operand1, IR::Value *operand2);
 
     Register *loadConstInt(int value);
 
     Register *loadConstFloat(float value);
 
-    Register *loadConst(AtomIR::Constant *);
+    Register *loadConst(IR::Constant *);
 
-    Register *getRegFromValue(AtomIR::Value *);
+    Register *getRegFromValue(IR::Value *);
 
     Register *processIfImmOutOfRange(Register *src, int &offset);
 
@@ -73,13 +73,13 @@ private:
     BasicBlock *_retBB;
 
     int _offset = 0;                                         // record current offset of sp
-    std::unordered_map<AtomIR::Value *, int> _value2offset;  // offset of sp
+    std::unordered_map<IR::Value *, int> _value2offset;  // offset of sp
 
-    std::unordered_map<AtomIR::Value *, Register *> _value2reg;  // IR value to asm reg
+    std::unordered_map<IR::Value *, Register *> _value2reg;  // IR value to asm reg
 
-    std::set<AtomIR::Value *> _paramInStack;  // params saved in stack
+    std::set<IR::Value *> _paramInStack;  // params saved in stack
 
-    std::unordered_map<AtomIR::BasicBlock *, BasicBlock *> _atomBB2asmBB;  // IR BasicBlock to asm BasicBlock
+    std::unordered_map<IR::BasicBlock *, BasicBlock *> _atomBB2asmBB;  // IR BasicBlock to asm BasicBlock
 
     std::unordered_map<float, std::string> _float2lable;  // float constant global lable
 

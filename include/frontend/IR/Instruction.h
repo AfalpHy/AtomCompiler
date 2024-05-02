@@ -5,7 +5,7 @@
 #include "Value.h"
 
 namespace ATC {
-namespace AtomIR {
+namespace IR {
 
 struct FunctionType;
 
@@ -264,5 +264,5 @@ private:
     int _type;
 };
 
-}  // namespace AtomIR
+}  // namespace IR
 }  // namespace ATC

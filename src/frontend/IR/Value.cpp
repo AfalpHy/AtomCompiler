@@ -2,10 +2,10 @@
 
 #include <iostream>
 
-#include "atomIR/Function.h"
+#include "IR/Function.h"
 
 namespace ATC {
-namespace AtomIR {
+namespace IR {
 
 void Value::setBelongAndInsertName(Function* function) {
     _belong = function;
@@ -77,5 +77,5 @@ void Value::dump() {
     }
 }
 
-}  // namespace AtomIR
+}  // namespace IR
 }  // namespace ATC

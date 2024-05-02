@@ -2,9 +2,9 @@ project(frontend)
 
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/antlr ANTLR4)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/AST AST)
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/atomIR ATOM_IR)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/IR IR)
 
-add_library(${PROJECT_NAME} ${ANTLR4} ${AST} ${ATOM_IR})
+add_library(${PROJECT_NAME} ${ANTLR4} ${AST} ${IR})
 
 target_include_directories(
   ${PROJECT_NAME}

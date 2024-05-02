@@ -1,10 +1,10 @@
 #include <assert.h>
 
-#include "atomIR/Function.h"
+#include "IR/Function.h"
 
 namespace ATC {
 
-namespace AtomIR {
+namespace IR {
 
 bool AllocInst::AllocForParam = false;
 int AllocInst::AllocatedIntParamNum = 0;
@@ -310,5 +310,5 @@ std::string CondJumpInst::toString() {
     return str;
 }
 
-}  // namespace AtomIR
+}  // namespace IR
 }  // namespace ATC

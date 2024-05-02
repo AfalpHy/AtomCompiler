@@ -8,7 +8,7 @@ namespace ATC {
 class DataType;
 class Scope;
 
-namespace AtomIR {
+namespace IR {
 
 class IRBuilder : public ASTVisitor {
 public:
@@ -115,5 +115,5 @@ private:
     std::unordered_map<Variable *, Value *> _var2addr;
     std::unordered_map<std::string, FunctionType *> _funcName2funcType;
 };
-}  // namespace AtomIR
+}  // namespace IR
 }  // namespace ATC
