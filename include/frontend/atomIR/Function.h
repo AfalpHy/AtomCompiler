@@ -47,10 +47,7 @@ public:
 
     void addParam(Value* param) { _params.push_back(param); }
 
-    void insertBB(BasicBlock* bb) {
-        insertName(bb);
-        _basicBlocks.push_back(bb);
-    }
+    void insertBB(BasicBlock* bb) { _basicBlocks.push_back(bb); }
 
     void setHasFunctionCall(bool b) { _hasFunctionCall = b; }
 
@@ -60,14 +57,8 @@ public:
 
     const FunctionType& getFunctionType() { return _functionType; }
 
-    BasicBlock* getEnteryBB() {
-        if (_basicBlocks.size() > 0) {
-            return _basicBlocks[0];
-        }
-        return nullptr;
-    }
-
     const std::vector<Value*>& getParams() { return _params; }
+
     const std::vector<BasicBlock*>& getBasicBlocks() { return _basicBlocks; }
 
     bool hasFunctionCall() { return _hasFunctionCall; }
@@ -80,7 +71,7 @@ public:
 
     void insertName(void* ptr, const std::string& name);
 
-    void updateName();
+    std::list<Instruction*>::iterator& getCurAllocIter() { return _currentAllocIter; }
 
     std::string toString();
 
@@ -96,6 +87,7 @@ private:
     std::unordered_map<void*, std::string> _nameMap;  // value and block pointer to unique name
     bool _hasFunctionCall = false;                    // Ture if there are some functionCall in this function
     int _valueIndex = 0;
+    std::list<Instruction*>::iterator _currentAllocIter;
 };
 }  // namespace AtomIR
 }  // namespace ATC

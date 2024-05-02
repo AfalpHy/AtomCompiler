@@ -7,7 +7,7 @@
 namespace ATC {
 namespace AtomIR {
 
-void Value::setBelong(Function* function) {
+void Value::setBelongAndInsertName(Function* function) {
     _belong = function;
     _belong->insertName(this);
 }

@@ -52,7 +52,7 @@ public:
 public:
     Module *getCurrentModule() { return _currentModule; }
 
-    void dumpIR(const std::string& filePath);
+    void dumpIR(const std::string &filePath);
 
 private:
     Value *createAlloc(Type *allocType, const std::string &resultName = "");
@@ -85,6 +85,8 @@ private:
     Value *castToDestTyIfNeed(Value *value, Type *destTy);
 
     Value *getIndexedRefAddress(IndexedRef *indexedRef);
+
+    void maskDeadInst();
 
 private:
     Module *_currentModule;

@@ -16,6 +16,7 @@ public:
     void addPredecessor(BasicBlock* bb) { _predecessors.push_back(bb); }
     void addSuccessor(BasicBlock* bb) { _successors.push_back(bb); }
     void addInstruction(Instruction* inst);
+    void setAlives(const std::set<Value*>& alives) { _alives = alives; }
     void setHasBr() { _hasBr = true; }
 
     Function* getParent() { return _parent; }
@@ -23,6 +24,7 @@ public:
     const std::vector<BasicBlock*>& getPredecessors() { return _predecessors; }
     const std::vector<BasicBlock*>& getSuccessors() { return _successors; }
     std::list<Instruction*>& getInstructionList() { return _instructions; }
+    const std::set<Value*>& getAlives() { return _alives; }
     bool isHasBr() { return _hasBr; }
 
     std::string getBBStr();
@@ -33,6 +35,7 @@ private:
     std::vector<BasicBlock*> _predecessors;
     std::vector<BasicBlock*> _successors;
     std::list<Instruction*> _instructions;
+    std::set<Value*> _alives;
     bool _hasBr = false;
 };
 

@@ -15,7 +15,7 @@ enum InstId {
     ID_ALLOC_INST,
     ID_STORE_INST,
     ID_FUNCTION_CALL_INST,
-    ID_GETELEMENTPTR_INST,
+    ID_GET_ELEMENT_PTR_INST,
     ID_BITCAST_INST,
     ID_RETURN_INST,
     ID_UNARY_INST,
@@ -31,6 +31,13 @@ public:
     virtual std::string toString() = 0;
 
     virtual Value* getResult() { return nullptr; }
+
+    void setIsDead(bool b) { _dead = b; }
+
+    bool isDead() { return _dead; }
+
+private:
+    bool _dead = false;
 };
 
 class AllocInst : public Instruction {
@@ -102,7 +109,7 @@ class GetElementPtrInst : public Instruction {
 public:
     GetElementPtrInst(Value* ptr, const std::vector<Value*>& indexes, const std::string& resultName = "");
 
-    virtual int getClassId() override { return ID_GETELEMENTPTR_INST; }
+    virtual int getClassId() override { return ID_GET_ELEMENT_PTR_INST; }
 
     virtual std::string toString() override;
 

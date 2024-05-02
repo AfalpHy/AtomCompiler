@@ -79,7 +79,8 @@ void IRBuilder::visit(FunctionDef *node) {
     _funcName2funcType.insert({node->getName(), funcType});
 
     _currentFunction = new Function(_currentModule, *funcType, node->getName());
-    _currentBasicBlock = new BasicBlock(_currentFunction, "init");
+    _currentBasicBlock = new BasicBlock(_currentFunction, "entryBB");
+    _currentFunction->getCurAllocIter() = _currentBasicBlock->getInstructionList().end();
 
     AllocInst::AllocatedIntParamNum = 0;
     AllocInst::AllocatedFloatParamNum = 0;
@@ -94,9 +95,9 @@ void IRBuilder::visit(FunctionDef *node) {
     }
     AllocInst::AllocForParam = false;
 
-    auto entry = new BasicBlock(_currentFunction, "entry");
-    createJump(entry);
-    _currentBasicBlock = entry;
+    auto beginBB = new BasicBlock(_currentFunction, "beginBB");
+    createJump(beginBB);
+    _currentBasicBlock = beginBB;
 
     node->getBlock()->accept(this);
 
@@ -110,6 +111,7 @@ void IRBuilder::visit(FunctionDef *node) {
             createRet(nullptr);
         }
     }
+    // maskDeadInst();
 }
 
 void IRBuilder::visit(Variable *node) {
@@ -361,7 +363,7 @@ void IRBuilder::visit(BinaryExpression *node) {
 
             _falseBB = new BasicBlock(_currentFunction, "valueZeroBB");
 
-            valueAddr = createAlloc(_int32Ty);
+            valueAddr = createAlloc(_int32Ty, "OneOrZero");
         }
 
         BasicBlock *rhsCondBB = new BasicBlock(_currentFunction, "rhsCondBB");
@@ -622,11 +624,17 @@ void IRBuilder::visit(ReturnStatement *node) {
 
 Value *IRBuilder::createAlloc(Type *allocType, const std::string &resultName) {
     auto entryBB = _currentFunction->getBasicBlocks().front();
+    auto &instList = entryBB->getInstructionList();
     Instruction *inst = new AllocInst(allocType, resultName);
-    entryBB->getInstructionList().push_front(inst);
+    if (_currentFunction->getCurAllocIter() == instList.end()) {
+        instList.push_front(inst);
+        _currentFunction->getCurAllocIter() = instList.begin();
+        _currentFunction->getCurAllocIter()++;
+    } else {
+        instList.insert(_currentFunction->getCurAllocIter(), inst);
+    }
     Value *result = inst->getResult();
-    result->setBelong(_currentFunction);
-    _currentFunction->updateName();
+    result->setBelongAndInsertName(_currentFunction);
     return result;
 }
 
@@ -642,7 +650,7 @@ Value *IRBuilder::createFunctionCall(const FunctionType &functionType, const std
     _currentFunction->setHasFunctionCall(true);
     Value *result = inst->getResult();
     if (result) {
-        result->setBelong(_currentFunction);
+        result->setBelongAndInsertName(_currentFunction);
     }
     return result;
 }
@@ -651,7 +659,7 @@ Value *IRBuilder::createGEP(Value *ptr, const std::vector<Value *> &indexes, con
     Instruction *inst = new GetElementPtrInst(ptr, indexes, resultName);
     _currentBasicBlock->addInstruction(inst);
     Value *result = inst->getResult();
-    result->setBelong(_currentFunction);
+    result->setBelongAndInsertName(_currentFunction);
     return result;
 }
 
@@ -662,7 +670,7 @@ Value *IRBuilder::createBitCast(Value *ptr, Type *destTy) {
     Instruction *inst = new BitCastInst(ptr, destTy);
     _currentBasicBlock->addInstruction(inst);
     Value *result = inst->getResult();
-    result->setBelong(_currentFunction);
+    result->setBelongAndInsertName(_currentFunction);
     return result;
 }
 
@@ -679,7 +687,7 @@ Value *IRBuilder::createUnaryInst(int type, Value *operand, const std::string &r
     Instruction *inst = new UnaryInst(type, operand, resultName);
     _currentBasicBlock->addInstruction(inst);
     Value *result = inst->getResult();
-    result->setBelong(_currentFunction);
+    result->setBelongAndInsertName(_currentFunction);
     return result;
 }
 
@@ -687,7 +695,7 @@ Value *IRBuilder::createBinaryInst(int type, Value *operand1, Value *operand2, c
     Instruction *inst = new BinaryInst(type, operand1, operand2, resultName);
     _currentBasicBlock->addInstruction(inst);
     Value *result = inst->getResult();
-    result->setBelong(_currentFunction);
+    result->setBelongAndInsertName(_currentFunction);
     return result;
 }
 
@@ -832,6 +840,117 @@ Value *IRBuilder::getIndexedRefAddress(IndexedRef *indexedRef) {
         tmp = createBinaryInst(BinaryInst::INST_ADD, ConstantInt::get(constPart), tmp);
     }
     return createGEP(addr, {_int32Zero, tmp});
+}
+
+void IRBuilder::maskDeadInst() {
+    bool update;
+    int i = 0;
+    do {
+        i++;
+        update = false;
+        for (auto bb : _currentFunction->getBasicBlocks()) {
+            std::set<Value *> alives;
+            for (auto succ : bb->getSuccessors()) {
+                alives.insert(succ->getAlives().begin(), succ->getAlives().end());
+            }
+            for (auto rbegin = bb->getInstructionList().rbegin(); rbegin != bb->getInstructionList().rend(); rbegin++) {
+                auto inst = *rbegin;
+                inst->setIsDead(false);
+                switch (inst->getClassId()) {
+                    case ID_ALLOC_INST: {
+                        auto allocInst = (AllocInst *)inst;
+                        if (alives.count(inst->getResult()) == 0) {
+                            inst->setIsDead(true);
+                        }
+                        break;
+                    }
+                    case ID_STORE_INST: {
+                        auto storeInst = (StoreInst *)inst;
+                        // store to global var and addr of GEP always alive(it hard to optmize)
+                        if (alives.count(storeInst->getDest()) == 0 && !storeInst->getDest()->isGlobal() &&
+                            storeInst->getDest()->getDefined()->getClassId() == ID_ALLOC_INST) {
+                            inst->setIsDead(true);
+                        } else {
+                            alives.insert(storeInst->getValue());
+                            alives.insert(storeInst->getDest());
+                        }
+                        break;
+                    }
+                    case ID_FUNCTION_CALL_INST: {
+                        // function call always alive(it hard to optmize)
+                        auto funCallInst = (FunctionCallInst *)inst;
+                        for (auto param : funCallInst->getParams()) {
+                            alives.insert(param);
+                        }
+                        break;
+                    }
+                    case ID_GET_ELEMENT_PTR_INST: {
+                        auto gepInst = (GetElementPtrInst *)inst;
+                        if (alives.count(gepInst->getResult()) == 0) {
+                            inst->setIsDead(true);
+                        } else {
+                            alives.insert(gepInst->getPtr());
+                            for (auto idx : gepInst->getIndexes()) {
+                                alives.insert(idx);
+                            }
+                        }
+                        break;
+                    }
+                    case ID_BITCAST_INST: {
+                        auto bitCastInst = (BitCastInst *)inst;
+                        if (alives.count(bitCastInst->getResult()) == 0) {
+                            inst->setIsDead(true);
+                        } else {
+                            alives.insert(bitCastInst->getPtr());
+                        }
+                        break;
+                    }
+                    case ID_RETURN_INST: {
+                        alives.insert(static_cast<ReturnInst *>(inst)->getRetValue());
+                        break;
+                    }
+                    case ID_UNARY_INST: {
+                        auto unaryInst = (UnaryInst *)inst;
+                        if (alives.count(unaryInst->getResult()) == 0) {
+                            inst->setIsDead(true);
+                        } else {
+                            alives.insert(unaryInst->getOperand());
+                        }
+                        break;
+                    }
+                    case ID_BINARY_INST: {
+                        auto binaryInst = (BinaryInst *)inst;
+                        if (alives.count(binaryInst->getResult()) == 0) {
+                            inst->setIsDead(true);
+                        } else {
+                            alives.insert(binaryInst->getOperand1());
+                            alives.insert(binaryInst->getOperand2());
+                        }
+                        break;
+                    }
+                    case ID_JUMP_INST: {
+                        break;
+                    }
+                    case ID_COND_JUMP_INST: {
+                        auto condJumpInst = (CondJumpInst *)inst;
+                        alives.insert(condJumpInst->getOperand1());
+                        alives.insert(condJumpInst->getOperand2());
+                        break;
+                    }
+                    default:
+                        assert(0 && "can't not reach here");
+                        break;
+                }
+                if (inst->getResult()) {
+                    alives.erase(inst->getResult());
+                }
+            }
+            if (bb->getAlives() != alives) {
+                update = true;
+                bb->setAlives(alives);
+            }
+        }
+    } while (update);
 }
 
 void IRBuilder::dumpIR(const std::string &filePath) { _currentModule->print(filePath); }

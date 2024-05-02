@@ -308,6 +308,9 @@ void CodeGenerator::emitBasicBlock(AtomIR::BasicBlock* basicBlock) {
 }
 
 void CodeGenerator::emitInstruction(AtomIR::Instruction* inst) {
+    if (inst->isDead()) {
+        return;
+    }
     switch (inst->getClassId()) {
         case AtomIR::ID_ALLOC_INST:
             emitAllocInst((AtomIR::AllocInst*)inst);
@@ -318,7 +321,7 @@ void CodeGenerator::emitInstruction(AtomIR::Instruction* inst) {
         case AtomIR::ID_FUNCTION_CALL_INST:
             emitFunctionCallInst((AtomIR::FunctionCallInst*)inst);
             break;
-        case AtomIR::ID_GETELEMENTPTR_INST:
+        case AtomIR::ID_GET_ELEMENT_PTR_INST:
             emitGEPInst((AtomIR::GetElementPtrInst*)inst);
             break;
         case AtomIR::ID_BITCAST_INST:

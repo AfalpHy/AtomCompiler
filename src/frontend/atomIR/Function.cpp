@@ -13,7 +13,7 @@ Function::Function(Module* parent, const FunctionType& functionType, const std::
     : _parent(parent), _functionType(functionType), _name(name) {
     for (auto paramType : functionType._params) {
         Value* param = new Value(paramType, "");
-        param->setBelong(this);
+        param->setBelongAndInsertName(this);
         _params.push_back(param);
     }
     parent->addFunction(this);
@@ -44,23 +44,6 @@ void Function::insertName(void* ptr, const std::string& name) {
     _nameMap.insert({ptr, uniqueName});
 }
 
-void Function::updateName() {
-    _valueIndex = 0;
-    _nameSet.clear();
-    _nameMap.clear();
-    for (auto param : _params) {
-        insertName(param);
-    }
-    for (auto bb : _basicBlocks) {
-        insertName(bb);
-        for (auto inst : bb->getInstructionList()) {
-            if (Value* result = inst->getResult()) {
-                insertName(result);
-            }
-        }
-    }
-}
-
 std::string Function::toString() {
     std::stringstream ss;
     ss << "define " << _functionType._ret->toString() << " " << _name << "(";
@@ -76,7 +59,9 @@ std::string Function::toString() {
     for (auto bb : _basicBlocks) {
         ss << bb->getBBStr() << ":" << std::endl;
         for (auto inst : bb->getInstructionList()) {
-            ss << "  " << inst->toString() << std::endl;
+            if (!inst->isDead()) {
+                ss << "  " << inst->toString() << std::endl;
+            }
         }
         if (bb != _basicBlocks.back()) {
             ss << std::endl;

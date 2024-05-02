@@ -15,7 +15,7 @@ public:
 
     void setName(const std::string& name) { _name = name; }
 
-    void setBelong(Function* function);
+    void setBelongAndInsertName(Function* function);
 
     void setDefined(Instruction* inst) { _defined = inst; }
 
