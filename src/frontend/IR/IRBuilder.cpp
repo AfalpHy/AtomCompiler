@@ -111,7 +111,7 @@ void IRBuilder::visit(FunctionDef *node) {
             createRet(nullptr);
         }
     }
-    // maskDeadInst();
+    maskDeadInst();
 }
 
 void IRBuilder::visit(Variable *node) {
@@ -844,10 +844,9 @@ Value *IRBuilder::getIndexedRefAddress(IndexedRef *indexedRef) {
 
 void IRBuilder::maskDeadInst() {
     bool update;
-    int i = 0;
     do {
-        i++;
         update = false;
+        std::set<Value *> allocVar;
         for (auto bb : _currentFunction->getBasicBlocks()) {
             std::set<Value *> alives;
             for (auto succ : bb->getSuccessors()) {
@@ -867,12 +866,19 @@ void IRBuilder::maskDeadInst() {
                     case ID_STORE_INST: {
                         auto storeInst = (StoreInst *)inst;
                         // store to global var and addr of GEP always alive(it hard to optmize)
-                        if (alives.count(storeInst->getDest()) == 0 && !storeInst->getDest()->isGlobal() &&
-                            storeInst->getDest()->getDefined()->getClassId() == ID_ALLOC_INST) {
+                        if (storeInst->getDest()->isGlobal()) {
+                            // needn't insert global addr to alives
+                            alives.insert(storeInst->getValue());
+                        } else if (storeInst->getDest()->getDefined()->getClassId() == ID_GET_ELEMENT_PTR_INST) {
+                            alives.insert(storeInst->getValue());
+                            alives.insert(storeInst->getDest());
+                        } else if (alives.count(storeInst->getDest()) == 0) {
                             inst->setIsDead(true);
                         } else {
                             alives.insert(storeInst->getValue());
-                            alives.insert(storeInst->getDest());
+                            // elimination to reduce the scale of propagation
+                            alives.erase(storeInst->getDest());
+                            allocVar.insert(storeInst->getDest());
                         }
                         break;
                     }
@@ -901,7 +907,9 @@ void IRBuilder::maskDeadInst() {
                         if (alives.count(bitCastInst->getResult()) == 0) {
                             inst->setIsDead(true);
                         } else {
-                            alives.insert(bitCastInst->getPtr());
+                            if (!bitCastInst->getPtr()->isGlobal()) {
+                                alives.insert(bitCastInst->getPtr());
+                            }
                         }
                         break;
                     }
@@ -914,7 +922,9 @@ void IRBuilder::maskDeadInst() {
                         if (alives.count(unaryInst->getResult()) == 0) {
                             inst->setIsDead(true);
                         } else {
-                            alives.insert(unaryInst->getOperand());
+                            if (!unaryInst->getOperand()->isGlobal()) {
+                                alives.insert(unaryInst->getOperand());
+                            }
                         }
                         break;
                     }
@@ -948,6 +958,25 @@ void IRBuilder::maskDeadInst() {
             if (bb->getAlives() != alives) {
                 update = true;
                 bb->setAlives(alives);
+            }
+        }
+        auto rbegin = _currentFunction->getBasicBlocks()[0]->getInstructionList().rbegin();
+        auto end = _currentFunction->getBasicBlocks()[0]->getInstructionList().rend();
+        // restore elimination by store
+        for (; rbegin != end; rbegin++) {
+            auto inst = *rbegin;
+            if (inst->isDead()) {
+                switch (inst->getClassId()) {
+                    case ID_ALLOC_INST: {
+                        auto allocInst = (AllocInst *)inst;
+                        if (allocVar.count(inst->getResult()) > 0) {
+                            inst->setIsDead(false);
+                        }
+                        break;
+                    }
+                    default:
+                        break;
+                }
             }
         }
     } while (update);

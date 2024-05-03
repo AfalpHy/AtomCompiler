@@ -12,9 +12,9 @@
 #include "ATCLexer.h"
 #include "ATCParser.h"
 #include "CmdOption.h"
+#include "IR/IRBuilder.h"
 #include "antlr4-runtime.h"
 #include "arm/CodeGenerator.h"
-#include "IR/IRBuilder.h"
 #include "riscv/CodeGenerator.h"
 
 using namespace std;
@@ -68,11 +68,12 @@ int main(int argc, const char *argv[]) {
     // only one module now
     for (auto compUnit : CompUnit::AllCompUnits) {
         compUnit->accept(&irBuilder);
+        if (DumpIR) {
+            irBuilder.dumpIR(filename + ".atom");
+        }
         codeGenerator.emitModule(irBuilder.getCurrentModule());
     }
-    if (DumpIR) {
-        irBuilder.dumpIR(filename + ".atom");
-    }
+
     ofstream asmfile(filename + ".s", ios::trunc);
     codeGenerator.print(asmfile);
     if (GenerateASM) {
