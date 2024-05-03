@@ -716,11 +716,7 @@ void CodeGenerator::emitCondJumpInst(IR::CondJumpInst* inst) {
         src1 = cmpInst->getDest();
         src2 = loadConstInt(0);
     }
-    /// FIXME:Temporarily reslove the problem of relocation failure, need to modify
-    auto newBB = new BasicBlock();
-    _currentFunction->addBasicBlock(newBB);
-    newBB->addInstruction(new JumpInst(_IRBB2asmBB[inst->getTureBB()]));
-    _currentBasicBlock->addInstruction(new CondJumpInst(type, src1, src2, newBB));
+    _currentBasicBlock->addInstruction(new CondJumpInst(type, src1, src2, _IRBB2asmBB[inst->getTureBB()]));
     _currentBasicBlock->addInstruction(new JumpInst(_IRBB2asmBB[inst->getFalseBB()]));
 }
 
