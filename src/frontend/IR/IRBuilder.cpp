@@ -67,7 +67,13 @@ void IRBuilder::visit(CompUnit *node) {
     ASTVisitor::visit(node);
 }
 
-void IRBuilder::visit(FunctionDecl *node) {}
+void IRBuilder::visit(FunctionDecl *node) {
+    std::vector<Type *> paramTypeVec;
+    for (auto param : node->getParams()) {
+        paramTypeVec.push_back(convertToIRType(param->getVariables()[0]->getDataType()));
+    }
+    _funcName2funcType[node->getName()] = FunctionType::get(convertToIRType(node->getRetType()), paramTypeVec, false);
+}
 
 void IRBuilder::visit(FunctionDef *node) {
     auto functionDecl = node->getFunctionDecl();
