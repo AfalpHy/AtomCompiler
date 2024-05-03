@@ -1,6 +1,6 @@
 #include "AST/Expression.h"
 
-#include "AST/FunctionDef.h"
+#include "AST/Function.h"
 
 namespace ATC {
 

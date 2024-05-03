@@ -17,6 +17,8 @@ public:
 
     virtual void visit(CompUnit *) override;
 
+    virtual void visit(FunctionDecl *) override;
+
     virtual void visit(FunctionDef *) override;
 
     virtual void visit(Variable *) override;

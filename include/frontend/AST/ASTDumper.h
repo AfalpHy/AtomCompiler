@@ -13,6 +13,8 @@ public:
 
     virtual void visit(VarDecl*) override;
 
+    virtual void visit(FunctionDecl*) override;
+
     virtual void visit(FunctionDef*) override;
 
     virtual void visit(BasicType*) override;

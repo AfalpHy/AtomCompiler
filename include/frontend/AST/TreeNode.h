@@ -20,6 +20,7 @@ enum NodeType {
     ID_POINTER_TYPE,
 
     ID_VAR_DECL,
+    ID_FUNCTION_DECL,
     ID_FUNCTION_DEF,
     ID_VARIABLE,
 

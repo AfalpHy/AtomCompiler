@@ -51,6 +51,8 @@ public:
 
     void setHasFunctionCall(bool b) { _hasFunctionCall = b; }
 
+    void setCurAllocIterInit() { _isCurAllocIterInit = true; }
+
     Module* getParent() { return _parent; }
 
     const std::string& getName() { return _name; }
@@ -73,6 +75,8 @@ public:
 
     std::list<Instruction*>::iterator& getCurAllocIter() { return _currentAllocIter; }
 
+    bool isCurAllocIterInit() { return _isCurAllocIterInit; }
+
     std::string toString();
 
     void dump();
@@ -88,6 +92,7 @@ private:
     bool _hasFunctionCall = false;                    // Ture if there are some functionCall in this function
     int _valueIndex = 0;
     std::list<Instruction*>::iterator _currentAllocIter;
+    bool _isCurAllocIterInit = false;
 };
 }  // namespace IR
 }  // namespace ATC

@@ -3,12 +3,13 @@
 namespace ATC {
 llvm::cl::OptionCategory MyCategory("ATC");
 
-llvm::cl::opt<std::string> SrcPath(llvm::cl::Positional, llvm::cl::desc("file"), llvm::cl::cat(MyCategory));
+llvm::cl::list<std::string> SrcPathList(llvm::cl::Positional, llvm::cl::desc("files waiting to be compile"),
+                                       llvm::cl::OneOrMore, llvm::cl::cat(MyCategory));
 
 llvm::cl::opt<bool> Sy("sy", llvm::cl::desc("include sy function"), llvm::cl::init(false), llvm::cl::cat(MyCategory));
 
 llvm::cl::opt<std::string> SyLibPath("sylib", llvm::cl::desc("sy src which need to be compiled"),
-                                 llvm::cl::cat(MyCategory));
+                                     llvm::cl::cat(MyCategory));
 
 llvm::cl::opt<bool> GenerateASM("S", llvm::cl::desc("generate asm only"), llvm::cl::init(false),
                                 llvm::cl::cat(MyCategory));
@@ -22,8 +23,9 @@ llvm::cl::opt<bool> DumpIR("dump-ir", llvm::cl::desc("dump the intermediate repr
 llvm::cl::opt<bool> RunAfterCompiling("R", llvm::cl::desc("run after compiling"), llvm::cl::init(false),
                                       llvm::cl::cat(MyCategory));
 
-llvm::cl::opt<std::string> Platform("platform", llvm::cl::desc("the platform used to execute the final executable file"),
-                                  llvm::cl::cat(MyCategory));
+llvm::cl::opt<std::string> Platform("platform",
+                                    llvm::cl::desc("the platform used to execute the final executable file"),
+                                    llvm::cl::cat(MyCategory));
 
 llvm::cl::opt<std::string> RunInput("R-input", llvm::cl::desc("input file for program which will run after compiling"),
                                     llvm::cl::cat(MyCategory));

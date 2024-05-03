@@ -8,6 +8,8 @@
 namespace ATC {
 class ASTBuilder : public ATCBaseVisitor {
 public:
+    ASTBuilder(antlr4::CommonTokenStream *token) : _token(token) {}
+
     virtual antlrcpp::Any visitCompUnit(ATCParser::CompUnitContext *ctx) override;
 
     virtual antlrcpp::Any visitCType(ATCParser::CTypeContext *ctx) override;
@@ -16,11 +18,9 @@ public:
 
     virtual antlrcpp::Any visitVarDef(ATCParser::VarDefContext *ctx) override;
 
-    // virtual antlrcpp::Any visitFunctionDecl(ATCParser::FunctionDeclContext *ctx) override;
-
     virtual antlrcpp::Any visitInitVal(ATCParser::InitValContext *ctx) override;
 
-    virtual antlrcpp::Any visitFunctionDef(ATCParser::FunctionDefContext *ctx) override;
+    virtual antlrcpp::Any visitFunctionDeclOrDef(ATCParser::FunctionDeclOrDefContext *ctx) override;
 
     virtual antlrcpp::Any visitFuncFParams(ATCParser::FuncFParamsContext *ctx) override;
 
@@ -60,11 +60,7 @@ public:
 
     virtual antlrcpp::Any visitFloatConst(ATCParser::FloatConstContext *ctx) override;
 
-    void setTokenStream(antlr4::CommonTokenStream *token) { _token = token; }
-
 private:
     antlr4::CommonTokenStream *_token;
-    // std::vector<TreeNode *> _astNodeStack;
-    // std::vector<antlr4::ParserRuleContext *> _antlrNodeStack;
 };
 }  // namespace ATC

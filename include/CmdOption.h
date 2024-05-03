@@ -6,7 +6,7 @@
 
 namespace ATC {
 extern llvm::cl::OptionCategory MyCategory;
-extern llvm::cl::opt<std::string> SrcPath;
+extern llvm::cl::list<std::string> SrcPathList;
 extern llvm::cl::opt<bool> Sy;
 extern llvm::cl::opt<std::string> SyLibPath;
 extern llvm::cl::opt<bool> GenerateASM;

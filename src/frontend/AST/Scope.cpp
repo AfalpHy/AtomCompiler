@@ -1,6 +1,6 @@
 #include "AST/Scope.h"
 
-#include "AST/FunctionDef.h"
+#include "AST/Function.h"
 
 namespace ATC {
 
@@ -14,21 +14,20 @@ Variable* Scope::getVariable(const std::string& name) {
     return nullptr;
 }
 
-FunctionDef* Scope::getFunctionDef(const std::string& name) {
+FunctionDecl* Scope::getFunction(const std::string& name) {
     if (_functionMap.find(name) != _functionMap.end()) {
         return _functionMap[name];
     }
     if (_parent) {
-        return _parent->getFunctionDef(name);
+        return _parent->getFunction(name);
     }
     return nullptr;
 }
 
 void Scope::insertVariable(const std::string& name, Variable* var) { _varMap.insert({name, var}); }
 
-void Scope::insertFunctionDef(const std::string& name, FunctionDef* functionDef) {
-    _functionMap.insert({name, functionDef});
+void Scope::insertFunction(const std::string& name, FunctionDecl* functionDecl) {
+    _functionMap.insert({name, functionDecl});
 }
-
 
 }  // namespace ATC

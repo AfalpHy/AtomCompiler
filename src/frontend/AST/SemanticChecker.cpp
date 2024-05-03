@@ -5,9 +5,8 @@
 #include <unordered_map>
 
 #include "AST/CompUnit.h"
-#include "AST/Decl.h"
 #include "AST/Expression.h"
-#include "AST/FunctionDef.h"
+#include "AST/Function.h"
 #include "AST/Statement.h"
 #include "AST/Variable.h"
 
@@ -21,7 +20,7 @@ namespace ATC {
 
 // void SemanticChecker::visit(Decl* node) { ASTVisitor::visit(node); }
 
-// void SemanticChecker::visit(FunctionDef* node) { ASTVisitor::visit(node); }
+// void SemanticChecker::visit(FunctionDeclOrDef* node) { ASTVisitor::visit(node); }
 
 // void SemanticChecker::visit(DataType* node) {}
 
@@ -56,7 +55,7 @@ void SemanticChecker::visit(IndexedRef* node) {
 // void SemanticChecker::visit(BinaryExpression* node) { ASTVisitor::visit(node); }
 
 void SemanticChecker::visit(FunctionCall* node) {
-    if (node->getFunctionDef() == nullptr) {
+    if (node->getFunctionDecl() == nullptr) {
         Position position = node->getPosition();
         printf("function %s %p <%d:%d-%d:%d> not defined\n", node->getName().c_str(), node, position._leftLine,
                position._leftColumn, position._rightLine, position._rightColumn);

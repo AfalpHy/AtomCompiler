@@ -14,8 +14,6 @@ public:
 
     void addElement(TreeNode* element) { _elements.push_back(element); }
 
-    static std::vector<CompUnit*> AllCompUnits;
-
     ACCEPT
 
 private:

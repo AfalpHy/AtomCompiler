@@ -1,9 +1,8 @@
 #include "AST/ASTBuilder.h"
 
 #include "AST/CompUnit.h"
-#include "AST/Decl.h"
 #include "AST/Expression.h"
-#include "AST/FunctionDef.h"
+#include "AST/Function.h"
 #include "AST/Scope.h"
 #include "AST/Statement.h"
 #include "AST/Variable.h"
@@ -11,8 +10,6 @@
 namespace ATC {
 
 Scope *CurrentScope = nullptr;
-
-std::vector<CompUnit *> CompUnit::AllCompUnits;
 
 static void fixupArrayType(ArrayType *arrayType) {
     const auto &dimensionExprs = arrayType->getDimensionExprs();
@@ -35,8 +32,6 @@ antlrcpp::Any ASTBuilder::visitCompUnit(ATCParser::CompUnitContext *ctx) {
     // take the token before EOF as stop token
     compUnit->setPosition(ctx->getStart(), _token->get(ctx->getStop()->getTokenIndex() - 1));
 
-    CompUnit::AllCompUnits.push_back(compUnit);
-
     CurrentScope = new Scope();
     compUnit->setScope(CurrentScope);
 
@@ -44,12 +39,14 @@ antlrcpp::Any ASTBuilder::visitCompUnit(ATCParser::CompUnitContext *ctx) {
         auto any = ctx->children[i]->accept(this);
         if (any.is<VarDecl *>()) {
             compUnit->addElement(any.as<VarDecl *>());
+        } else if (any.is<FunctionDecl *>()) {
+            compUnit->addElement(any.as<FunctionDecl *>());
         } else if (any.is<FunctionDef *>()) {
             compUnit->addElement(any.as<FunctionDef *>());
         }
     }
 
-    return nullptr;
+    return compUnit;
 }
 
 antlrcpp::Any ASTBuilder::visitCType(ATCParser::CTypeContext *ctx) {
@@ -159,31 +156,35 @@ antlrcpp::Any ASTBuilder::visitInitVal(ATCParser::InitValContext *ctx) {
     return (Expression *)nestedExpr;
 }
 
-antlrcpp::Any ASTBuilder::visitFunctionDef(ATCParser::FunctionDefContext *ctx) {
-    auto functionDef = new FunctionDef();
-    functionDef->setName(ctx->Ident()->getText());
-    functionDef->setPosition(ctx->getStart(), ctx->getStop());
-    CurrentScope->insertFunctionDef(functionDef->getName(), functionDef);
+antlrcpp::Any ASTBuilder::visitFunctionDeclOrDef(ATCParser::FunctionDeclOrDefContext *ctx) {
+    auto functionDecl = new FunctionDecl();
+    functionDecl->setName(ctx->Ident()->getText());
+    functionDecl->setPosition(ctx->getStart(), ctx->getStop());
+    CurrentScope->insertFunction(functionDecl->getName(), functionDecl);
 
     auto parentScope = CurrentScope;
     CurrentScope = new Scope();
     CurrentScope->setParent(parentScope);
     parentScope->addChild(CurrentScope);
-    functionDef->setScope(CurrentScope);
-
-    functionDef->setRetType(ctx->cType()->accept(this).as<DataType *>());
+    functionDecl->setScope(CurrentScope);
+    functionDecl->setRetType(ctx->cType()->accept(this).as<DataType *>());
     if (ctx->funcFParams()) {
         auto fParams = ctx->funcFParams()->accept(this).as<std::vector<VarDecl *>>();
         for (auto fParam : fParams) {
-            functionDef->addParams(fParam);
+            functionDecl->addParams(fParam);
         }
     }
-    auto block = ctx->block()->accept(this).as<Statement *>();
-    assert(block->getClassId() == ID_BLOCK);
-    functionDef->setBlock((Block *)block);
-
+    if (ctx->block()) {
+        auto functionDef = new FunctionDef(functionDecl);
+        functionDef->setScope(CurrentScope);
+        auto block = ctx->block()->accept(this).as<Statement *>();
+        assert(block->getClassId() == ID_BLOCK);
+        functionDef->setBlock((Block *)block);
+        CurrentScope = parentScope;
+        return functionDef;
+    }
     CurrentScope = parentScope;
-    return functionDef;
+    return functionDecl;
 }
 
 antlrcpp::Any ASTBuilder::visitFuncFParams(ATCParser::FuncFParamsContext *ctx) {
@@ -371,7 +372,7 @@ antlrcpp::Any ASTBuilder::visitUnaryExpr(ATCParser::UnaryExprContext *ctx) {
                 functionCall->addParams(rParam);
             }
         }
-        functionCall->setFunctionDef(CurrentScope->getFunctionDef(functionCall->getName()));
+        functionCall->setFunctionDecl(CurrentScope->getFunction(functionCall->getName()));
         functionCall->setPosition(ctx->getStart(), ctx->getStop());
         return (Expression *)functionCall;
     } else {

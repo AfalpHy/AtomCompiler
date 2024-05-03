@@ -25,70 +25,73 @@ int main(int argc, const char *argv[]) {
     llvm::cl::HideUnrelatedOptions({&MyCategory});
     llvm::cl::ParseCommandLineOptions(argc, argv);
 
-    std::ifstream file;
-    file.open(SrcPath);
+    vector<string> objFiles;
+    for (auto SrcPath : SrcPathList) {
+        std::ifstream file;
+        file.open(SrcPath);
+        if (!file.is_open()) {
+            cerr << filesystem::absolute(std::string(SrcPath)) << " not exist" << endl;
+            return -1;
+        }
 
-    if (!file.is_open()) {
-        cerr << filesystem::absolute(std::string(SrcPath)) << " not exist" << endl;
-        return -1;
-    }
-    ANTLRInputStream input(file);
-    ATCLexer lexer(&input);
-    CommonTokenStream token(&lexer);
-    ATCParser parser(&token);
-    auto context = parser.compUnit();
-    if (parser.getNumberOfSyntaxErrors() != 0) {
-        cerr << "There are syntax errors in " << filesystem::absolute(std::string(SrcPath)) << endl;
-        return -1;
-    }
-    ASTBuilder astBuilder;
-    astBuilder.setTokenStream(&token);
-    context->accept(&astBuilder);
+        ANTLRInputStream input(file);
+        ATCLexer lexer(&input);
+        CommonTokenStream token(&lexer);
+        ATCParser parser(&token);
+        auto context = parser.compUnit();
 
-    // SemanticChecker checker;
-    // for (auto compUnit : CompUnit::AllCompUnits) {
-    //     compUnit->accept(&checker);
-    // }
+        if (parser.getNumberOfSyntaxErrors() != 0) {
+            cerr << "There are syntax errors in " << filesystem::absolute(std::string(SrcPath)) << endl;
+            return -1;
+        }
+        ASTBuilder astBuilder(&token);
+        CompUnit *compUnit = context->accept(&astBuilder);
 
-    if (DumpAst) {
-        ASTDumper dump;
-        for (auto compUnit : CompUnit::AllCompUnits) {
+        // SemanticChecker checker;
+        // for (auto compUnit : CompUnit::AllCompUnits) {
+        //     compUnit->accept(&checker);
+        // }
+
+        if (DumpAst) {
+            ASTDumper dump;
             compUnit->accept(&dump);
         }
-    }
 
-    std::filesystem::path filePath = std::string(SrcPath);
-    string filename = filePath.stem();
-    string outFile = filename + ".out";
-    string cmd;
-    int ret = 0;
+        std::filesystem::path filePath = SrcPath;
+        string filename = filePath.stem();
 
-    IR::IRBuilder irBuilder;
-    RISCV::CodeGenerator codeGenerator;
-    // only one module now
-    for (auto compUnit : CompUnit::AllCompUnits) {
+        IR::IRBuilder irBuilder;
         compUnit->accept(&irBuilder);
         if (DumpIR) {
             irBuilder.dumpIR(filename + ".atom");
         }
+        RISCV::CodeGenerator codeGenerator;
         codeGenerator.emitModule(irBuilder.getCurrentModule());
-    }
 
-    ofstream asmfile(filename + ".s", ios::trunc);
-    codeGenerator.print(asmfile);
+        ofstream asmfile(filename + ".s", ios::trunc);
+        codeGenerator.print(asmfile);
+        if (GenerateASM) {
+            continue;
+        }
+        string cmd = "riscv64-linux-gnu-gcc -c " + filename + ".s -o " + filename + ".o";
+        int ret = WEXITSTATUS(system(cmd.c_str()));
+        if (ret) {
+            return ret;
+        }
+        objFiles.push_back(filename + ".o");
+    }
     if (GenerateASM) {
         return 0;
     }
-    cmd = "riscv64-linux-gnu-gcc -c " + filename + ".s -o " + filename + ".o";
-    ret = WEXITSTATUS(system(cmd.c_str()));
-    if (ret) {
-        return ret;
-    }
+    string cmd = "riscv64-linux-gnu-gcc -static";
     if (!SyLibPath.empty()) {
-        cmd = "riscv64-linux-gnu-gcc -static " + filename + ".o " + SyLibPath;
-    } else {
-        cmd = "riscv64-linux-gnu-gcc -static " + filename + ".o ";
+        cmd += " " + SyLibPath;
     }
+    for (auto obj : objFiles) {
+        cmd += " " + obj;
+    }
+
+    int ret = 0;
     ret = WEXITSTATUS(system(cmd.c_str()));
     if (ret) {
         return ret;
@@ -104,14 +107,15 @@ int main(int argc, const char *argv[]) {
             cmd.append(" < ").append(RunInput);
         }
         if (Check) {
-            cmd.append(" > ").append(outFile);
+            string resultFile = "result.txt";
+            cmd.append(" > ").append(resultFile);
             ret = system(cmd.c_str());
             ret = WEXITSTATUS(ret);
             cmd = "echo";
-            cmd.append(" ").append(to_string(ret)).append(" >> ").append(outFile);
+            cmd.append(" ").append(to_string(ret)).append(" >> ").append(resultFile);
             system(cmd.c_str());
             cmd = "diff";
-            cmd.append(" ").append(outFile).append(" ").append(CompareFile);
+            cmd.append(" ").append(resultFile).append(" ").append(CompareFile);
             ret = system(cmd.c_str());
             return WEXITSTATUS(ret);
         }

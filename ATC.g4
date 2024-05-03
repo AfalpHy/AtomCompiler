@@ -1,8 +1,6 @@
 grammar ATC;
 
-compUnit: (decl | functionDef)* EOF;
-
-decl: varDecl | functionDecl;
+compUnit: (varDecl | functionDeclOrDef | Semicolon)* EOF;
 
 cType: (Int | Float | Void) Star*;
 
@@ -12,14 +10,15 @@ varDef:
 	Ident (LeftBracket expr RightBracket)*
 	| Ident (LeftBracket expr RightBracket)* '=' initVal;
 
-functionDecl:
-	cType Ident LeftParenthesis funcFParams? RightParenthesis Semicolon;
-
 initVal:
 	expr
 	| LeftCurlyBracket (initVal ( Comma initVal)*)? RightCurlyBracket;
 
-functionDef: cType Ident LeftParenthesis funcFParams? RightParenthesis block;
+functionDeclOrDef:
+	cType Ident LeftParenthesis funcFParams? RightParenthesis (
+		Semicolon
+		| block
+	);
 
 funcFParams: funcFParam ( Comma funcFParam)*;
 

@@ -5,6 +5,7 @@ namespace ATC {
 class TreeNode;
 class CompUnit;
 class VarDecl;
+class FunctionDecl;
 class FunctionDef;
 class BasicType;
 class ArrayType;
@@ -34,6 +35,8 @@ public:
     virtual void visit(CompUnit*);
 
     virtual void visit(VarDecl*);
+
+    virtual void visit(FunctionDecl*);
 
     virtual void visit(FunctionDef*);
 

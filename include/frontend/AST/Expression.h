@@ -174,16 +174,16 @@ public:
     virtual bool isConst() override { return false; }
 
     const std::vector<Expression*>& getParams() { return _params; }
-    FunctionDef* getFunctionDef() { return _functionDef; }
+    FunctionDecl* getFunctionDecl() { return _functionDecl; }
 
     void addParams(Expression* param) { _params.push_back(param); }
-    void setFunctionDef(FunctionDef* functionDef) { _functionDef = functionDef; }
+    void setFunctionDecl(FunctionDecl* functionDecl) { _functionDecl = functionDecl; }
 
     ACCEPT
 
 private:
     std::vector<Expression*> _params;
-    FunctionDef* _functionDef;
+    FunctionDecl* _functionDecl;
 };
 
 class ExpressionHandle {

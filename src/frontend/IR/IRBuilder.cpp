@@ -2,9 +2,8 @@
 
 #include "../CmdOption.h"
 #include "AST/CompUnit.h"
-#include "AST/Decl.h"
 #include "AST/Expression.h"
-#include "AST/FunctionDef.h"
+#include "AST/Function.h"
 #include "AST/Scope.h"
 #include "AST/Statement.h"
 #include "AST/Variable.h"
@@ -68,25 +67,27 @@ void IRBuilder::visit(CompUnit *node) {
     ASTVisitor::visit(node);
 }
 
+void IRBuilder::visit(FunctionDecl *node) {}
+
 void IRBuilder::visit(FunctionDef *node) {
+    auto functionDecl = node->getFunctionDecl();
     std::vector<Type *> params;
-    for (auto param : node->getParams()) {
+    for (auto param : functionDecl->getParams()) {
         DataType *dataType = param->getVariables()[0]->getDataType();
         params.push_back(convertToIRType(dataType));
     }
 
-    auto funcType = FunctionType::get(convertToIRType(node->getRetType()), params, false);
-    _funcName2funcType.insert({node->getName(), funcType});
+    auto funcType = FunctionType::get(convertToIRType(functionDecl->getRetType()), params, false);
+    _funcName2funcType.insert({functionDecl->getName(), funcType});
 
-    _currentFunction = new Function(_currentModule, *funcType, node->getName());
+    _currentFunction = new Function(_currentModule, *funcType, functionDecl->getName());
     _currentBasicBlock = new BasicBlock(_currentFunction, "entryBB");
-    _currentFunction->getCurAllocIter() = _currentBasicBlock->getInstructionList().end();
 
     AllocInst::AllocatedIntParamNum = 0;
     AllocInst::AllocatedFloatParamNum = 0;
     AllocInst::AllocForParam = true;
     int i = 0;
-    for (auto param : node->getParams()) {
+    for (auto param : functionDecl->getParams()) {
         param->accept(this);
         // the decl of formal param is the only one
         Variable *var = param->getVariables()[0];
@@ -103,9 +104,9 @@ void IRBuilder::visit(FunctionDef *node) {
 
     // if the function didn't execute return before, than return the default value
     if (!_currentBasicBlock->isHasBr()) {
-        if (node->getRetType()->getBasicType() == BasicType::INT) {
+        if (functionDecl->getRetType()->getBasicType() == BasicType::INT) {
             createRet(_int32Zero);
-        } else if (node->getRetType()->getBasicType() == BasicType::FLOAT) {
+        } else if (functionDecl->getRetType()->getBasicType() == BasicType::FLOAT) {
             createRet(_floatZero);
         } else {
             createRet(nullptr);
@@ -626,12 +627,15 @@ Value *IRBuilder::createAlloc(Type *allocType, const std::string &resultName) {
     auto entryBB = _currentFunction->getBasicBlocks().front();
     auto &instList = entryBB->getInstructionList();
     Instruction *inst = new AllocInst(allocType, resultName);
-    if (_currentFunction->getCurAllocIter() == instList.end()) {
-        instList.push_front(inst);
-        _currentFunction->getCurAllocIter() = instList.begin();
+    if (_currentFunction->isCurAllocIterInit()) {
+        auto tmp = _currentFunction->getCurAllocIter();
+        tmp++;
+        instList.insert(tmp, inst);
         _currentFunction->getCurAllocIter()++;
     } else {
-        instList.insert(_currentFunction->getCurAllocIter(), inst);
+        instList.push_front(inst);
+        _currentFunction->getCurAllocIter() = instList.begin();
+        _currentFunction->setCurAllocIterInit();
     }
     Value *result = inst->getResult();
     result->setBelongAndInsertName(_currentFunction);

@@ -1,37 +1,46 @@
 #pragma once
 
-#include <llvm/IR/Function.h>
-
 #include <vector>
 
-#include "Decl.h"
 #include "Statement.h"
 namespace ATC {
 
-namespace IR {
-class Function;
-}
-
-class FunctionDef : public TreeNode {
+class FunctionDecl : public TreeNode {
 public:
-    FunctionDef() = default;
+    FunctionDecl() = default;
 
     virtual int getClassId() override { return ID_FUNCTION_DEF; }
 
     DataType* getRetType() { return _retType; }
     const std::vector<VarDecl*>& getParams() { return _params; }
-    Block* getBlock() { return _block; }
 
     void setRetType(DataType* retType) { _retType = retType; }
     void addParams(VarDecl* decl) { _params.push_back(decl); }
-    void setBlock(Block* block) { _block = block; }
 
     ACCEPT
 
 private:
     DataType* _retType;
     std::vector<VarDecl*> _params;
-    Block* _block;
+};
+
+class FunctionDef : public TreeNode {
+public:
+    FunctionDef(FunctionDecl* decl) : _functionDecl(decl) {}
+
+    virtual int getClassId() override { return ID_FUNCTION_DEF; }
+
+    FunctionDecl* getFunctionDecl() { return _functionDecl; }
+
+    Block* getBlock() { return _block; }
+
+    void setBlock(Block* block) { _block = block; }
+
+    ACCEPT
+
+private:
+    FunctionDecl* _functionDecl;
+    Block* _block = nullptr;
 };
 
 }  // namespace ATC

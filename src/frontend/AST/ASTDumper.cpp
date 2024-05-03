@@ -6,9 +6,8 @@
 #include <unordered_map>
 
 #include "AST/CompUnit.h"
-#include "AST/Decl.h"
 #include "AST/Expression.h"
-#include "AST/FunctionDef.h"
+#include "AST/Function.h"
 #include "AST/Statement.h"
 #include "AST/Variable.h"
 
@@ -23,6 +22,7 @@ unordered_map<int, string> ClassName = {
     {ID_ARRAY_TYPE,             "ArrayType"},
     {ID_POINTER_TYPE,           "PointerType"},
     {ID_VAR_DECL,               "VarDecl"},
+    {ID_FUNCTION_DECL,          "FunctionDecl"},
     {ID_FUNCTION_DEF,           "FunctionDef"},
     {ID_VARIABLE,               "Variable"},
     {ID_CONST_VAL,              "ConstVal"},
@@ -97,6 +97,13 @@ void ASTDumper::visit(CompUnit* node) {
 }
 
 void ASTDumper::visit(VarDecl* node) {
+    printNode(node);
+    _indent++;
+    ASTVisitor::visit(node);
+    _indent--;
+}
+
+void ASTDumper::visit(FunctionDecl* node) {
     printNode(node);
     _indent++;
     ASTVisitor::visit(node);

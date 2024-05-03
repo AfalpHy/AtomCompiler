@@ -6,9 +6,8 @@
 #include <unordered_map>
 
 #include "AST/CompUnit.h"
-#include "AST/Decl.h"
 #include "AST/Expression.h"
-#include "AST/FunctionDef.h"
+#include "AST/Function.h"
 #include "AST/Statement.h"
 #include "AST/Variable.h"
 
@@ -30,10 +29,14 @@ void ASTVisitor::visit(VarDecl* node) {
     }
 }
 
-void ASTVisitor::visit(FunctionDef* node) {
+void ASTVisitor::visit(FunctionDecl* node) {
     for (auto fParam : node->getParams()) {
         fParam->accept(this);
     }
+}
+
+void ASTVisitor::visit(FunctionDef* node) {
+    node->getFunctionDecl()->accept(this);
     node->getBlock()->accept(this);
 }
 
